@@ -36,6 +36,9 @@ pip install wandb
 python test_GPU.py
 ```
 
+
+*Expected result:* **True** *if you have GPU(s) available*
+
 6. Test DeepRobust
 
 ```
@@ -43,7 +46,6 @@ cd DeepRobust
 python examples/graph/test_gcn_jaccard.py --dataset cora
 ```
 
-*Expected result:* **True** *if you have GPU(s) available*
 
 **If you are using window, you may encounter this problem**
 ```
@@ -63,7 +65,7 @@ pip install torch_scatter==2.1.2
 pip install torch_sparse==0.6.18
 ```
 
-## create branches and development
+## Create branches and development
 
 ```
 git fetch origin
