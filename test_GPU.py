@@ -17,5 +17,4 @@ from deeprobust.graph.data import Dataset, Dpr2Pyg
 # from model.GSAGE import GraphSAGE
 from deeprobust.graph.targeted_attack import Nettack
 # from ogb.nodeproppred import PygNodePropPredDataset
-from deeprobust.graph.targeted_attack import UGBA
 
