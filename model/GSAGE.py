@@ -10,6 +10,8 @@ from torch.nn import Linear, Sequential, BatchNorm1d, ReLU, Dropout
 from copy import deepcopy
 from torch_geometric.nn import GATConv
 from torch_geometric.nn import GCNConv, GINConv,SAGEConv
+from deeprobust.graph import utils
+
 
 
 class GraphSAGE(nn.Module):
@@ -48,7 +50,7 @@ class GraphSAGE(nn.Module):
         return F.log_softmax(x, dim=1)
 
     def initialize(self):
-        """Initialize parameters of GAT.
+        """Initialize parameters of GSAGE.
         """
         self.conv1.reset_parameters()
         self.conv2.reset_parameters()
@@ -57,7 +59,7 @@ class GraphSAGE(nn.Module):
 
 
     def fit(self, pyg_data, train_iters=1000, initialize=True, verbose=False, patience=100, **kwargs):
-        """Train the GAT model, when idx_val is not None, pick the best model
+        """Train the GSAGE model, when idx_val is not None, pick the best model
         according to the validation loss.
 
         Parameters
@@ -87,7 +89,7 @@ class GraphSAGE(nn.Module):
         """early stopping based on the validation loss
         """
         if verbose:
-            print('=== training GIN model ===')
+            print('=== training GSAGE model ===')
 
         criterion = torch.nn.CrossEntropyLoss()
         optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
@@ -128,7 +130,7 @@ class GraphSAGE(nn.Module):
              print('=== early stopping at {0}, loss_val = {1} ==='.format(i, best_loss_val) )
         self.load_state_dict(weights)
     def test(self):
-        """Evaluate GAT performance on test set.
+        """Evaluate GSAGE performance on test set.
 
         Parameters
         ----------
@@ -153,7 +155,7 @@ class GraphSAGE(nn.Module):
         Returns
         -------
         torch.FloatTensor
-            output (log probabilities) of GAT
+            output (log probabilities) of GSAGE
         """
 
         self.eval()

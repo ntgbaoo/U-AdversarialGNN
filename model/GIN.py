@@ -10,6 +10,9 @@ from torch.nn import Linear, Sequential, BatchNorm1d, ReLU, Dropout
 from copy import deepcopy
 from torch_geometric.nn import GATConv
 from torch_geometric.nn import GCNConv, GINConv
+from deeprobust.graph import utils
+from torch_geometric.nn.models.basic_gnn import GIN,GraphSAGE
+
 
 
 class GIN(nn.Module):
@@ -62,7 +65,7 @@ class GIN(nn.Module):
 
 
     def fit(self, pyg_data, train_iters=1000, initialize=True, verbose=False, patience=100, **kwargs):
-        """Train the GAT model, when idx_val is not None, pick the best model
+        """Train the GIN model, when idx_val is not None, pick the best model
         according to the validation loss.
 
         Parameters
@@ -133,7 +136,7 @@ class GIN(nn.Module):
              print('=== early stopping at {0}, loss_val = {1} ==='.format(i, best_loss_val) )
         self.load_state_dict(weights)
     def test(self):
-        """Evaluate GAT performance on test set.
+        """Evaluate GIN performance on test set.
 
         Parameters
         ----------
@@ -158,7 +161,7 @@ class GIN(nn.Module):
         Returns
         -------
         torch.FloatTensor
-            output (log probabilities) of GAT
+            output (log probabilities) of GIN
         """
 
         self.eval()
