@@ -20,6 +20,7 @@ parser.add_argument("--wandb", action="store_true", default=False, help="Log tra
 
 
 # 3.models
+parser.add_argument('--model', type=str, default='GCN', help='models name')
 parser.add_argument('--in_channels', type=int, default=2, help='Size of each input sample')
 parser.add_argument('--out_channels', type=int, default=None, help='Size of output')
 parser.add_argument('--hidden_channels', type=int, default=8,help='Size of each hidden sample')
