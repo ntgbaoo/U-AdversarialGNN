@@ -1,4 +1,4 @@
-from util import logger
+from utility.util import logger
 from torch_geometric.nn.models.basic_gnn import GCN,GIN,GraphSAGE
 
 def load_model(args):
