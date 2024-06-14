@@ -17,6 +17,8 @@ parser.add_argument('--lr', type=float, default=0.01, help='learning rate')
 parser.add_argument('--weight_decay', type=float, default=5e-7, help='weight for L2 loss on basic models.')
 parser.add_argument('--min_epoch', type=int, default=100, help='min epoch')
 parser.add_argument("--wandb", action="store_true", default=False, help="Log training process")
+parser.add_argument('--log_interval', type=int, default=20, help='log interval, default: 20,[20,40,...]')
+
 
 
 # 3.models
@@ -29,6 +31,9 @@ parser.add_argument('--heads', type=int, default=8)
 parser.add_argument('--dropout', type=float, default=0., help='Dropout probability')
 
 args = parser.parse_args()
+
+args.output_folder = '../output/log/{}/{}/'.format(args.dataset, args.model)
+
 
 # set the running device
 if int(args.device_id) >= 0 and torch.cuda.is_available():

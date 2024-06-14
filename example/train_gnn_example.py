@@ -3,6 +3,7 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.datasets import Planetoid
 import torch_geometric.transforms as T
+import timeit
 
 
 
@@ -25,6 +26,7 @@ class Runner(object):
             )
         self.data = data
         self.adj_csr, self.features_csr, self.labels_csr = data.adj, data.features, data.labels
+        self.number_nodes = len(data.labels)
 
         self.edge_index_torch = torch.tensor(sparse_adjacency_to_edge_list(self.adj_csr),dtype=torch.long)
         self.features_torch = torch.tensor(self.features_csr.toarray(),dtype=torch.float)
@@ -52,11 +54,44 @@ class Runner(object):
         return float(loss)
     
     def run(self):
-        print("Training")
+        logger.info(">>Start traing {} on {} for node classification".format(args.model,args.dataset))
+        logger.info("Number of nodes:{}".format(self.number_nodes))
+        logger.info("Training node:{} , Validation node: {} , Test node: {}".format(len(self.idx_train),len(self.idx_val),len(self.idx_test)))
 
         self.train()
 
-        
+        best_val_acc = test_acc = 0
+        times = []
+        for epoch in range(1, args.max_epoch + 1):
+            start_epoch = timeit.default_timer()
+            loss = self.train()
+            train_acc, val_acc, tmp_test_acc = self.test()
+
+            #Early stopping can be applied here if needed
+            if val_acc > best_val_acc:
+                best_val_acc = val_acc
+                test_acc = tmp_test_acc
+            
+            gpu_mem_alloc = torch.cuda.max_memory_allocated() / 1000000 if torch.cuda.is_available() else 0
+            delta_epoch = timeit.default_timer() - start_epoch
+            times.append(delta_epoch)
+            if epoch == 1 or epoch % args.log_interval == 0:
+                logger.info("=="*30)
+                logger.info("Epoch:{}, Loss:{:.4f}, Time:{:.3f}, GPU:{:.1f}MiB".format(epoch,loss,delta_epoch,gpu_mem_alloc))
+                logger.info("Train: {:.3f}, Validation:{:.3f}, Test: {:.3f}".format(train_acc,val_acc,test_acc))
+
+        logger.info(">> Done Training")
+        total_time = sum(times)
+        logger.info('>> Total time : %6.2f' % (total_time))
+
+    @torch.no_grad
+    def test(self):
+        self.model.eval()
+        prediction = self.model( self.features_torch, self.edge_index_torch).argmax(dim=-1)
+        accs = []
+        for mask in [self.idx_train, self.idx_val, self.idx_test]:
+            accs.append(int((prediction[mask] == self.labels_torch[mask]).sum()) / len(mask))
+        return accs
         
 if __name__ == '__main__':
     import sys
@@ -66,7 +101,7 @@ if __name__ == '__main__':
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
     from utility.config import args
-    from utility.util import set_random, logger, init_logger
+    from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
     from utility.data_util import dataset_loader,sparse_adjacency_to_edge_list
     from utility.load_model import load_model
 
@@ -78,17 +113,10 @@ if __name__ == '__main__':
 
 
     data = dataset_loader(args)
-     
+    init_logger(
+                prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
+                    args.seed) + '_log.txt')
     runner = Runner(data)
     runner.run()
    
-    # print(type(data.features))
-    # feature = torch.from_numpy(data.features.toarray())
-    # print(feature.shape)
-    # edge_list = sparse_adjacency_to_edge_list(data.adj)
-    # # print(edge_list.shape)
-   
-    # path = "../dataset/"
-    # dataset = Planetoid(path, args.dataset, transform=T.NormalizeFeatures())
-
-    # print(dataset.x.shape)
+    

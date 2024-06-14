@@ -11,6 +11,11 @@ import networkx as nx
 logger = logging.getLogger()
 
 
+def prepare_dir(output_folder):
+    mkdirs(output_folder)
+    log_folder = mkdirs(output_folder)
+    return log_folder
+
 def mkdirs(folder):
     if not os.path.isdir(folder):
         os.makedirs(folder)
