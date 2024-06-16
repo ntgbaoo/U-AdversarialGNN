@@ -108,7 +108,7 @@ if __name__ == '__main__':
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
     from utility.data_util import dataset_loader
     from utility.config import args
-    from attack.Nettack import Nettack
+    from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
 
     '''
        Config attack method and dataset
@@ -148,11 +148,7 @@ if __name__ == '__main__':
         miss_percentage = attack_net(surrogate,data, target_node, budget, features, adj, labels,"GCN")
       
 
-        '''
-        Additional adversarial attacks can also be called easily with API provided by DeepRobust
-        For further documentation: https://deeprobust.readthedocs.io/en/latest/
-        For example, FGA can be called as follows:
-        '''
+     
      
 
 

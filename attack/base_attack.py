@@ -22,16 +22,15 @@ class BaseAttack(Module):
 
     """
 
-    def __init__(self, args, model, nnodes, attack_structure=True, attack_features=False):
+    def __init__(self, args, model_runner, nnodes, attack_structure=True, attack_features=False):
         super(BaseAttack, self).__init__()
-
-        self.surrogate = model
+        self.surrogate = model_runner
         self.nnodes = nnodes
         self.attack_structure = attack_structure
         self.attack_features = attack_features
         self.device = args.device
 
-        if model is not None:
+        if model_runner is not None:
             self.nclass = args.out_channels
             self.nfeat = args.in_channels
             self.hidden_sizes = [args.hidden_channels]

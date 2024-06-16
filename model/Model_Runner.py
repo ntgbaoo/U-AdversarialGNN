@@ -4,16 +4,24 @@ import torch.nn.functional as F
 from torch_geometric.datasets import Planetoid
 import torch_geometric.transforms as T
 import timeit
-from torch.nn.parameter import Parameter
-import numpy as np
 
+import sys
+import os
+    
+# Edit path to import from different module
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
+from utility.data_util import dataset_loader,sparse_adjacency_to_edge_list
+from utility.load_model import load_model
+from utility.config import args
 
-
-
+'''
+Wrapper for GNNs Torch Geometric models
+'''
 
 class Runner(object):
-    def __init__(self,data):
+    def __init__(self):
         if args.wandb:
             wandb.init(
                 # set the wandb project where this run will be logged
@@ -28,37 +36,35 @@ class Runner(object):
 
                 }
             )
-        self.data = data
-        self.adj_csr, self.features_csr, self.labels_csr = data.adj, data.features, data.labels
-        self.number_nodes = len(data.labels)
+        self.data = dataset_loader(args)
+        self.adj_csr, self.features_csr, self.labels_csr = self.data.adj, self.data.features, self.data.labels
+        self.number_nodes = len(self.data.labels)
 
         self.edge_index_torch = torch.tensor(sparse_adjacency_to_edge_list(self.adj_csr),dtype=torch.long)
         self.features_torch = torch.tensor(self.features_csr.toarray(),dtype=torch.float)
-
-        print( self.adj_csr.shape)
-        print( self.features_torch.shape)
         self.labels_torch = torch.tensor(self.labels_csr,dtype=torch.long)
 
         args.in_channels = self.features_torch.shape[1]
         args.out_channels = self.labels_csr.max().item() + 1
         
-        self.idx_train, self.idx_val, self.idx_test = data.idx_train, data.idx_val, data.idx_test
+        self.idx_train, self.idx_val, self.idx_test = self.data.idx_train, self.data.idx_val, self.data.idx_test
         self.lr = args.lr
         self.model = load_model(args).to(args.device)
-
-       
-
-        # test =  self.model.convs[1].lin_r.weight @ self.model.convs[0].lin_r.weight
-        # test =  np.transpose(torch.tensor(test.cpu().detach().numpy())).to(args.device) 
-       
-        # print(type((self.model.convs[0].parameters)))
-        # print(self.model.convs[0].lin.weight @ self.model.convs[1].lin.weight)
 
         self.optimizer = torch.optim.Adam(self.model.parameters(), self.lr)  # Only perform weight-decay on first convolution.
 
         self.edge_index_torch = self.edge_index_torch.to(args.device)
         self.features_torch = self.features_torch.to(args.device)
+
         self.labels_torch = self.labels_torch.to(args.device)
+
+    def forward_adversarial(self,modified_features, adj_norm):
+        # print(adj_norm.shape)
+        # adversarial_edge_index_torch = torch.tensor(sparse_adjacency_to_edge_list(adj_norm),dtype=torch.long)
+        
+        adversarial_edge_index_torch = torch.nonzero(adj_norm, as_tuple=False).transpose(0, 1)
+        # adversarial_features_torch = torch.tensor(modified_features.toarray(),dtype=torch.float)
+        return self.model(modified_features,adversarial_edge_index_torch)
 
     def train(self):
         self.model.train()
@@ -102,51 +108,29 @@ class Runner(object):
 
     @torch.no_grad
     def test(self):
-        self.model.eval()
-        prediction = self.model( self.features_torch, self.edge_index_torch).argmax(dim=-1)
+        prediction = self.predict()
+        print(prediction.shape)
         accs = []
         for mask in [self.idx_train, self.idx_val, self.idx_test]:
             accs.append(int((prediction[mask] == self.labels_torch[mask]).sum()) / len(mask))
         return accs
-        
-if __name__ == '__main__':
-    import sys
-    import os
     
-    # Edit path to import from different module
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    @torch.no_grad
+    def predict(self):
+        self.model.eval()
+        prediction = self.model( self.features_torch, self.edge_index_torch).argmax(dim=-1)
+        return prediction
 
+if __name__ == "__main__":
     from utility.config import args
-    from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-    from utility.data_util import dataset_loader,sparse_adjacency_to_edge_list
-    from utility.load_model import load_model
-    from attack.Nettack import Nettack
 
-
-    args.model = "GCN"
     args.dataset = "cora"
     args.seed = 710
-    args.max_epoch = 100
     set_random(args.seed)
-    verbose = False
 
-
-
-    data = dataset_loader(args)
-    adj, features, labels = data.adj, data.features, data.labels
+   
     init_logger(
                 prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
                     args.seed) + '_log.txt')
-    
-    target_node = [929, 1554, 1342, 2406, 1347, 1956, 2082, 1504, 1823, 1820]
-    runner = Runner(data)
+    runner = Runner(args)
     runner.run()
-
-    model = Nettack(args,runner.model, nnodes=adj.shape[0], attack_structure=True, attack_features=False)
-    model = model.to(args.device)
-    model.attack(features, adj, labels, 929, 1, verbose=verbose)
-    modified_adj = model.modified_adj
-
-    # print(modified_adj)
-   
-    
