@@ -43,7 +43,6 @@ else:
     args.device = torch.device("cpu")
     print('INFO: using cpu to train the models')
 
-print("INFO: using {} as a defense model".format(args.model))
 
 
 

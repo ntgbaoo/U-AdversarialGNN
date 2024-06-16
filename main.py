@@ -14,7 +14,7 @@ import random
 from deeprobust.graph.data import Dataset, Dpr2Pyg
 from model.GIN import GIN
 from model.GSAGE import GraphSAGE
-from deeprobust.graph.targeted_attack import Nettack
+from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
 
 """
 Author: Anonymous Authors
@@ -201,12 +201,12 @@ if __name__ == '__main__':
         target_node = select_nodes()
 
         # Orbit attack(1518)
-        surrogate = set_up_surrogate_model(features, adj, labels, idx_train, idx_val)
-        model = OrbitAttack(surrogate, df_orbit, nnodes=adj.shape[0], device=device)
-        # model = OrbitAttackModified(surrogate, df_orbit, nnodes=adj.shape[0], device=device,attack_type="1518",orbit_type="two_Orbit_type")
-        model = model.to(device)
-        miss_percentage = attack(data,model, target_node,budget,features,adj,labels,test_model)
-        row.append(miss_percentage)
+        # surrogate = set_up_surrogate_model(features, adj, labels, idx_train, idx_val)
+        # model = OrbitAttack(surrogate, df_orbit, nnodes=adj.shape[0], device=device)
+        # # model = OrbitAttackModified(surrogate, df_orbit, nnodes=adj.shape[0], device=device,attack_type="1518",orbit_type="two_Orbit_type")
+        # model = model.to(device)
+        # miss_percentage = attack(data,model, target_node,budget,features,adj,labels,test_model)
+        # row.append(miss_percentage)
 
         # Nettack
         surrogate = set_up_surrogate_model(features, adj, labels, idx_train, idx_val)
