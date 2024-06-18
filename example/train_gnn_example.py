@@ -19,10 +19,12 @@ if __name__ == '__main__':
     from utility.load_model import load_model
     from model.Model_Runner import Runner
 
-    args.model = "GIN"
+    args.model = "GCN"
     args.dataset = "cora"
     args.seed = 710
+    args.train_early_stopping = False
     set_random(args.seed)
+    
 
 
 
@@ -32,5 +34,8 @@ if __name__ == '__main__':
                     args.seed) + '_log.txt')
     runner = Runner()
     runner.run()
+
+    train_acc, val_acc, test_acc = runner.compute_acc(runner.get_predict())
+    print(train_acc, val_acc, test_acc)
    
     
