@@ -98,12 +98,15 @@ class FGA(BaseAttack):
         if verbose == True:
             print('number of pertubations: %s' % n_perturbations)
 
-        pseudo_labels = self.surrogate.predict().detach()
+        pseudo_labels = self.surrogate.get_predict().detach()
         pseudo_labels[idx_train] = labels[idx_train]
 
         modified_adj.requires_grad = True
+
         for i in range(n_perturbations):
+            
             adj_norm = utils.normalize_adj_tensor(modified_adj)
+
             if self.attack_structure:
                 output = self.surrogate.forward_adversarial(modified_features, adj_norm)
                

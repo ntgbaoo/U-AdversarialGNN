@@ -12,12 +12,14 @@ parser.add_argument('--max_epoch', type=int, default=500, help='number of epochs
 parser.add_argument('--device', type=str, default='cpu', help='training device')
 parser.add_argument('--device_id', type=str, default='0', help='device id for gpu')
 parser.add_argument('--seed', type=int, default=1024, help='random seed')
-parser.add_argument('--patience', type=int, default=50, help='patience for early stop')
+parser.add_argument('--patience', type=int, default=40, help='patience for early stop')
 parser.add_argument('--lr', type=float, default=0.01, help='learning rate')
 parser.add_argument('--weight_decay', type=float, default=5e-7, help='weight for L2 loss on basic models.')
-parser.add_argument('--min_epoch', type=int, default=100, help='min epoch')
-parser.add_argument("--wandb", action="store_true", default=False, help="Log training process")
+parser.add_argument('--min_epoch', type=int, default=100, help='min epoch applied for early stopping')
+parser.add_argument("--wandb", action="store_true", default=False, help="Log training process on wandb")
 parser.add_argument('--log_interval', type=int, default=20, help='log interval, default: 20,[20,40,...]')
+parser.add_argument("--train_early_stopping", default=True, help="Apply early stopping for training")
+parser.add_argument("--tolerance", type=float, default=0.0005, help="Apply early stopping for training")
 
 
 

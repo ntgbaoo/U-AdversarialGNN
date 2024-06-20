@@ -1,10 +1,6 @@
-import wandb
-import torch
 import torch.nn.functional as F
 from torch_geometric.datasets import Planetoid
 import torch_geometric.transforms as T
-import timeit
-
         
 if __name__ == '__main__':
     import sys
@@ -25,10 +21,6 @@ if __name__ == '__main__':
     args.train_early_stopping = False
     set_random(args.seed)
     
-
-
-
-    # data = dataset_loader(args)
     init_logger(
                 prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
                     args.seed) + '_log.txt')
