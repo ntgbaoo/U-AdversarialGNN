@@ -21,10 +21,13 @@ if __name__ == '__main__':
     args.train_early_stopping = False
     set_random(args.seed)
     
+
     init_logger(
                 prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
                     args.seed) + '_log.txt')
-    runner = Runner()
+    
+    data = dataset_loader(args)
+    runner = Runner(data)
     runner.run()
 
     train_acc, val_acc, test_acc = runner.compute_acc(runner.get_predict())

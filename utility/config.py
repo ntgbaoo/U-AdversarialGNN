@@ -20,6 +20,8 @@ parser.add_argument("--wandb", action="store_true", default=False, help="Log tra
 parser.add_argument('--log_interval', type=int, default=20, help='log interval, default: 20,[20,40,...]')
 parser.add_argument("--train_early_stopping", default=True, help="Apply early stopping for training")
 parser.add_argument("--tolerance", type=float, default=0.0005, help="Apply early stopping for training")
+parser.add_argument("--verbose", default=False, help="Log training and attack process")
+
 
 
 
@@ -31,6 +33,7 @@ parser.add_argument('--hidden_channels', type=int, default=8,help='Size of each 
 parser.add_argument('--num_layers', type=int, default=2,help='Number of message passing layers')
 parser.add_argument('--heads', type=int, default=8)
 parser.add_argument('--dropout', type=float, default=0., help='Dropout probability')
+
 
 args = parser.parse_args()
 

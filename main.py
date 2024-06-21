@@ -1,3 +1,4 @@
+import timeit
 import pandas as pd
 from deeprobust.graph.defense import GCN
 from deeprobust.graph.utils import *
@@ -203,18 +204,18 @@ if __name__ == '__main__':
         # Orbit attack(1518)
         # surrogate = set_up_surrogate_model(features, adj, labels, idx_train, idx_val)
         # model = OrbitAttack(surrogate, df_orbit, nnodes=adj.shape[0], device=device)
-        # # model = OrbitAttackModified(surrogate, df_orbit, nnodes=adj.shape[0], device=device,attack_type="1518",orbit_type="two_Orbit_type")
+        # # model = OrbitAttackModified(surrogate, df_orbit, nnodes=adj.shape[0], devicdce=device,attack_type="1518",orbit_type="two_Orbit_type")
         # model = model.to(device)
         # miss_percentage = attack(data,model, target_node,budget,features,adj,labels,test_model)
         # row.append(miss_percentage)
-
+        start = timeit.default_timer()
         # Nettack
         surrogate = set_up_surrogate_model(features, adj, labels, idx_train, idx_val)
         model = Nettack(surrogate, nnodes=adj.shape[0], attack_structure=True, attack_features=False, device=device)
         model = model.to(device)
         miss_percentage = attack_net(surrogate,data, target_node, budget, features, adj, labels,test_model)
         row.append(miss_percentage)
-
+        print(timeit.default_timer() - start)
         '''
         Additional adversarial attacks can also be called easily with API provided by DeepRobust
         For further documentation: https://deeprobust.readthedocs.io/en/latest/
