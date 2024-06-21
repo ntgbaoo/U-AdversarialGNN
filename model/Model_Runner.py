@@ -26,7 +26,7 @@ Wrapper for GNNs Torch Geometric models
 '''
 
 class Runner(object):
-    def __init__(self):
+    def __init__(self,data):
         if args.wandb:
             wandb.init(
                 # set the wandb project where this run will be logged
@@ -41,7 +41,7 @@ class Runner(object):
 
                 }
             )
-        self.data = dataset_loader(args)
+        self.data = data
         self.adj_csr, self.features_csr, self.labels_csr = self.data.adj, self.data.features, self.data.labels
         self.number_nodes = len(self.data.labels)
 
@@ -64,6 +64,14 @@ class Runner(object):
         self.labels_torch = self.labels_torch.to(args.device)
         self.output = None
         self.prediction = None
+
+    def update_adversarial_adj(self,adversarial_adj):
+        self.adj_csr = adversarial_adj
+        self.edge_index_torch = torch.tensor(sparse_adjacency_to_edge_list(self.adj_csr),dtype=torch.long).to(args.device)
+
+    def update_adversarial_edgelist(self,adversarial_edgelist):
+        self.edge_index_torch = adversarial_edgelist.to(args.device)
+
 
     def forward_adversarial(self,modified_features, adj_norm):
         # sparse = adj_norm.to_sparse()

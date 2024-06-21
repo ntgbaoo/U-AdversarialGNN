@@ -1,3 +1,4 @@
+import timeit
 import torch.nn.functional as F
 from torch_geometric.datasets import Planetoid
 import torch_geometric.transforms as T
@@ -6,7 +7,6 @@ if __name__ == '__main__':
     import sys
     import os
     import warnings
-
     # Hide all warnings
     warnings.filterwarnings("ignore")
     
@@ -24,40 +24,69 @@ if __name__ == '__main__':
 
     from utility.data_util import dataset_loader,sparse_adjacency_to_edge_list
 
-
-
-    args.model = "GSAGE"
+    args.model = "GCN"
     args.dataset = "cora"
-    args.seed = 710
+    args.seed = 720
     args.train_early_stopping = True
     set_random(args.seed)
     
-    init_logger(
-                prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
-                    args.seed) + '_log.txt')
+    
+    if args.verbose:
+        init_logger(
+                    prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
+                        args.seed) + '_log.txt')
+        
+    data = dataset_loader(args)
+
     
     #Set up surrogate model
-    runner_surrogate = Runner()
+    runner_surrogate = Runner(data)
     runner_surrogate.run()
 
-    data = runner_surrogate.data
     adj, features, labels = data.adj, data.features, data.labels
     idx_train, idx_val, idx_test = data.idx_train, data.idx_val, data.idx_test
 
-    train_acc, val_acc, test_acc = runner_surrogate.compute_acc(runner_surrogate.get_predict())
+    #Select target nodes
     node_list = select_nodes_margin(runner_surrogate)
-    print(node_list)
-    # adversarial = FGA(args,runner_surrogate,runner_surrogate.data.adj.shape[0])
-
+    
+    #Set up gcn model
     gcn_surrogate = set_up_surrogate_model(features, adj, labels, idx_train, idx_val,args)
-    adversarial = Nettack(gcn_surrogate, nnodes=adj.shape[0], attack_structure=True, attack_features=False, device=args.device)
+    miss = 0
+    budgets = [1]
+    counter = 0
+    false_nodes = []
+    for budget in budgets:
+        print("=="*30)
+        print("INFO: Apply Nettack on {} on {} dataset with budget {}".format(args.model, args.dataset,budget))
+        start = timeit.default_timer()
+        for node in node_list:
+            adversarial = Nettack(gcn_surrogate, nnodes=adj.shape[0], attack_structure=True, attack_features=False, device=args.device)
+            adversarial.to(args.device)
+            adversarial.attack(features, adj, labels, node, budget, verbose=False)
+            modified_adj = adversarial.modified_adj
+            
+            runner_adversarial = Runner(data)
+            runner_adversarial.update_adversarial_adj(modified_adj)
+            runner_adversarial.run()
+            prediction = runner_adversarial.get_predict()
 
-   
-    # adversarial.attack(features, adj,labels,idx_train, 2307, 1, verbose=True)
-    adversarial.attack(features, adj, labels, 2307, 1, verbose=False)
-    modified_adj = adversarial.modified_adj
-    modified_edgelist = sparse_adjacency_to_edge_list(modified_adj)
-    print(modified_edgelist.shape)
+            if node in false_nodes:
+                miss += 1
+            elif not (prediction[node] == labels[node]).item():
+                miss += 1
+                false_nodes.append(node)
+                
+            counter += 1
+            # print("INFO: finished {}/{}".format(counter,len(node_list)))
+            print(f'\rINFO : finished {counter}/{len(node_list)}', end='')
+        
+        duration = timeit.default_timer() - start
+        print("\nWrong classified ratio:{:.3f}".format(miss/len(node_list)))
+        print("Total time:{:.2f}".format(duration))
 
+
+
+    
+    
     
     
