@@ -54,9 +54,9 @@ OSError: [WinError 127] The specified procedure could not be found
 Then uninstall ```torch_geometric```, ```torch_scatter``` and ```torch_sparse ``` by using :
 
 ```
-pip unstall torch_geometric
-pip unstall torch_scatter
-pip unstall torch_sparse
+pip uninstall torch_geometric
+pip uninstall torch_scatter
+pip uninstall torch_sparse
 ```
 Then re-install packages as follow:
 ```
