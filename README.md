@@ -46,6 +46,15 @@ cd DeepRobust
 python examples/graph/test_gcn_jaccard.py --dataset cora
 ```
 
+7. Installed dependencies for Gradient-free Graph Advantage Actor Critic (G2A2C)
+
+The paper can be found [here.](https://arxiv.org/pdf/2211.10782)
+
+```
+pip install dgl==0.9.0 pyro-ppl==1.8.1
+```
+
+*Due to some dependencies conflicts (Pytorch 2.3.1 is not supported in the latest DGL yet), G2A2C is just able to use CPU. Waiting further update from PyTorch and DGL.*
 
 **If you are using window, you may encounter this problem**
 ```
