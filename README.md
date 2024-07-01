@@ -8,7 +8,7 @@ Unifying Adversarial Attacks on Graph Neural Networks
 1. install torch
 
 ```
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+pip install torch==2.3.0 torchvision==0.18.0 torchaudio==2.3.0 --index-url https://download.pytorch.org/whl/cu121
 ```
 
 2. install PyG
@@ -51,10 +51,10 @@ python examples/graph/test_gcn_jaccard.py --dataset cora
 The paper can be found [here.](https://arxiv.org/pdf/2211.10782)
 
 ```
-pip install dgl==0.9.0 pyro-ppl==1.8.1
+pip install  dgl -f https://data.dgl.ai/wheels/cu121/repo.html
+pip install pyro-ppl==1.8.1 pydantic
 ```
 
-*Due to some dependencies conflicts (Pytorch 2.3.1 is not supported in the latest DGL yet), G2A2C is just able to use CPU. Waiting further update from PyTorch and DGL.*
 
 **If you are using window, you may encounter this problem**
 ```

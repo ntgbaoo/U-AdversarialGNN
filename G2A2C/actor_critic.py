@@ -35,8 +35,7 @@ parser.add_argument('--repeat', type=int, default=5, help='number of runs')
 
 args = parser.parse_args()
 
-# device = 'cuda:{}'.format(str(args.device))
-device = 'cpu'
+device = 'cuda:{}'.format(str(args.device))
 hid_dim = args.hid_dim
 k_hop_feat = args.khop_feat
 k_hop_edge = args.khop_edge
