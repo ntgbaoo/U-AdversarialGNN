@@ -8,7 +8,7 @@ Unifying Adversarial Attacks on Graph Neural Networks
 1. install torch
 
 ```
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+pip install torch==2.3.0 torchvision==0.18.0 torchaudio==2.3.0 --index-url https://download.pytorch.org/whl/cu121
 ```
 
 2. install PyG
@@ -44,6 +44,15 @@ python test_GPU.py
 ```
 cd DeepRobust
 python examples/graph/test_gcn_jaccard.py --dataset cora
+```
+
+7. Installed dependencies for Gradient-free Graph Advantage Actor Critic (G2A2C)
+
+The paper can be found [here.](https://arxiv.org/pdf/2211.10782)
+
+```
+pip install  dgl -f https://data.dgl.ai/wheels/cu121/repo.html
+pip install pyro-ppl==1.8.1 pydantic
 ```
 
 

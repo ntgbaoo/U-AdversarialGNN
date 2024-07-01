@@ -20,7 +20,7 @@ Credits:
             a method proposed in the paper: 'Adversarial Attacks on Neural Networks for Graph Data'
             by Daniel Zügner, Amir Akbarnejad and Stephan Günnemann
             - Gottack is built on top of DeepRobust - A PyTorch Library for Adversarial
-            Attacks and Defenses developed by Yaxin Li, Wei Jin, Han Xu and Jiliang Tang
+            Attacks and Defenses developed by Yaxin Li, Wei Jin, Han Xu and Jiliang Tang.
 """
 
 
