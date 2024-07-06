@@ -19,7 +19,6 @@ if __name__ == '__main__':
     from utility.load_model import load_model
     from model.Model_Runner import Runner
     from utility.attack_util import select_nodes_margin,set_up_surrogate_model
-    from attack.FGA_rework import FGA
     from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
 
     from utility.data_util import dataset_loader,sparse_adjacency_to_edge_list

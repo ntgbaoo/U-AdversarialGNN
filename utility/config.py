@@ -32,6 +32,8 @@ parser.add_argument('--out_channels', type=int, default=None, help='Size of outp
 parser.add_argument('--hidden_channels', type=int, default=8,help='Size of each hidden sample')
 parser.add_argument('--num_layers', type=int, default=2,help='Number of message passing layers')
 parser.add_argument('--heads', type=int, default=8)
+parser.add_argument('--aggr_function', type=str, default="add", help='Type of aggregate function. Choose from sum, mean, min, max and mul')
+
 parser.add_argument('--dropout', type=float, default=0., help='Dropout probability')
 
 
