@@ -8,6 +8,7 @@ parser = argparse.ArgumentParser(description='Adversarial attacks args parser')
 parser.add_argument('--dataset', type=str, default='cora', help='baseline dataset')
 
 # 2.experiment setup
+parser.add_argument('--wandb_name', type=str, default="adversarial_GNN", help='Name of project to keep track results on wandb')
 parser.add_argument('--max_epoch', type=int, default=500, help='number of epochs to train')
 parser.add_argument('--device', type=str, default='cpu', help='training device')
 parser.add_argument('--device_id', type=str, default='0', help='device id for gpu')
@@ -21,8 +22,6 @@ parser.add_argument('--log_interval', type=int, default=20, help='log interval, 
 parser.add_argument("--train_early_stopping", default=True, help="Apply early stopping for training")
 parser.add_argument("--tolerance", type=float, default=0.0005, help="Apply early stopping for training")
 parser.add_argument("--verbose", default=False, help="Log training and attack process")
-
-
 
 
 # 3.models
