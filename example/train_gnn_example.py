@@ -1,6 +1,7 @@
 import torch.nn.functional as F
 from torch_geometric.datasets import Planetoid
 import torch_geometric.transforms as T
+
         
 if __name__ == '__main__':
     import sys
@@ -14,6 +15,8 @@ if __name__ == '__main__':
     from utility.data_util import dataset_loader,sparse_adjacency_to_edge_list
     from utility.load_model import load_model
     from model.Model_Runner import Runner
+    from evaluation.ModelSupervisor import ModelSupervisor
+
 
     args.model = "GCN"
     args.dataset = "cora"
@@ -27,10 +30,10 @@ if __name__ == '__main__':
                     args.seed) + '_log.txt')
     
     data = dataset_loader(args)
-    runner = Runner(data)
-    runner.run()
+    runner = ModelSupervisor(args,data)
+    runner.train_model()
 
-    train_acc, val_acc, test_acc = runner.compute_acc(runner.get_predict())
+    train_acc, val_acc, test_acc = runner.get_prediction_accuracy()
     print(train_acc, val_acc, test_acc)
    
     
