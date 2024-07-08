@@ -2,6 +2,10 @@ import timeit
 import torch.nn.functional as F
 from torch_geometric.datasets import Planetoid
 import torch_geometric.transforms as T
+from scipy.sparse import csr_matrix
+
+
+
         
 if __name__ == '__main__':
     import sys
@@ -15,13 +19,11 @@ if __name__ == '__main__':
 
     from utility.config import args
     from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-    from utility.data_util import dataset_loader,sparse_adjacency_to_edge_list
-    from utility.load_model import load_model
-    from model.Model_Runner import Runner
     from utility.attack_util import select_nodes_margin,set_up_surrogate_model
     from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
+    from evaluation.ModelSupervisor import ModelSupervisor
+    from data_loader.DataLoader import DataLoader
 
-    from utility.data_util import dataset_loader,sparse_adjacency_to_edge_list
 
     args.model = "GCN"
     args.dataset = "cora"
@@ -35,18 +37,19 @@ if __name__ == '__main__':
                     prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
                         args.seed) + '_log.txt')
         
-    data = dataset_loader(args)
+    data = DataLoader.load(args.dataset)
 
     
     #Set up surrogate model
-    runner_surrogate = Runner(data)
-    runner_surrogate.run()
+    supervisor_surrogate = ModelSupervisor(args,data)
+    supervisor_surrogate.train_model()
 
-    adj, features, labels = data.adj, data.features, data.labels
+    adj, features, labels = data.adj, data.feature, data.label
     idx_train, idx_val, idx_test = data.idx_train, data.idx_val, data.idx_test
 
     #Select target nodes
-    node_list = select_nodes_margin(runner_surrogate)
+    node_list = select_nodes_margin(supervisor_surrogate)
+    
     
     #Set up gcn model
     gcn_surrogate = set_up_surrogate_model(features, adj, labels, idx_train, idx_val,args)
@@ -61,13 +64,13 @@ if __name__ == '__main__':
         for node in node_list:
             adversarial = Nettack(gcn_surrogate, nnodes=adj.shape[0], attack_structure=True, attack_features=False, device=args.device)
             adversarial.to(args.device)
-            adversarial.attack(features, adj, labels, node, budget, verbose=False)
+            adversarial.attack(csr_matrix(features), adj, labels, node, budget, verbose=False)
             modified_adj = adversarial.modified_adj
             
-            runner_adversarial = Runner(data)
-            runner_adversarial.update_adversarial_adj(modified_adj)
-            runner_adversarial.run()
-            prediction = runner_adversarial.get_predict()
+            supervisor_adversarial = ModelSupervisor(args,data)
+            supervisor_adversarial.update_structure_with_adj(modified_adj)
+            supervisor_adversarial.train_model()
+            prediction = supervisor_adversarial.get_model_prediction()
 
             if node in false_nodes:
                 miss += 1

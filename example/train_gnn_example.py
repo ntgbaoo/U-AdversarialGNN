@@ -2,6 +2,7 @@ import torch.nn.functional as F
 from torch_geometric.datasets import Planetoid
 import torch_geometric.transforms as T
 
+
         
 if __name__ == '__main__':
     import sys
@@ -12,10 +13,9 @@ if __name__ == '__main__':
 
     from utility.config import args
     from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-    from utility.data_util import dataset_loader,sparse_adjacency_to_edge_list
-    from utility.load_model import load_model
-    from model.Model_Runner import Runner
     from evaluation.ModelSupervisor import ModelSupervisor
+    from data_loader.DataLoader import DataLoader
+
 
 
     args.model = "GCN"
@@ -29,7 +29,7 @@ if __name__ == '__main__':
                 prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
                     args.seed) + '_log.txt')
     
-    data = dataset_loader(args)
+    data = DataLoader.load(args.dataset)
     runner = ModelSupervisor(args,data)
     runner.train_model()
 
