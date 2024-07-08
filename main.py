@@ -5,7 +5,7 @@ from deeprobust.graph.utils import *
 from tqdm import tqdm
 import warnings
 
-from GOttack.OrbitAttack import OrbitAttack
+from adversarial_attack.GOttack.OrbitAttack import OrbitAttack
 from utility.orbit_table_generator import OrbitTableGenerator
 
 warnings.filterwarnings("ignore")

@@ -8,6 +8,7 @@ parser = argparse.ArgumentParser(description='Adversarial attacks args parser')
 parser.add_argument('--dataset', type=str, default='cora', help='baseline dataset')
 
 # 2.experiment setup
+parser.add_argument('--wandb_name', type=str, default="adversarial_GNN", help='Name of project to keep track results on wandb')
 parser.add_argument('--max_epoch', type=int, default=500, help='number of epochs to train')
 parser.add_argument('--device', type=str, default='cpu', help='training device')
 parser.add_argument('--device_id', type=str, default='0', help='device id for gpu')
@@ -23,8 +24,6 @@ parser.add_argument("--tolerance", type=float, default=0.0005, help="Apply early
 parser.add_argument("--verbose", default=False, help="Log training and attack process")
 
 
-
-
 # 3.models
 parser.add_argument('--model', type=str, default='GCN', help='models name')
 parser.add_argument('--in_channels', type=int, default=2, help='Size of each input sample')
@@ -32,6 +31,8 @@ parser.add_argument('--out_channels', type=int, default=None, help='Size of outp
 parser.add_argument('--hidden_channels', type=int, default=8,help='Size of each hidden sample')
 parser.add_argument('--num_layers', type=int, default=2,help='Number of message passing layers')
 parser.add_argument('--heads', type=int, default=8)
+parser.add_argument('--aggr_function', type=str, default="add", help='Type of aggregate function. Choose from sum, mean, min, max and mul')
+
 parser.add_argument('--dropout', type=float, default=0., help='Dropout probability')
 
 
