@@ -48,10 +48,10 @@ class Data(IData):
         self.feature = adversarial_feature
 
     # TODO: implement random splitting k-fold train, validation and test
-    def init_k_fold(self,k):
+    def init_train_test_splits(self,k):
         raise Exception("Not yet implemented")
 
-    def get_split_fold(self,fold_kth):
+    def get_split(self,fold_kth):
         if len(self.folds) != 0: raise Exception("Folds is not yet initialized")
         if fold_kth < len(self.folds): raise "Given index {} out of bound of {}-fold".format(fold_kth,len(self.folds))
         k_fold = self.folds[fold_kth]

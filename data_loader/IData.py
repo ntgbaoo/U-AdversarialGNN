@@ -14,10 +14,10 @@ class IData:
     def update_adversarial_feature(self,adversarial_feature):
         pass
 
-    def init_k_fold(self,k):
+    def init_train_test_splits(self,k):
         pass
 
-    def get_split_fold(self,fold_kth):
+    def get_split(self,fold_kth):
         pass
 
     def get_tensor_edgelist(self):
