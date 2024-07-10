@@ -10,6 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from data_loader.IDataLoader import IDataLoader
 from data_loader.IData import IData
 from data_loader.utils import sparse_adjacency_to_edge_list,edge_list_to_sparse_adjacency
+from data_loader.Splitter import ISplitter
 
 
 
@@ -47,15 +48,14 @@ class Data(IData):
     def update_adversarial_feature(self,adversarial_feature:np.ndarray):
         self.feature = adversarial_feature
 
-    # TODO: implement random splitting k-fold train, validation and test
-    def init_train_test_splits(self,k):
-        raise Exception("Not yet implemented")
+    def init_train_test_splits(self,splitter: ISplitter):
+        self.folds = splitter.split(self.feature,self.label)
 
     def get_split(self,fold_kth):
-        if len(self.folds) != 0: raise Exception("Folds is not yet initialized")
-        if fold_kth < len(self.folds): raise "Given index {} out of bound of {}-fold".format(fold_kth,len(self.folds))
+        if len(self.folds) == 0: raise Exception("Folds is not yet initialized")
+        if fold_kth > len(self.folds) or fold_kth < 0 : raise Exception("Given index {} out of bound of {}-fold".format(fold_kth,len(self.folds)))
         k_fold = self.folds[fold_kth]
-        return k_fold.train,k_fold.val,k_fold.test
+        return k_fold.idx_train,k_fold.idx_val,k_fold.idx_test
     
     def get_tensor_edgelist(self):
         return torch.tensor(self.edgelist,dtype=torch.long)

@@ -3,6 +3,12 @@ Provides the interface for models training supervisor
 =======
 July 09 2024
 """
+import os
+import sys
+# Edit path to import from different module
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from data_loader.Splitter import ISplitter
+
 
 class IData:
     def update_adversarial_adj(self,adversarial_adj):
@@ -14,7 +20,7 @@ class IData:
     def update_adversarial_feature(self,adversarial_feature):
         pass
 
-    def init_train_test_splits(self,k):
+    def init_train_test_splits(self,splitter):
         pass
 
     def get_split(self,fold_kth):
