@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     from utility.config import args
     from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-    from utility.attack_util import select_nodes_margin,set_up_surrogate_model
+    from utility.attack_util import select_nodes_margin
     from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
     from evaluation.ModelSupervisor import ModelSupervisor
     from data_loader.DataLoader import DataLoader
@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     args.model = "GCN"
     args.dataset = "cora"
-    args.seed = 710
+    args.seed = 713
     args.train_early_stopping = True
     args.hidden_channels = 16
     set_random(args.seed)
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     supervisor_surrogate.train_model()
 
     adj, features, labels = data.adj, data.feature, data.label
-    for seed in (710,720):
+    for seed in (713,720):
         args.seed = seed
         set_random(args.seed)
 
