@@ -30,4 +30,7 @@ class IModelSupervisor:
     def to_device(device):
         pass
 
+    def update_split(self,idx_train,idx_val,idx_test):
+        pass
+
 

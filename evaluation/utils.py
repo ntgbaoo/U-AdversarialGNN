@@ -12,5 +12,3 @@ def sparse_adjacency_to_edge_list(sparse_adj_matrix):
     
     return edge_list
 
-def optimizer_loader(optimizer_name, model_parameters):
-    pass

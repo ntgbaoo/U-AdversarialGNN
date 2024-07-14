@@ -17,7 +17,6 @@ from scipy.sparse import csr_matrix
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from data_loader.IData import IData
 from evaluation.IModelSupervisor import IModelSupervisor
-from utility.data_util import dataset_loader
 from utility.load_model import load_model
 from utility.config import args
 from evaluation.utils import sparse_adjacency_to_edge_list
@@ -96,7 +95,7 @@ class ModelSupervisor(IModelSupervisor):
 
 
 
-    def train_model(self):
+    def train_model(self,idx_train = None,idx_val = None,idx_test = None):
         logger.info(">>Start traing {} on {} for node classification".format(args.model,args.dataset))
         logger.info("Number of nodes:{}".format(self.number_nodes))
         logger.info("Training node:{} , Validation node: {} , Test node: {}".format(len(self.idx_train),len(self.idx_val),len(self.idx_test)))
@@ -182,10 +181,14 @@ class ModelSupervisor(IModelSupervisor):
         self.adj = edge_list_to_sparse_adjacency(adversarial_edgelist)
 
     def update_node_feature(self,adversarial_feature:np.ndarray):
-        self.data.update_adversarial_feature(adversarial_feature)
-        self._update_adversarial()
+        self.features_torch = torch.tensor(adversarial_feature,dtype=torch.float).to(self.device)
 
     def update_structure_with_adj(self,adversarial_adj:csr_matrix):
         self.adj = adversarial_adj
         edgelist = sparse_adjacency_to_edge_list(adversarial_adj)
         self.edge_index_torch = torch.tensor(edgelist,dtype=torch.long).to(self.device)
+
+    def update_split(self,idx_train : np.ndarray, idx_val : np.ndarray, idx_test :  np.ndarray):
+        self.idx_train = idx_train
+        self.idx_val = idx_val
+        self.idx_test = idx_test

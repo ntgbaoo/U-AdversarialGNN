@@ -1,0 +1,50 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from data_loader.IData import IData
+from evaluation import IModelSupervisor
+from utility.util import set_random
+
+
+class IAdversarial:
+    def attack(**kwargs):
+        pass
+
+class AdversarialSupervisor:
+    def __init__(self,
+                 adversarial, 
+                 model_supervisor:IModelSupervisor,
+                 data:IData,
+                 surrogate_model,
+                 target_nodes,
+                 **kwargs
+                 ) -> None:
+        self.adversarial = adversarial
+        self.model_supervisor = model_supervisor
+        self.data = data
+        self.target_nodes = target_nodes
+        self.surrogate_model = surrogate_model
+    
+    def attack(self,node,seed,**kwargs):
+        set_random(seed)
+        device = kwargs.get('device')
+        attack_structure =kwargs.get('attack_structure')
+        attack_features = kwargs.get('attack_features')
+        self.adversarial = self.adversarial.to(device)
+        self.adversarial.attack(target_node = node,**kwargs)
+        adj = self.data.adj
+        feature = self.data.feature
+        if attack_structure:
+            adj = self.adversarial.modified_adj
+            self.model_supervisor.update_structure_with_adj(adj)
+        if attack_features:
+            feature = self.adversarial.modified_features
+            self.model_supervisor.update_node_feature(feature)
+        
+        self.model_supervisor.train_model()
+
+        prediction = self.model_supervisor.get_model_prediction()
+        labels = self.data.label
+        return (prediction[node] == labels[node]).item()
+

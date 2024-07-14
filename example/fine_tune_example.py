@@ -49,9 +49,9 @@ analysis = tune.run(
     config=search_space,
     num_samples=10,
     stop={"training_iteration": 10},
-    resources_per_trial={"cpu": 1, "gpu":1},  # Allocate 1 GPU per trial
+    resources_per_trial={"cpu": 1},  # Allocate 1 GPU per trial
     local_dir="ray_results",  # Optional: specify a directory for results
-    verbose=1  # Set verbosity level
+    verbose=0  # Set verbosity level
 )
 
 print("Best hyperparameters found were: ", analysis.get_best_config(metric= 'loss', mode = 'min'))
