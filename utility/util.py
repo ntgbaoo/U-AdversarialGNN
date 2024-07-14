@@ -29,7 +29,6 @@ def set_random(random_seed):
     torch.cuda.manual_seed_all(random_seed)
     # torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
-    print('INFO: fixed random seed')
 
 def init_logger(log_file=None):
     log_format = logging.Formatter("[%(asctime)s %(levelname)s] %(message)s")

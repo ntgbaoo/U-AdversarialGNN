@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     args.model = "GCN"
     args.dataset = "cora"
-    args.seed = 720
+    args.seed = 710
     args.train_early_stopping = True
     args.hidden_channels = 16
     set_random(args.seed)
@@ -69,14 +69,16 @@ if __name__ == '__main__':
     supervisor_surrogate.train_model()
 
     adj, features, labels = data.adj, data.feature, data.label
-    for seed in (710,720,800):
+    for seed in (710,720):
+        args.seed = seed
         set_random(args.seed)
 
         # Select target nodes
-        node_list = select_nodes_margin(supervisor_surrogate)
+        node_list = select_nodes_margin(supervisor_surrogate,data.get_tensor_label())
         miss = 0
         counter = 0
         for node in node_list:
+            set_random(args.seed)
             adversarial = SGAttack(surrogate, attack_structure=True, attack_features=False, device=args.device).to(args.device)
             adversarial.attack( csr_matrix(features),  adj,  labels, node,1,direct=True, verbose=False)
             modified_adj = adversarial.modified_adj

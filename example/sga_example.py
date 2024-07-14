@@ -20,6 +20,7 @@ warnings.filterwarnings("ignore")
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from data_loader.utils import sparse_adjacency_to_edge_list
 
+from data_loader.utils import edge_list_to_sparse_adjacency,sparse_adjacency_to_edge_list
 
 from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
 from utility.attack_util import select_nodes_margin,set_up_surrogate_model
@@ -156,10 +157,12 @@ def multi_test_poison():
         n_perturbations = int(degrees[target_node])
         model = SGAttack(surrogate, attack_structure=True, attack_features=False, device=device)
         model = model.to(device)
-        model.attack(features, adj, labels, target_node, 5, direct=True, verbose=False)
+        model.attack(features, adj, labels, target_node, 1, direct=True, verbose=False)
         modified_adj = model.modified_adj
+        edge_list = sparse_adjacency_to_edge_list(modified_adj)
+        modified_adj = edge_list_to_sparse_adjacency(edge_list)
         modified_features = model.modified_features
-        acc = acc = single_test_v1(modified_adj, modified_features, target_node)
+        acc = acc = single_test(modified_adj, modified_features, target_node)
         if acc == 0:
             cnt += 1
     print('misclassification rate : %s' % (cnt / num))
@@ -225,11 +228,14 @@ def multi_test_evasion():
         n_perturbations = int(degrees[target_node])
         model = SGAttack(surrogate, attack_structure=True, attack_features=False, device=device)
         model = model.to(device)
-        model.attack(features, adj, labels, target_node, 5, direct=True, verbose=False)
+        model.attack(features, adj, labels, target_node, 1, direct=True, verbose=False)
         modified_adj = model.modified_adj
         modified_features = model.modified_features
 
-        acc = single_test_v1(modified_adj, modified_features, target_node, gcn=None)
+        edge_list = sparse_adjacency_to_edge_list(modified_adj)
+        modified_adj = edge_list_to_sparse_adjacency(edge_list)
+
+        acc = single_test(modified_adj, modified_features, target_node, gcn=None)
         if acc == 0:
             cnt += 1
     print('misclassification rate : %s' % (cnt / num))

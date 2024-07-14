@@ -6,6 +6,8 @@ from scipy.sparse import csr_matrix
 
 
 
+
+
         
 if __name__ == '__main__':
     import sys
@@ -16,10 +18,11 @@ if __name__ == '__main__':
     
     # Edit path to import from different module
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
+    from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
+    from adversarial_attack.SurrogateLoader import SurrogateLoader
     from utility.config import args
     from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-    from utility.attack_util import select_nodes_margin,set_up_surrogate_model
+    from utility.attack_util import select_nodes_margin
     from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
     from evaluation.ModelSupervisor import ModelSupervisor
     from data_loader.DataLoader import DataLoader
@@ -48,11 +51,10 @@ if __name__ == '__main__':
     idx_train, idx_val, idx_test = data.idx_train, data.idx_val, data.idx_test
 
     #Select target nodes
-    node_list = select_nodes_margin(supervisor_surrogate)
-    
+    node_list = select_nodes_margin(supervisor_surrogate,data.get_tensor_label())        
     
     #Set up gcn model
-    gcn_surrogate = set_up_surrogate_model(features, adj, labels, idx_train, idx_val,args)
+    gcn_surrogate = SurrogateLoader.load_surrogate(data,idx_train, idx_val,device = args.device)
     miss = 0
     budgets = [1]
     counter = 0
@@ -63,23 +65,30 @@ if __name__ == '__main__':
         start = timeit.default_timer()
         for node in node_list:
             adversarial = Nettack(gcn_surrogate, nnodes=adj.shape[0], attack_structure=True, attack_features=False, device=args.device)
-            adversarial.to(args.device)
-            adversarial.attack(csr_matrix(features), adj, labels, node, budget, verbose=False)
-            modified_adj = adversarial.modified_adj
-            
             supervisor_adversarial = ModelSupervisor(args,data)
-            supervisor_adversarial.update_structure_with_adj(modified_adj)
-            supervisor_adversarial.train_model()
-            prediction = supervisor_adversarial.get_model_prediction()
+            adversarial_supervisor = AdversarialSupervisor(adversarial = adversarial,
+                                                           model_supervisor = supervisor_adversarial,
+                                                           data = data,
+                                                           surrogate_model = gcn_surrogate,
+                                                           target_nodes = node
+                                                           )
+            adversarial_config = {
+                'features':csr_matrix(features),
+                'adj':adj, 
+                'labels':labels,
+                'n_perturbations':budget,
+                'device':args.device,
+                'verbose':False,
+                'attack_structure':True,
+                'attack_features':False
+            }
+            success = adversarial_supervisor.attack(node,args.seed,**adversarial_config)
 
-            if node in false_nodes:
-                miss += 1
-            elif not (prediction[node] == labels[node]).item():
+            if success == 0:
                 miss += 1
                 false_nodes.append(node)
                 
             counter += 1
-            # print("INFO: finished {}/{}".format(counter,len(node_list)))
             print(f'\rINFO : finished {counter}/{len(node_list)}', end='')
         
         duration = timeit.default_timer() - start

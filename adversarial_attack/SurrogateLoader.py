@@ -23,18 +23,17 @@ class SurrogateLoader:
     def load_surrogate(data:IData,idx_train,idx_val,model = 'gcn',device = 'cpu',lr = 0.01):
         if model == 'gcn':
             surrogate = GCN(nfeat=data.nfeat, nclass=data.nclass, nhid=16, dropout=0, with_relu=False,
-                    with_bias=False, device=device)
+                    with_bias=False, device=device,lr=lr)
             surrogate.to(device)
             surrogate.fit(data.feature, data.adj, data.label, idx_train, idx_val, patience=30)
-        elif model == 'sgc':
             
+        elif model == 'sgc':
             surrogate = SGC(nfeat=data.nfeat, nclass=data.nclass,K=2,lr=0.01,
                     with_bias=True, device=device)
             surrogate.to(device)
-
             surrogate.fit(data.get_tensor_feature(), data.get_tensor_edgelist(), data.get_tensor_label(), idx_train, idx_val)
         else:
-            raise Exception("{} is not support as surrogate models. Choosing from gcn/sgc".format(model))
+            raise Exception("{} is not support as surrogate models. Choosing gcn/sgc".format(model))
         
         return surrogate
 

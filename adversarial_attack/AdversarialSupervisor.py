@@ -4,6 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from data_loader.IData import IData
 from evaluation import IModelSupervisor
+from utility.util import set_random
 
 
 class IAdversarial:
@@ -12,29 +13,38 @@ class IAdversarial:
 
 class AdversarialSupervisor:
     def __init__(self,
-                 adversarial: IAdversarial, 
+                 adversarial, 
                  model_supervisor:IModelSupervisor,
                  data:IData,
                  surrogate_model,
                  target_nodes,
-                 idx_train,
-                 idx_val,
-                 idx_test,
                  **kwargs
                  ) -> None:
         self.adversarial = adversarial
         self.model_supervisor = model_supervisor
         self.data = data
         self.target_nodes = target_nodes
-        self.idx_train = idx_train
-        self.idx_val = idx_val
-        self.idx_test = idx_test
         self.surrogate_model = surrogate_model
     
-    # @TODO: implement to attack on graph 
-    def attack(budget = 1, attack_structure = True, feature_structure = False, verbose = False):
-        pass
+    def attack(self,node,seed,**kwargs):
+        set_random(seed)
+        device = kwargs.get('device')
+        attack_structure =kwargs.get('attack_structure')
+        attack_features = kwargs.get('attack_features')
+        self.adversarial = self.adversarial.to(device)
+        self.adversarial.attack(target_node = node,**kwargs)
+        adj = self.data.adj
+        feature = self.data.feature
+        if attack_structure:
+            adj = self.adversarial.modified_adj
+            self.model_supervisor.update_structure_with_adj(adj)
+        if attack_features:
+            feature = self.adversarial.modified_features
+            self.model_supervisor.update_node_feature(feature)
+        
+        self.model_supervisor.train_model()
 
-    # @TODO: return attack success rate
-    def get_miss_rate():
-        pass
+        prediction = self.model_supervisor.get_model_prediction()
+        labels = self.data.label
+        return (prediction[node] == labels[node]).item()
+

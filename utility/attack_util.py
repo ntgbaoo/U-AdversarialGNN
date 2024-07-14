@@ -4,7 +4,7 @@ from DeepRobust.deeprobust.graph.utils import classification_margin
 import numpy as np
 
 
-def select_nodes_margin(target_runner):
+def select_nodes_margin(target_runner,labels_torch):
     '''
     selecting nodes as reported in nettack paper:
     (i) the 10 nodes with highest margin of classification, i.e. they are clearly correctly classified,
@@ -14,7 +14,7 @@ def select_nodes_margin(target_runner):
 
     target_runner.model.eval()
     output = target_runner.get_model_output()
-
+    
     margin_dict = {}
     for idx in target_runner.idx_test:
         margin = classification_margin(output[idx], target_runner.labels_torch[idx])
