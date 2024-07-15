@@ -4,7 +4,7 @@ from DeepRobust.deeprobust.graph.utils import classification_margin
 import numpy as np
 
 
-def select_nodes_margin(target_runner,labels_torch):
+def select_nodes_margin(target_runner):
     '''
     selecting nodes as reported in nettack paper:
     (i) the 10 nodes with highest margin of classification, i.e. they are clearly correctly classified,
@@ -30,9 +30,9 @@ def select_nodes_margin(target_runner,labels_torch):
     return high + low + other
 
 
-def set_up_surrogate_model(features, adj, labels, idx_train, idx_val,args):
-    surrogate = GCN(nfeat=features.shape[1], nclass=labels.max().item() + 1, nhid=16, dropout=0, with_relu=False,
-                    with_bias=False, device=args.device)
-    surrogate = surrogate.to(args.device)
-    surrogate.fit(features, adj, labels, idx_train, idx_val, patience=30)
-    return surrogate
+# def set_up_surrogate_model(features, adj, labels, idx_train, idx_val,args):
+#     surrogate = GCN(nfeat=features.shape[1], nclass=labels.max().item() + 1, nhid=16, dropout=0, with_relu=False,
+#                     with_bias=False, device=args.device)
+#     surrogate = surrogate.to(args.device)
+#     surrogate.fit(features, adj, labels, idx_train, idx_val, patience=30)
+#     return surrogate

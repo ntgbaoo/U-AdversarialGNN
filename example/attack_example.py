@@ -22,7 +22,9 @@ if __name__ == '__main__':
     from adversarial_attack.SurrogateLoader import SurrogateLoader
     from utility.config import args
     from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-    from utility.attack_util import select_nodes_margin
+    from adversarial_attack.utils import select_nodes
+    # from utility.attack_util import select_nodes_margin
+
     from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
     from evaluation.ModelSupervisor import ModelSupervisor
     from data_loader.DataLoader import DataLoader
@@ -51,7 +53,7 @@ if __name__ == '__main__':
     idx_train, idx_val, idx_test = data.idx_train, data.idx_val, data.idx_test
 
     #Select target nodes
-    node_list = select_nodes_margin(supervisor_surrogate,data.get_tensor_label())        
+    node_list = select_nodes(supervisor_surrogate)        
     
     #Set up gcn model
     gcn_surrogate = SurrogateLoader.load_surrogate(data,idx_train, idx_val,device = args.device)
