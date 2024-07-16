@@ -1,3 +1,11 @@
+
+#Model set-up
+DEVICE = "device"
+IN_CHANNEL = "in_channel"
+OUT_CHANNEL = "out_channel"
+MODEL = "model"
+
+#Hyper=parameters
 NUM_LAYERS = "num_layers"
 BATCH_SIZE = "batch_size"
 LEARNING_RATE = "lr"
@@ -10,12 +18,13 @@ AGGREGATION = "aggr"
 OPTIMIZER_STATE = "optimizer_state"
 SCHEDULER = "scheduler"
 OPTIMIZER = "optimizer"
+GAMMA_LIST = "gamma_list"
+STEP_SIZE_LIST = "step_size_list"
+STEP_SIZE = "step_size"
 
 
+#Hyper-parameters' options
 SGD ="SGD"
 ADAM = "ADAM"
 STEP_LR = "StepLR"
-GAMMA_LIST = "gamma_list"
-STEP_SIZE_LIST = "step_size_list"
 GAMMA = "gamma"
-STEP_SIZE = "step_size"
