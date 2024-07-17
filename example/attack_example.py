@@ -5,9 +5,6 @@ import torch_geometric.transforms as T
 from scipy.sparse import csr_matrix
 
 
-
-
-
         
 if __name__ == '__main__':
     import sys
@@ -22,35 +19,49 @@ if __name__ == '__main__':
     from adversarial_attack.SurrogateLoader import SurrogateLoader
     from utility.config import args
     from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-    from adversarial_attack.utils import select_nodes
-    # from utility.attack_util import select_nodes_margin
+    from adversarial_attack.utils import select_nodes,select_nodes_margin
 
     from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
     from evaluation.ModelSupervisor import ModelSupervisor
+
     from data_loader.DataLoader import DataLoader
+    from static import *
 
-
-    args.model = "GCN"
+    args.model = 'GCN'
     args.dataset = "cora"
-    args.seed = 720
+    args.seed = 722
     args.train_early_stopping = True
     set_random(args.seed)
     
+    data = DataLoader.load(args.dataset)
     
+    gcn_config = {
+        MODEL:'GCN',
+        LEARNING_RATE:0.01,
+        OPTIMIZER:ADAM,
+        IN_CHANNEL:data.nfeat,
+        OUT_CHANNEL: data.nclass,
+        HIDDEN_UNITS:8,
+        NUM_LAYERS:2,
+        AGGREGATION:"add",
+        EPOCHS:500,
+        PATIENCE:40,
+    }
     if args.verbose:
         init_logger(
                     prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
                         args.seed) + '_log.txt')
         
-    data = DataLoader.load(args.dataset)
 
     
     #Set up surrogate model
-    supervisor_surrogate = ModelSupervisor(args,data)
+    supervisor_surrogate = ModelSupervisor(data,args,**gcn_config)
     supervisor_surrogate.train_model()
 
     adj, features, labels = data.adj, data.feature, data.label
     idx_train, idx_val, idx_test = data.idx_train, data.idx_val, data.idx_test
+
+    
 
     #Select target nodes
     node_list = select_nodes(supervisor_surrogate)        
@@ -62,34 +73,41 @@ if __name__ == '__main__':
     counter = 0
     false_nodes = []
     for budget in budgets:
-        print("=="*30)
-        print("INFO: Apply Nettack on {} on {} dataset with budget {}".format(args.model, args.dataset,budget))
-        start = timeit.default_timer()
-        for node in node_list:
-            adversarial = Nettack(gcn_surrogate, nnodes=adj.shape[0], attack_structure=True, attack_features=False, device=args.device)
-            supervisor_adversarial = ModelSupervisor(args,data)
-            adversarial_supervisor = AdversarialSupervisor(adversarial = adversarial,
-                                                           model_supervisor = supervisor_adversarial,
-                                                           data = data,
-                                                           surrogate_model = gcn_surrogate,
-                                                           target_nodes = node
-                                                           )
-            adversarial_config = {
+        nettack_config = {
                 'features':csr_matrix(features),
                 'adj':adj, 
                 'labels':labels,
                 'n_perturbations':budget,
-                'device':args.device,
-                'verbose':False,
-                'attack_structure':True,
-                'attack_features':False
+                
             }
-            success = adversarial_supervisor.attack(node,args.seed,**adversarial_config)
-
+        
+        FGA_config = {
+            'ori_features': csr_matrix(features),
+            'ori_adj' : adj,
+            'labels':labels,
+            'idx_train':idx_train,
+            'n_perturbations' :budget,
+        }
+        print("=="*30)
+        print("INFO: Apply Nettack on {} on {} dataset with budget {}".format(args.model, args.dataset,budget))
+        start = timeit.default_timer()
+        for node in node_list:
+            # adversarial = Nettack(gcn_surrogate, nnodes=adj.shape[0], attack_structure=True, attack_features=False, device=args.device)
+            adversarial =  FGA(gcn_surrogate, nnodes=data.nnode, attack_structure=True, attack_features=False, device=args.device).to(args.device)
+            supervisor_adversarial = ModelSupervisor(data,args,**gcn_config)
+            adversarial_supervisor = AdversarialSupervisor(adversarial = adversarial,
+                                                           model_supervisor = supervisor_adversarial,
+                                                           data = data,
+                                                           surrogate_model = gcn_surrogate,
+                                                           target_nodes = node,
+                                                           attack_structure= True,
+                                                           attack_feature= False
+                                                           )
+            
+            success = adversarial_supervisor.attack(node,args.seed,**FGA_config)
             if success == 0:
                 miss += 1
                 false_nodes.append(node)
-                
             counter += 1
             print(f'\rINFO : finished {counter}/{len(node_list)}', end='')
         

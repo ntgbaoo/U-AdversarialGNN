@@ -1,6 +1,11 @@
 import numpy as np
 import scipy.sparse as sp
 from scipy.sparse import coo_matrix
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from static import *
 
 
 def normalize_adjacency_matrix(adj_matrix):
@@ -23,4 +28,19 @@ def sparse_adjacency_to_edge_list(sparse_adj_matrix):
     edge_list =np.array(list(edge_list)).T
     
     return edge_list
+
+def load_opt(opt_name):
+    if opt_name == ADAM:
+        from torch.optim import Adam
+        return Adam
+    else:
+        raise Exception("{} is not supported".format(opt_name))
+    
+def load_scheduler(scheduler_name):
+    if scheduler_name == STEP_LR:
+        from torch.optim.lr_scheduler import StepLR
+        return StepLR
+    else:
+       raise Exception("Scheduler {} is not supported".format(scheduler_name)) 
+
 

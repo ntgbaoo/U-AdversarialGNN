@@ -18,8 +18,12 @@ class AdversarialSupervisor:
                  data:IData,
                  surrogate_model,
                  target_nodes,
+                 attack_structure = True,
+                 attack_feature = False,
                  **kwargs
                  ) -> None:
+        self.attack_structure = attack_structure
+        self.attack_feature = attack_feature
         self.adversarial = adversarial
         self.model_supervisor = model_supervisor
         self.data = data
@@ -29,16 +33,14 @@ class AdversarialSupervisor:
     def attack(self,node,seed,**kwargs):
         set_random(seed)
         device = kwargs.get('device')
-        attack_structure =kwargs.get('attack_structure')
-        attack_features = kwargs.get('attack_features')
         self.adversarial = self.adversarial.to(device)
         self.adversarial.attack(target_node = node,**kwargs)
         adj = self.data.adj
         feature = self.data.feature
-        if attack_structure:
+        if self.attack_structure:
             adj = self.adversarial.modified_adj
             self.model_supervisor.update_structure_with_adj(adj)
-        if attack_features:
+        if self.attack_features:
             feature = self.adversarial.modified_features
             self.model_supervisor.update_node_feature(feature)
         

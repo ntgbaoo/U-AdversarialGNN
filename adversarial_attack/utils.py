@@ -36,7 +36,8 @@ def select_nodes(target_runner:IModelSupervisor):
     selecting nodes as reported in nettack paper:
     (i) the 10 nodes with highest margin of classification, i.e. they are clearly correctly classified,
     (ii) the 10 nodes with lowest margin (but still correctly classified) and
-    (iii) 20 more nodes randomly
+    (iii) 10 nodes with highest degree
+    (iv) 10 nodes with lowest degree
     '''
 
     target_runner.model.eval()
@@ -54,6 +55,31 @@ def select_nodes(target_runner:IModelSupervisor):
     other = [x for x, y in sorted_margins[10: -10]]
     # other = np.random.choice(other, 20, replace=False).tolist()
     other = select_nodes_margin_degree(target_runner.adj,other)
+
+    return high + low + other
+
+def select_nodes_margin(target_runner):
+    '''
+    selecting nodes as reported in nettack paper:
+    (i) the 10 nodes with highest margin of classification, i.e. they are clearly correctly classified,
+    (ii) the 10 nodes with lowest margin (but still correctly classified) and
+    (iii) 20 more nodes randomly
+    '''
+
+    target_runner.model.eval()
+    output = target_runner.get_model_output()
+    
+    margin_dict = {}
+    for idx in target_runner.idx_test:
+        margin = classification_margin(output[idx], target_runner.labels_torch[idx])
+        if margin < 0: # only keep the nodes correctly classified
+            continue
+        margin_dict[idx] = margin
+    sorted_margins = sorted(margin_dict.items(), key=lambda x:x[1], reverse=True)
+    high = [x for x, y in sorted_margins[: 10]]
+    low = [x for x, y in sorted_margins[-10: ]]
+    other = [x for x, y in sorted_margins[10: -10]]
+    other = np.random.choice(other, 20, replace=False).tolist()
 
     return high + low + other
 
