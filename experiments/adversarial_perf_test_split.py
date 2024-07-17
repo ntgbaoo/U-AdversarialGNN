@@ -25,7 +25,6 @@ if __name__ == '__main__':
 
     from utility.config import args
     from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-    from utility.attack_util import select_nodes_margin,set_up_surrogate_model
     from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
     from evaluation.ModelSupervisor import ModelSupervisor
     from data_loader.DataLoader import DataLoader

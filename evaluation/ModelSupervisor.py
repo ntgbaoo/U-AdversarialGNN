@@ -17,42 +17,56 @@ from scipy.sparse import csr_matrix
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from data_loader.IData import IData
 from evaluation.IModelSupervisor import IModelSupervisor
-from utility.load_model import load_model
+from model.utils import load_model
 from utility.config import args
-from evaluation.utils import sparse_adjacency_to_edge_list
+from evaluation.utils import load_opt, sparse_adjacency_to_edge_list,load_scheduler
 from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
 from data_loader.utils import edge_list_to_sparse_adjacency,sparse_adjacency_to_edge_list
+from static import *
 
 
 
 class ModelSupervisor(IModelSupervisor):
-    def __init__(self,args,data:IData) -> None:
+    def __init__(self,data:IData,args,**kwargs) -> None:
         super().__init__()
         if args.wandb:
             self._init_wandb(args)
 
+        self.kwagrs = kwargs
+        self.data = data
         self.args = args
-        self.data = data
+
+        #Config from args
         self.device = args.device
+        self.train_early_stopping = args.train_early_stopping
+        self.min_epoch = args.min_epoch
 
-        self.data = data
+        #Configs from kwargs for hyper-parameters
+        self.epoch = kwargs.get(EPOCHS)
+        self.patience = kwargs.get(PATIENCE)
+        self.lr = kwargs.get(LEARNING_RATE)
+        self.model = load_model(data.nfeat,data.nclass,**kwargs)
+        opti_state = kwargs.get(OPTIMIZER_STATE)
+        if opti_state is not None:
+            self.optimizer =  load_opt(kwargs.get(OPTIMIZER))(self.model.parameters(),lr= self.lr,**opti_state)
+        else:
+            self.optimizer =  load_opt(kwargs.get(OPTIMIZER))(self.model.parameters(),lr= self.lr)
+
+        self.scheduler = kwargs.get(SCHEDULER)
+        if self.scheduler is not None:
+            scheduler_state = kwargs.get(SCHEDULER_STATE)
+            self.scheduler = load_scheduler(kwargs.get(self.scheduler))(self.optimizer,**scheduler_state)
+
+        #Data
         self.number_nodes = data.nnode
-
         self.adj = data.adj
         self.edge_index_torch = data.get_tensor_edgelist()
         self.features_torch = data.get_tensor_feature()
         self.labels_torch = data.get_tensor_label()
-        args.in_channels = data.nfeat
-        args.out_channels = data.nclass
-        
         self.idx_train, self.idx_val, self.idx_test = self.data.idx_train, self.data.idx_val, self.data.idx_test
-        self.lr = args.lr
-        self.model = load_model(args)
-
-        self.optimizer = torch.optim.Adam(self.model.parameters(), self.lr)  
-
         
-        self.to_device(args.device)
+        
+        self.to_device(self.device)
         self.output = None
         self.prediction = None
 
@@ -64,20 +78,18 @@ class ModelSupervisor(IModelSupervisor):
         self.labels_torch = self.labels_torch.to(device)
 
     
-        
-
     def _init_wandb(self,args):
         try:
             wandb.init(
                     # set the wandb project where this run will be logged
-                    project=args.wandb_name,
+                    project=self.args.wandb_name,
                     # Set name of the run:
-                    name="{}_{}_{}".format(args.dataset, args.model, args.seed),
+                    name="{}_{}_{}".format(self.args.dataset, self.args.model, self.args.seed),
                     # track hyperparameters and run metadata
                     config={
-                        "learning_rate": args.lr,
-                        "architecture": args.model,
-                        "dataset": args.dataset,
+                        "learning_rate": self.lr,
+                        "architecture": self.args.model,
+                        "dataset": self.args.dataset,
                     }
             )
         except Exception as e:
@@ -90,12 +102,14 @@ class ModelSupervisor(IModelSupervisor):
         loss = F.cross_entropy(out[self.idx_train], self.labels_torch[self.idx_train])
         loss.backward()
         self.optimizer.step()
+        if self.scheduler is not None:
+            self.scheduler.step()
         return float(loss)
     
 
 
 
-    def train_model(self,idx_train = None,idx_val = None,idx_test = None):
+    def train_model(self):
         logger.info(">>Start traing {} on {} for node classification".format(args.model,args.dataset))
         logger.info("Number of nodes:{}".format(self.number_nodes))
         logger.info("Training node:{} , Validation node: {} , Test node: {}".format(len(self.idx_train),len(self.idx_val),len(self.idx_test)))
@@ -106,8 +120,8 @@ class ModelSupervisor(IModelSupervisor):
         best_val_loss = 100
         best_weight = None
         times = []
-        patience = args.patience
-        for epoch in range(1, args.max_epoch + 1):
+        patience = self.patience
+        for epoch in range(1, self.epoch + 1):
             start_epoch = timeit.default_timer()
             loss = self._train()
 
@@ -124,9 +138,9 @@ class ModelSupervisor(IModelSupervisor):
                 best_weight = deepcopy(self.model.state_dict())
                 self.output = epoch_output
                 self.prediction = epoch_prediction
-                patience = args.patience #Reset patience
+                patience = self.patience #Reset patience
 
-            elif args.train_early_stopping and epoch >= args.min_epoch and val_loss >= best_val_loss:
+            elif self.train_early_stopping and epoch >= self.min_epoch and val_loss >= best_val_loss:
                 patience -= 1
                 
             if val_acc > best_val_acc:
@@ -136,17 +150,17 @@ class ModelSupervisor(IModelSupervisor):
                 best_weight = deepcopy(self.model.state_dict())
                 self.output = epoch_output
                 self.prediction = epoch_prediction
-                patience = args.patience #Reset patience
+                patience = self.patience #Reset patience
             
             gpu_mem_alloc = torch.cuda.max_memory_allocated() / 1000000 if torch.cuda.is_available() else 0
             delta_epoch = timeit.default_timer() - start_epoch
             times.append(delta_epoch)
-            if epoch == 1 or epoch % args.log_interval == 0:
+            if epoch == 1 or epoch % self.args.log_interval == 0:
                 logger.info("=="*30)
                 logger.info("Epoch:{}, Loss:{:.4f}, Time:{:.3f}, GPU:{:.1f}MiB".format(epoch,loss,delta_epoch,gpu_mem_alloc))
                 logger.info("Train: {:.3f}, Validation accuracy:{:.3f}, Test: {:.3f}".format(train_acc,val_acc,test_acc))
 
-            if args.train_early_stopping and patience <=0 :
+            if self.train_early_stopping and patience <=0 :
                 logger.info(">> Early stopping")
                 break
         

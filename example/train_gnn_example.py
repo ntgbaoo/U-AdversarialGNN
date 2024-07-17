@@ -14,7 +14,6 @@ if __name__ == '__main__':
     from utility.config import args
     from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
     from evaluation.ModelSupervisor import ModelSupervisor
-    from evaluation.ModelSupervisorv2 import ModelSupervisorv2
     from data_loader.DataLoader import DataLoader
     from static import *
 
@@ -38,15 +37,13 @@ if __name__ == '__main__':
         MODEL:'GCN',
         LEARNING_RATE:0.01,
         OPTIMIZER:ADAM,
-        IN_CHANNEL:data.nfeat,
-        OUT_CHANNEL: data.nclass,
         HIDDEN_UNITS:8,
         NUM_LAYERS:2,
         AGGREGATION:"add",
         EPOCHS:500,
         PATIENCE:40,
     }
-    runner = ModelSupervisorv2(data,args,**config)
+    runner = ModelSupervisor(data,args,**config)
     runner.train_model()
 
     train_acc, val_acc, test_acc = runner.get_prediction_accuracy()

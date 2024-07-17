@@ -10,60 +10,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utility.util import logger
 from static import *
 
-def load_model(args):
-    if args.model == "GCN":
-        model = GCN(args.in_channels,
-                    args.hidden_channels,
-                    args.num_layers,
-                    args.out_channels,
-                    args.dropout,
-                    aggr = args.aggr_function)
-    elif args.model == 'GIN':
-          model = GIN(args.in_channels,
-                    args.hidden_channels,
-                    args.num_layers,
-                    args.out_channels,
-                    args.dropout,
-                    aggr = args.aggr_function)
-    elif args.model == 'GSAGE':
-         model = GraphSAGE(args.in_channels,
-                    args.hidden_channels,
-                    args.num_layers,
-                    args.out_channels,
-                    args.dropout,
-                    aggr = args.aggr_function)
-    elif args.model == "PNA":
-        model = PNA(args.in_channels,
-                    args.hidden_channels,
-                    args.num_layers,
-                    args.out_channels,
-                    args.dropout,
-                    aggr = args.aggr_function)
-    elif args.model == "GAT":
-        model = GAT(args.in_channels,
-                    args.hidden_channels,
-                    args.num_layers,
-                    args.out_channels,
-                    args.dropout,
-                    aggr = args.aggr_function)
-    elif args.model == "EdgeCNN":
-        model = EdgeCNN(args.in_channels,
-                    args.hidden_channels,
-                    args.num_layers,
-                    args.out_channels,
-                    args.dropout,
-                    aggr = args.aggr_function)
-    else:
-        raise Exception('Unsupport or undefined model. Please select one of the following model: GCN, GIN, GSAGE,GAT, PNA, EdgeCNN')
-    logger.info('Using models {} '.format(args.model))
-    return model
-
-def load_model_v2(**kwargs):
+def load_model(in_channel,out_channel,**kwargs):
     model_name = kwargs.get(MODEL)
-    in_channel = kwargs.get(IN_CHANNEL)
     nhid = kwargs.get(HIDDEN_UNITS,16)
     nlayers = kwargs.get(NUM_LAYERS,2)
-    out_channel = kwargs.get(OUT_CHANNEL)
     drop_out = kwargs.get(DROPOUT,0)
     aggr = kwargs.get(AGGREGATION,"sum")
     
