@@ -27,10 +27,8 @@ if __name__ == '__main__':
     from data_loader.DataLoader import DataLoader
     from static import *
 
-    args.model = 'GCN'
     args.dataset = "cora"
     args.seed = 722
-    args.train_early_stopping = True
     set_random(args.seed)
     
     data = DataLoader.load(args.dataset)
@@ -55,7 +53,7 @@ if __name__ == '__main__':
 
     
     #Set up surrogate model
-    supervisor_surrogate = ModelSupervisor(data,args,**gcn_config)
+    supervisor_surrogate = ModelSupervisor(data,device=args.device,**gcn_config)
     supervisor_surrogate.train_model()
 
     adj, features, labels = data.adj, data.feature, data.label
