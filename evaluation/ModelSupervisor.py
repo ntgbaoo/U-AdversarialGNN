@@ -27,19 +27,17 @@ from static import *
 
 
 class ModelSupervisor(IModelSupervisor):
-    def __init__(self,data:IData,args,**kwargs) -> None:
+    def __init__(self,data:IData,device = "cpu",train_early_stopping = True,**kwargs) -> None:
         super().__init__()
         if args.wandb:
             self._init_wandb(args)
 
         self.kwagrs = kwargs
         self.data = data
-        self.args = args
 
         #Config from args
-        self.device = args.device
-        self.train_early_stopping = args.train_early_stopping
-        self.min_epoch = args.min_epoch
+        self.device = device
+        self.train_early_stopping = train_early_stopping
 
         #Configs from kwargs for hyper-parameters
         self.epoch = kwargs.get(EPOCHS)
@@ -78,22 +76,6 @@ class ModelSupervisor(IModelSupervisor):
         self.labels_torch = self.labels_torch.to(device)
 
     
-    def _init_wandb(self,args):
-        try:
-            wandb.init(
-                    # set the wandb project where this run will be logged
-                    project=self.args.wandb_name,
-                    # Set name of the run:
-                    name="{}_{}_{}".format(self.args.dataset, self.args.model, self.args.seed),
-                    # track hyperparameters and run metadata
-                    config={
-                        "learning_rate": self.lr,
-                        "architecture": self.args.model,
-                        "dataset": self.args.dataset,
-                    }
-            )
-        except Exception as e:
-            raise Exception("Can't set up wandb due to{}".format(e))
         
     def _train(self):
         self.model.train()
@@ -109,7 +91,7 @@ class ModelSupervisor(IModelSupervisor):
 
 
 
-    def train_model(self):
+    def train_model(self,log_interval = 10):
         logger.info(">>Start traing {} on {} for node classification".format(args.model,args.dataset))
         logger.info("Number of nodes:{}".format(self.number_nodes))
         logger.info("Training node:{} , Validation node: {} , Test node: {}".format(len(self.idx_train),len(self.idx_val),len(self.idx_test)))
@@ -140,7 +122,7 @@ class ModelSupervisor(IModelSupervisor):
                 self.prediction = epoch_prediction
                 patience = self.patience #Reset patience
 
-            elif self.train_early_stopping and epoch >= self.min_epoch and val_loss >= best_val_loss:
+            elif self.train_early_stopping and val_loss >= best_val_loss:
                 patience -= 1
                 
             if val_acc > best_val_acc:
@@ -155,7 +137,7 @@ class ModelSupervisor(IModelSupervisor):
             gpu_mem_alloc = torch.cuda.max_memory_allocated() / 1000000 if torch.cuda.is_available() else 0
             delta_epoch = timeit.default_timer() - start_epoch
             times.append(delta_epoch)
-            if epoch == 1 or epoch % self.args.log_interval == 0:
+            if epoch == 1 or epoch % log_interval == 0:
                 logger.info("=="*30)
                 logger.info("Epoch:{}, Loss:{:.4f}, Time:{:.3f}, GPU:{:.1f}MiB".format(epoch,loss,delta_epoch,gpu_mem_alloc))
                 logger.info("Train: {:.3f}, Validation accuracy:{:.3f}, Test: {:.3f}".format(train_acc,val_acc,test_acc))

@@ -17,16 +17,10 @@ if __name__ == '__main__':
     from data_loader.DataLoader import DataLoader
     from static import *
 
-
-
-    args.model = "GCN"
     args.dataset = "cora"
     args.seed = 710
-    args.train_early_stopping = True
     set_random(args.seed)
 
-    
-    
 
     init_logger(
                 prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
@@ -43,7 +37,7 @@ if __name__ == '__main__':
         EPOCHS:500,
         PATIENCE:40,
     }
-    runner = ModelSupervisor(data,args,**config)
+    runner = ModelSupervisor(data,device=args.device,**config)
     runner.train_model()
 
     train_acc, val_acc, test_acc = runner.get_prediction_accuracy()
