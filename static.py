@@ -28,3 +28,5 @@ SGD ="SGD"
 ADAM = "ADAM"
 STEP_LR = "StepLR"
 GAMMA = "gamma"
+
+#Model names:

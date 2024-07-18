@@ -92,7 +92,7 @@ if __name__ == '__main__':
         for node in node_list:
             # adversarial = Nettack(gcn_surrogate, nnodes=adj.shape[0], attack_structure=True, attack_features=False, device=args.device)
             adversarial =  FGA(gcn_surrogate, nnodes=data.nnode, attack_structure=True, attack_features=False, device=args.device).to(args.device)
-            supervisor_adversarial = ModelSupervisor(data,args,**gcn_config)
+            supervisor_adversarial = ModelSupervisor(data,device= args.device,**gcn_config)
             adversarial_supervisor = AdversarialSupervisor(adversarial = adversarial,
                                                            model_supervisor = supervisor_adversarial,
                                                            data = data,

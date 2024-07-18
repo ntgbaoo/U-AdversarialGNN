@@ -1,0 +1,7 @@
+model: 'GCN'
+lr: 0.01
+optimizer: "ADAM"
+num_layers: 2
+aggr: "add"
+num_epochs: 500
+patience: 40
