@@ -169,4 +169,4 @@ class SGC(torch.nn.Module):
         """
 
         self.eval()
-        return self.forward(self.features,self.adj)
+        return self.forward(self.features,self.edgelist)
