@@ -4,6 +4,11 @@ import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from evaluation.Grid import Grid
+from evaluation.ModelSupervisor import ModelSupervisor
+from data_loader.IData import IData
+from adversarial_attack.utils import select_nodes
+from utility.util import set_random
+
 
 
 class ModelSelector:
@@ -12,7 +17,7 @@ class ModelSelector:
                  idx_train:np.ndarray,
                  idx_val :np.ndarray,
                  idx_test:np.ndarray,
-                 model = 'gcn'
+                 data: IData
                  ) -> None:
         self.config_dict = config_dict
         self.grid_generator = Grid(self.config_dict)
@@ -20,7 +25,7 @@ class ModelSelector:
         self.idx_train = idx_train
         self.idx_val = idx_val
         self.idx_test = idx_test
-        self.model ='gcn'
+        self.data = data
         self.results = [0]*len(self.all_configs)
 
     def process_model_selection(self):
@@ -30,6 +35,8 @@ class ModelSelector:
     def get_best_config(self):
         return self.results.index(max(self.results))
     
-    # @TODO: run ModelSupervisor here
     def _run_model_on_config(self,config):
-        return 0
+        runner = ModelSupervisor(self.data,**config)
+        runner.train_model()
+        _, _, test_acc = runner.get_prediction_accuracy()
+        return test_acc

@@ -40,7 +40,7 @@ class AdversarialSupervisor:
         if self.attack_structure:
             adj = self.adversarial.modified_adj
             self.model_supervisor.update_structure_with_adj(adj)
-        if self.attack_features:
+        if self.attack_feature:
             feature = self.adversarial.modified_features
             self.model_supervisor.update_node_feature(feature)
         

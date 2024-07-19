@@ -15,6 +15,7 @@ if __name__ == '__main__':
     from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
     from evaluation.ModelSupervisor import ModelSupervisor
     from data_loader.DataLoader import DataLoader
+    from utility.util import load_model_config
     from static import *
 
     args.dataset = "cora"
@@ -27,16 +28,7 @@ if __name__ == '__main__':
                     args.seed) + '_log.txt')
     
     data = DataLoader.load(args.dataset)
-    config = {
-        MODEL:'GCN',
-        LEARNING_RATE:0.01,
-        OPTIMIZER:ADAM,
-        HIDDEN_UNITS:8,
-        NUM_LAYERS:2,
-        AGGREGATION:"add",
-        EPOCHS:500,
-        PATIENCE:40,
-    }
+    config = load_model_config()
     runner = ModelSupervisor(data,device=args.device,**config)
     runner.train_model()
 

@@ -27,7 +27,7 @@ from torch import spmm
 class OrbitAttack(BaseAttack):
 
 
-    def __init__(self, model,orbit_dict,attack_type = '1518', nnodes=None, device='cpu',orbit_type = "two_Orbit_type"):
+    def __init__(self, model,orbit_dict,attack_type = 1518, nnodes=None, device='cpu',orbit_type = "two_Orbit_type"):
         """
         Input:
             model: surrogate model
@@ -68,7 +68,7 @@ class OrbitAttack(BaseAttack):
         W = surrogate.gc1.weight @ surrogate.gc2.weight
         return W.detach().cpu().numpy()
 
-    def attack(self, features, adj, labels, target_node, n_perturbations, n_influencers= 0, verbose=True, **kwargs):
+    def attack(self, features, adj, labels, target_node, n_perturbations, n_influencers= 0, verbose=False, **kwargs):
         """Generate perturbations on the input graph.
 
         Parameters
