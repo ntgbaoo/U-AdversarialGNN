@@ -13,9 +13,11 @@ from utility.config import args
 from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
 from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
 from evaluation.ModelSupervisor import ModelSupervisor
+from evaluation.ModelSelector import ModelSelector
 from data_loader.DataLoader import DataLoader
 from data_loader.Splitter import Splitter
 from utility.ConfigHandler import ConfigHandler
+from evaluation.Grid import Grid
 
 if __name__ == "__main__":
     args.dataset = "cora"
@@ -23,8 +25,20 @@ if __name__ == "__main__":
     split_config = ConfigHandler.load_split_config(config_name="default")
    
     data.init_train_test_splits(**split_config)
-    hyper_grid = ConfigHandler.load_hyper_grid(model_type="GCN",grid_name="toy_grid")
-    print(hyper_grid)
+    idx_train,idx_val,idx_test = data.get_split(0)
+    hyper_grid_config = ConfigHandler.load_hyper_grid(model_type="GCN",grid_name="toy_grid")
+    modelSelector = ModelSelector(
+        config_dict= hyper_grid_config,
+        idx_train=idx_train,
+        idx_val= idx_val,
+        idx_test= idx_test,
+        data=data,
+        device=args.device
+    )
+    modelSelector.process_model_selection()
+    print(modelSelector.get_best_config())
+    modelSelector.save_config(0)
+     
 
     
    

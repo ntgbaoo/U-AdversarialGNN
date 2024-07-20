@@ -67,7 +67,7 @@ class Data(IData):
         if len(self.folds) == 0: raise Exception("Folds is not yet initialized")
         if fold_kth > len(self.folds) or fold_kth < 0 : raise Exception("Given index {} out of bound of {}-fold".format(fold_kth,len(self.folds)))
         k_fold = self.folds[fold_kth]
-        return k_fold.idx_train,k_fold.idx_val,k_fold.idx_test
+        return np.array(k_fold.idx_train),np.array(k_fold.idx_val),np.array(k_fold.idx_test)
     
     def get_tensor_edgelist(self):
         return torch.tensor(self.edgelist,dtype=torch.long)

@@ -20,12 +20,15 @@ class Grid:
     '''
     def __init__(self,config_dict:dict) -> None:
         self.config_dict = config_dict
+        self.model = config_dict.get(MODEL)
         self.num_layers = config_dict.get(NUM_LAYERS)
         self.lr = config_dict.get(LEARNING_RATE)
         self.nhid = config_dict.get(HIDDEN_UNITS)
+        self.batch_size = config_dict.get(BATCH_SIZE)
         self.epoch = config_dict.get(EPOCHS)
         self.drop_out = config_dict.get(DROPOUT)
         self.patience = config_dict.get(PATIENCE)
+        self.weight_decay = config_dict.get(WEIGHT_DECAY)
         self.scheduler_state = config_dict.get(SCHEDULER_STATE)
         self.optimizer_state = config_dict.get(OPTIMIZER_STATE)
         self.aggregation = config_dict.get(AGGREGATION)
@@ -33,6 +36,7 @@ class Grid:
         self.all_configs = []
     
     def _assert_config_dict(self):
+        assert self.model is not None, "Model is not defined"
         assert self.num_layers is not None and len(self.num_layers) > 0, "Number of layers must be at least 1 possible value"
         assert self.lr is not None and len(self.lr) > 0, "Learning rate must be at least 1 possible value"
         assert self.nhid is not None and len(self.nhid) > 0, "Learning rate must be at least 1 possible value"
@@ -41,9 +45,18 @@ class Grid:
         assert self.optimizer_state is not None, "optimizer_state must be at least 1 possible value"
 
     def init_grid(self):
+        self.all_configs = self._update_config(self.all_configs,[self.model],MODEL)
         self.all_configs = self._update_config(self.all_configs,self.num_layers,NUM_LAYERS)
         self.all_configs = self._update_config(self.all_configs,self.lr,LEARNING_RATE)
         self.all_configs = self._update_config(self.all_configs,self.epoch,EPOCHS)
+        self.all_configs = self._update_config(self.all_configs,self.nhid,HIDDEN_UNITS)
+
+        if self.batch_size is not None and len(self.batch_size) > 0:
+            self.all_configs = self._update_config(self.all_configs,self.batch_size,BATCH_SIZE)
+
+        if self.weight_decay is not None and len(self.weight_decay) > 0:
+            self.all_configs = self._update_config(self.all_configs,self.weight_decay,WEIGHT_DECAY)
+
         if self.drop_out is not None and len(self.drop_out) > 0:
             self.all_configs = self._update_config(self.all_configs,self.drop_out,DROPOUT)
 
@@ -69,7 +82,7 @@ class Grid:
                 self.all_configs = self._update_config(self.all_configs,opti_state_configs,OPTIMIZER_STATE)
 
         else:
-            raise Exception("Adam {} is not supported".format(self.optimizer_state.get(OPTIMIZER)))
+            raise Exception("{} is not supported".format(self.optimizer_state.get(OPTIMIZER)))
 
         
     def _update_configs_scheduler(self):

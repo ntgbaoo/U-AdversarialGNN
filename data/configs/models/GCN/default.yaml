@@ -6,3 +6,4 @@ hidden_unit: 8
 aggr: "add"
 num_epochs: 500
 patience: 40
+batch_size: 10000

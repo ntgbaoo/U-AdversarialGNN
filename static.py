@@ -23,7 +23,9 @@ STEP_SIZE_LIST = "step_size_list"
 STEP_SIZE = "step_size"
 WEIGHT_DECAY = "weight_decay"
 
-
+IDX_TRAIN = "idx_train"
+IDX_VAL = "idx_val"
+IDX_TEST = "idx_test"
 #Hyper-parameters' options
 SGD ="SGD"
 ADAM = "ADAM"
