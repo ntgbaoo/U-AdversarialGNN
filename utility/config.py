@@ -1,6 +1,9 @@
 import argparse
 import torch
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from static import *
 
 parser = argparse.ArgumentParser(description='Adversarial attacks args parser')
 
@@ -9,36 +12,27 @@ parser.add_argument('--dataset', type=str, default='cora', help='baseline datase
 
 # 2.experiment setup
 parser.add_argument('--wandb_name', type=str, default="adversarial_GNN", help='Name of project to keep track results on wandb')
-parser.add_argument('--max_epoch', type=int, default=500, help='number of epochs to train')
 parser.add_argument('--device', type=str, default='cpu', help='training device')
 parser.add_argument('--device_id', type=str, default='0', help='device id for gpu')
 parser.add_argument('--seed', type=int, default=1024, help='random seed')
-parser.add_argument('--patience', type=int, default=40, help='patience for early stop')
-parser.add_argument('--lr', type=float, default=0.01, help='learning rate')
-parser.add_argument('--weight_decay', type=float, default=5e-7, help='weight for L2 loss on basic models.')
+parser.add_argument('--num_run', type=int, default=3, help='Number of time to run')
 parser.add_argument('--min_epoch', type=int, default=100, help='min epoch applied for early stopping')
 parser.add_argument("--wandb", action="store_true", default=False, help="Log training process on wandb")
 parser.add_argument('--log_interval', type=int, default=20, help='log interval, default: 20,[20,40,...]')
 parser.add_argument("--train_early_stopping", default=True, help="Apply early stopping for training")
-parser.add_argument("--tolerance", type=float, default=0.0005, help="Apply early stopping for training")
 parser.add_argument("--verbose", default=False, help="Log training and attack process")
+parser.add_argument('--split_state', type=int, default=1024, help='initial state for split')
+
 
 
 # 3.models
 parser.add_argument('--model', type=str, default='GCN', help='models name')
 parser.add_argument('--in_channels', type=int, default=2, help='Size of each input sample')
 parser.add_argument('--out_channels', type=int, default=None, help='Size of output')
-parser.add_argument('--hidden_channels', type=int, default=8,help='Size of each hidden sample')
-parser.add_argument('--num_layers', type=int, default=2,help='Number of message passing layers')
-parser.add_argument('--heads', type=int, default=8)
-parser.add_argument('--aggr_function', type=str, default="add", help='Type of aggregate function. Choose from sum, mean, min, max and mul')
-
-parser.add_argument('--dropout', type=float, default=0., help='Dropout probability')
-
 
 args = parser.parse_args()
 
-args.output_folder = '../output/log/{}/{}/'.format(args.dataset, args.model)
+args.output_folder = '{}{}/{}/'.format(PATH_LOG,args.dataset, args.model)
 
 
 # set the running device

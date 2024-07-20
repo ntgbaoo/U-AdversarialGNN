@@ -51,14 +51,3 @@ def init_logger(log_file=None):
 
     return logger
 
-def load_model_config(model_type="GCN",config_name = "default"):
-    file_path = '../dataset/configs/{}/{}.yaml'.format(model_type,config_name)
-    with open(file_path,'r') as file:
-        data = yaml.safe_load(file)
-    return data
-
-def save_model_config(config,config_name,model_type = "GCN"):
-    file_path = '../dataset/configs/{}/{}.yaml'.format(model_type,config_name)
-    with open(file_path,'w') as file:
-        yaml.dump(config,file_path)
-    print("INFO: save model config successfully at {}".format(file_path))

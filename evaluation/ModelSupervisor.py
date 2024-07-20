@@ -43,12 +43,14 @@ class ModelSupervisor(IModelSupervisor):
         self.epoch = kwargs.get(EPOCHS)
         self.patience = kwargs.get(PATIENCE)
         self.lr = kwargs.get(LEARNING_RATE)
+        self.weight_decay = float(kwargs.get(WEIGHT_DECAY,0))
+        self.batch_size = kwargs.get(BATCH_SIZE)
         self.model = load_model(data.nfeat,data.nclass,**kwargs)
         opti_state = kwargs.get(OPTIMIZER_STATE)
         if opti_state is not None:
-            self.optimizer =  load_opt(kwargs.get(OPTIMIZER))(self.model.parameters(),lr= self.lr,**opti_state)
+            self.optimizer =  load_opt(kwargs.get(OPTIMIZER))(self.model.parameters(),lr= self.lr,weight_decay=self.weight_decay,**opti_state)
         else:
-            self.optimizer =  load_opt(kwargs.get(OPTIMIZER))(self.model.parameters(),lr= self.lr)
+            self.optimizer =  load_opt(kwargs.get(OPTIMIZER))(self.model.parameters(),lr= self.lr,weight_decay=self.weight_decay)
 
         self.scheduler = kwargs.get(SCHEDULER)
         if self.scheduler is not None:
@@ -80,7 +82,10 @@ class ModelSupervisor(IModelSupervisor):
     def _train(self):
         self.model.train()
         self.optimizer.zero_grad()
-        out = self.model( self.features_torch, self.edge_index_torch)
+        if self.batch_size is not None:
+            out = self.model( self.features_torch, self.edge_index_torch, batch_size = int(self.batch_size) )
+        else:
+            out = self.model( self.features_torch, self.edge_index_torch)
         loss = F.cross_entropy(out[self.idx_train], self.labels_torch[self.idx_train])
         loss.backward()
         self.optimizer.step()

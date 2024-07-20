@@ -20,7 +20,9 @@ class IData:
     def update_adversarial_feature(self,adversarial_feature):
         pass
 
-    def init_train_test_splits(self,splitter):
+    def init_train_test_splits(self,stratified:bool,n_split:int,train_ratio:float,val_ratio:float ,
+                test_ratio:float ,
+                 seed:int):
         pass
 
     def get_split(self,fold_kth):

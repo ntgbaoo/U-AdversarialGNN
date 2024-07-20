@@ -15,7 +15,7 @@ if __name__ == '__main__':
     from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
     from evaluation.ModelSupervisor import ModelSupervisor
     from data_loader.DataLoader import DataLoader
-    from utility.util import load_model_config
+    from utility.ConfigHandler import ConfigHandler
     from static import *
 
     args.dataset = "cora"
@@ -28,7 +28,7 @@ if __name__ == '__main__':
                     args.seed) + '_log.txt')
     
     data = DataLoader.load(args.dataset)
-    config = load_model_config()
+    config = ConfigHandler.load_model_config(model_type="GCN",config_name="default")
     runner = ModelSupervisor(data,device=args.device,**config)
     runner.train_model()
 
