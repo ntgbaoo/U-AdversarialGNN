@@ -10,12 +10,15 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from data_loader.IDataLoader import IDataLoader
 from data_loader.IData import IData
 from data_loader.utils import sparse_adjacency_to_edge_list,edge_list_to_sparse_adjacency
-from data_loader.Splitter import ISplitter
+from data_loader.Splitter import Splitter
+
 
 
 
 class Data(IData):
-    def __init__(self,edgelist: np.ndarray,
+    def __init__(self,
+                 dataset_name :str,
+                 edgelist: np.ndarray,
                  adj: csr_matrix,
                  feature: np.ndarray,
                  label:np.ndarray,
@@ -30,6 +33,7 @@ class Data(IData):
         self.idx_train = idx_train
         self.idx_val = idx_val
         self.idx_test = idx_test
+        self.dataset_name = dataset_name
 
         self.nclass = self.label.max().item() + 1
         self.nfeat = self.feature.shape[1]
@@ -48,8 +52,16 @@ class Data(IData):
     def update_adversarial_feature(self,adversarial_feature:np.ndarray):
         self.feature = adversarial_feature
 
-    def init_train_test_splits(self,splitter: ISplitter):
+    def init_train_test_splits(self,stratified:bool = True,
+                 n_split:int = 5,
+                 train_ratio:float = 0.1,
+                 val_ratio:float = 0.1,
+                 test_ratio:float = 0.8,
+                 seed:int = 100):
+      
+        splitter = Splitter(stratified,n_split,train_ratio,val_ratio,test_ratio,seed)
         self.folds = splitter.split(self.feature,self.label)
+      
 
     def get_split(self,fold_kth):
         if len(self.folds) == 0: raise Exception("Folds is not yet initialized")

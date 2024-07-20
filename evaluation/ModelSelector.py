@@ -17,7 +17,8 @@ class ModelSelector:
                  idx_train:np.ndarray,
                  idx_val :np.ndarray,
                  idx_test:np.ndarray,
-                 data: IData
+                 data: IData,
+                 device = 'cpu'
                  ) -> None:
         self.config_dict = config_dict
         self.grid_generator = Grid(self.config_dict)
@@ -27,6 +28,7 @@ class ModelSelector:
         self.idx_test = idx_test
         self.data = data
         self.results = [0]*len(self.all_configs)
+        self.device = device
 
     def process_model_selection(self):
         for index,config in enumerate(self.all_configs):
@@ -36,7 +38,7 @@ class ModelSelector:
         return self.results.index(max(self.results))
     
     def _run_model_on_config(self,config):
-        runner = ModelSupervisor(self.data,**config)
+        runner = ModelSupervisor(self.data,device=self.device,**config)
         runner.train_model()
         _, _, test_acc = runner.get_prediction_accuracy()
         return test_acc

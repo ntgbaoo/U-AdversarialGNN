@@ -21,6 +21,7 @@ OPTIMIZER = "optimizer"
 GAMMA_LIST = "gamma_list"
 STEP_SIZE_LIST = "step_size_list"
 STEP_SIZE = "step_size"
+WEIGHT_DECAY = "weight_decay"
 
 
 #Hyper-parameters' options
@@ -29,4 +30,10 @@ ADAM = "ADAM"
 STEP_LR = "StepLR"
 GAMMA = "gamma"
 
-#Model names:
+#PATH
+PATH_DATA = "data/"
+PATH_CONFIG_MODEL = "{}configs/models/".format(PATH_DATA)
+PATH_CONFIG_SPLIT = "{}configs/split/".format(PATH_DATA)
+PATH_DATASET = "{}dataset".format(PATH_DATA)
+PATH_OUTPUT = "output/"
+PATH_LOG = "{}log/".format(PATH_OUTPUT)

@@ -23,9 +23,9 @@ class Splitter(ISplitter):
                  test_ratio:float,
                  seed:int
                  ) -> None:
-        assert train_ratio + val_ratio + test_ratio <= 1, "Sum up ration is greater than 1: train ratio({}), validation ratio({}) and test ratio({})".format(train_ratio,
-                                                                                                                                                            val_ratio,
-                                                                                                                                                            test_ratio)
+        assert train_ratio + val_ratio + test_ratio <= 1, "Sum up ration is greater than 1: train ratio({}), validation ratio({}) and test ratio({})".format(str(train_ratio),
+                                                                                                                                                            str(val_ratio),
+                                                                                                                                                            str(test_ratio))
         self.stratified = stratified
         self.n_split = n_split
         self.train_ratio = train_ratio
