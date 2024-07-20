@@ -53,7 +53,7 @@ class FGA(BaseAttack):
 
     """
 
-    def __init__(self, model, nnodes, feature_shape=None, attack_structure=True, attack_features=False, device='cpu'):
+    def __init__(self, model, nnodes, features, adj, labels, idx_train, n_perturbations, feature_shape=None, attack_structure=True, attack_features=False, device='cpu'):
 
         super(FGA, self).__init__(model, nnodes, attack_structure=attack_structure, attack_features=attack_features, device=device)
 
@@ -63,15 +63,20 @@ class FGA(BaseAttack):
         if self.attack_features:
             self.feature_changes = Parameter(torch.FloatTensor(feature_shape))
             self.feature_changes.data.fill_(0)
+        self.idx_train = idx_train
+        self.n_perturbations = n_perturbations
+        self.features = features
+        self.adj = adj
+        self.labels = labels
 
-    def attack(self, ori_features, ori_adj, labels, idx_train, target_node, n_perturbations, verbose=False, **kwargs):
+    def attack(self, target_node, verbose=False, **kwargs):
         """Generate perturbations on the input graph.
 
         Parameters
         ----------
-        ori_features : scipy.sparse.csr_matrix
+        features : scipy.sparse.csr_matrix
             Original (unperturbed) adjacency matrix
-        ori_adj : scipy.sparse.csr_matrix
+        adj : scipy.sparse.csr_matrix
             Original (unperturbed) node feature matrix
         labels :
             node labels
@@ -84,19 +89,19 @@ class FGA(BaseAttack):
             be edge removals/additions or feature removals/additions.
         """
 
-        modified_adj = ori_adj.todense()
-        modified_features = ori_features.todense()
+        modified_adj = self.adj.todense()
+        modified_features = self.features.todense()
         modified_adj, modified_features, labels = utils.to_tensor(modified_adj, modified_features, labels, device=self.device)
 
         self.surrogate.eval()
         if verbose == True:
-            print('number of pertubations: %s' % n_perturbations)
+            print('number of pertubations: %s' % self.n_perturbations)
 
         pseudo_labels = self.surrogate.predict().detach().argmax(1)
-        pseudo_labels[idx_train] = labels[idx_train]
+        pseudo_labels[self.idx_train] = labels[self.idx_train]
 
         modified_adj.requires_grad = True
-        for i in range(n_perturbations):
+        for i in range(self.n_perturbations):
             adj_norm = utils.normalize_adj_tensor(modified_adj)
 
             if self.attack_structure:

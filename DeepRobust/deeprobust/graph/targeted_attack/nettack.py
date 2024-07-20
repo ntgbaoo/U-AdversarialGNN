@@ -71,7 +71,7 @@ class Nettack(BaseAttack):
 
     """
 
-    def __init__(self, model, nnodes=None, attack_structure=True, attack_features=False, device='cpu'):
+    def __init__(self, model, features, adj, labels, n_perturbations, nnodes=None, attack_structure=True, attack_features=False, device='cpu'):
 
         super(Nettack, self).__init__(model, nnodes, attack_structure=attack_structure, attack_features=attack_features, device=device)
 
@@ -79,6 +79,10 @@ class Nettack(BaseAttack):
         self.feature_perturbations = []
         self.influencer_nodes = []
         self.potential_edges = []
+        self.n_perturbations = n_perturbations
+        self.features = features
+        self.adj = adj
+        self.labels = labels
 
         self.cooc_constraint = None
 
@@ -101,7 +105,7 @@ class Nettack(BaseAttack):
         W = surrogate.gc1.weight @ surrogate.gc2.weight
         return W.detach().cpu().numpy()
 
-    def attack(self, features, adj, labels, target_node, n_perturbations, direct=True, n_influencers= 0, ll_cutoff=0.004, verbose=True, **kwargs):
+    def attack(self, target_node, direct=True, verbose=False, n_influencers= 0, ll_cutoff=0.004, **kwargs):
         """Generate perturbations on the input graph.
 
         Parameters
@@ -135,27 +139,27 @@ class Nettack(BaseAttack):
         """
 
         if self.nnodes is None:
-            self.nnodes = adj.shape[0]
+            self.nnodes = self.adj.shape[0]
 
         self.target_node = target_node
 
-        if type(adj) is torch.Tensor:
-            self.ori_adj = utils.to_scipy(adj).tolil()
-            self.modified_adj = utils.to_scipy(adj).tolil()
-            self.ori_features = utils.to_scipy(features).tolil()
-            self.modified_features = utils.to_scipy(features).tolil()
+        if type(self.adj) is torch.Tensor:
+            self.ori_adj = utils.to_scipy(self.adj).tolil()
+            self.modified_adj = utils.to_scipy(self.adj).tolil()
+            self.ori_features = utils.to_scipy(self.features).tolil()
+            self.modified_features = utils.to_scipy(self.features).tolil()
         else:
-            self.ori_adj = adj.tolil()
-            self.modified_adj = adj.tolil()
-            self.ori_features = features.tolil()
-            self.modified_features = features.tolil()
+            self.ori_adj = self.adj.tolil()
+            self.modified_adj = self.adj.tolil()
+            self.ori_features = self.features.tolil()
+            self.modified_features = self.features.tolil()
 
         self.cooc_matrix = self.modified_features.T.dot(self.modified_features).tolil()
 
         attack_features = self.attack_features
         attack_structure = self.attack_structure
         assert not (direct==False and n_influencers==0), "indirect mode requires at least one influencer node"
-        assert n_perturbations > 0, "need at least one perturbation"
+        assert self.n_perturbations > 0, "need at least one perturbation"
         assert attack_features or attack_structure, "either attack_features or attack_structure must be true"
 
         # adj_norm = utils.normalize_adj_tensor(modified_adj, sparse=True)
@@ -164,10 +168,10 @@ class Nettack(BaseAttack):
 
         logits = (self.adj_norm @ self.adj_norm @ self.modified_features @ self.W )[target_node]
 
-        self.label_u = labels[target_node]
-        label_target_onehot = np.eye(int(self.nclass))[labels[target_node]]
+        self.label_u = self.labels[target_node]
+        label_target_onehot = np.eye(int(self.nclass))[self.labels[target_node]]
         best_wrong_class = (logits - 1000*label_target_onehot).argmax()
-        surrogate_losses = [logits[labels[target_node]] - logits[best_wrong_class]]
+        surrogate_losses = [logits[self.labels[target_node]] - logits[best_wrong_class]]
 
         if verbose:
             print("##### Starting attack #####")
@@ -181,7 +185,7 @@ class Nettack(BaseAttack):
                 print("##### Attacking the node directly #####")
             else:
                 print("##### Attacking the node indirectly via {} influencer nodes #####".format(n_influencers))
-            print("##### Performing {} perturbations #####".format(n_perturbations))
+            print("##### Performing {} perturbations #####".format(self.n_perturbations))
 
         if attack_structure:
             # Setup starting values of the likelihood ratio test.
@@ -218,9 +222,9 @@ class Nettack(BaseAttack):
 
         self.potential_edges = self.potential_edges.astype("int32")
 
-        for _ in range(n_perturbations):
+        for _ in range(self.n_perturbations):
             if verbose:
-                print("##### ...{}/{} perturbations ... #####".format(_+1, n_perturbations))
+                print("##### ...{}/{} perturbations ... #####".format(_+1, self.n_perturbations))
             if attack_structure:
 
                 # Do not consider edges that, if removed, result in singleton edges in the graph.
