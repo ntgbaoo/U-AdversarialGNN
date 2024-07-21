@@ -4,12 +4,30 @@ import os
 import sys
 from scipy.sparse import coo_matrix
 from deeprobust.graph.utils import *
+import networkx as nx
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # from DeepRobust.deeprobust.graph.utils import classification_margin
 from evaluation import IModelSupervisor
+
+def calculate_centrality(adj_matrix,direct= False):
+    row_indices,col_indices = adj_matrix.nonzero()
+    edgelists = list(zip(row_indices,col_indices))
+    G = nx.Graph(edgelists)
+    centrality_node = nx.degree_centrality(G)
+    centrality_values = [(key,value) for key,value in centrality_node.items()]
+    return centrality_values
+
+
+def select_nodes_margin_centrality(adj_matrix,top_n = 10):
+    centrality_values = calculate_centrality(adj_matrix)
+    centrality_values.sort(key=lambda x: x[1])
+    highest = [node for node,_ in centrality_values[-top_n:]]
+    lowest = [node for node,_ in centrality_values[:top_n]]
+    return highest + lowest
+
 
 def calculate_degrees(adj_matrix, directed=False):
     if directed:
@@ -83,24 +101,8 @@ def select_nodes_margin(target_runner):
 
     return high + low + other
 
+
 if __name__ == '__main__':
-    sparse_adj_matrix  =    parse_adj_matrix = coo_matrix([
-        [0, 1, 0],
-        [1, 0, 1],
-        [0, 1, 0]
-    ])
-
-    degrees = calculate_degrees(sparse_adj_matrix)
-    degrees = degrees[0,2]
-    print("Degrees (undirected):", degrees)
-
-    values_array = np.array([1, 5, 6, 7, 8])
-
-    # Array with indices
-    indices_array = np.array([0, 3])
-
-    # Extract values
-    extracted_values = values_array[indices_array]
-
-    print("Extracted values:", extracted_values)
-    
+   graph = nx.erdos_renyi_graph(100,0.1)
+   nodes = select_nodes_margin_centrality(nx.adjacency_matrix(graph),20)
+   print(nodes)
