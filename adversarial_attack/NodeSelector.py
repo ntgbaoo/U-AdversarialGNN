@@ -32,7 +32,7 @@ class NodeSelector:
         other = [x for x, y in sorted_margins[10: -10]]
         other = np.random.choice(other, 20, replace=False).tolist()
 
-        return high + low + other
+        return high,low,other
     
     @staticmethod
     def select_nodes_margin_degree(target_runner:IModelSupervisor):
