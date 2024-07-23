@@ -27,7 +27,6 @@ class AdversarialSupervisor:
         self.adversarial = adversarial
         self.model_supervisor = model_supervisor
         self.data = data
-        self.target_nodes = target_nodes
         self.surrogate_model = surrogate_model
     
     def attack(self,node,seed,**kwargs):

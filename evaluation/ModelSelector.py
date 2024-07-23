@@ -22,6 +22,7 @@ class ModelSelector:
                  data: IData,
                  device = 'cpu'
                  ) -> None:
+        self.model_name = config_dict.get("model")
         self.config_dict = config_dict
         self.grid_generator = Grid(self.config_dict)
         self.all_configs = self.grid_generator.init_grid()
@@ -42,7 +43,7 @@ class ModelSelector:
         print("\n")
 
     def get_best_config(self):
-        print(self.results)
+        print(max(self.results))
         return self.all_configs[self.results.index(max(self.results))]
     
     def _run_model_on_config(self,config,seed):
@@ -63,4 +64,4 @@ class ModelSelector:
             
             "model_config":self.get_best_config()
         }
-        ConfigHandler.save_model_config(best_config,"best_config_split_{}".format(split_index))
+        ConfigHandler.save_model_config(best_config,"best_config_split_{}".format(split_index),model_type=self.model_name)

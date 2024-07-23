@@ -55,7 +55,7 @@ class ModelSupervisor(IModelSupervisor):
         self.scheduler = kwargs.get(SCHEDULER)
         if self.scheduler is not None:
             scheduler_state = kwargs.get(SCHEDULER_STATE)
-            self.scheduler = load_scheduler(kwargs.get(self.scheduler))(self.optimizer,**scheduler_state)
+            self.scheduler = load_scheduler(self.scheduler)(self.optimizer,**scheduler_state)
 
         #Data
         self.number_nodes = data.nnode

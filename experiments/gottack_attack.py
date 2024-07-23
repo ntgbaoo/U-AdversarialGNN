@@ -77,7 +77,6 @@ if __name__ == '__main__':
     print("INFO: Apply Nettack on {} on {} dataset with budget {}".format(args.model, args.dataset,budget))
     start = timeit.default_timer()
     for node in node_list:
-        # adversarial = Nettack(gcn_surrogate, nnodes=adj.shape[0], attack_structure=True, attack_features=False, device=args.device)
         adversarial =  OrbitAttack(model = gcn_surrogate,orbit_dict = orbit_dict, nnodes=data.nnode, device=args.device).to(args.device)
         supervisor_adversarial = ModelSupervisor(data,device= args.device,**gcn_config)
         adversarial_supervisor = AdversarialSupervisor(adversarial = adversarial,

@@ -2,6 +2,7 @@ import sys
 import os
 import warnings
 import numpy as np
+import timeit
 # Hide all warnings
 warnings.filterwarnings("ignore")
     
@@ -25,19 +26,25 @@ if __name__ == "__main__":
     split_config = ConfigHandler.load_split_config(config_name="default")
    
     data.init_train_test_splits(**split_config)
-    idx_train,idx_val,idx_test = data.get_split(0)
-    hyper_grid_config = ConfigHandler.load_hyper_grid(model_type="GCN",grid_name="toy_grid")
-    modelSelector = ModelSelector(
-        config_dict= hyper_grid_config,
-        idx_train=idx_train,
-        idx_val= idx_val,
-        idx_test= idx_test,
-        data=data,
-        device=args.device
-    )
-    modelSelector.process_model_selection()
-    print(modelSelector.get_best_config())
-    modelSelector.save_config(0)
+    split_idx_list = [0]
+    for split_idx in split_idx_list:
+        idx_train,idx_val,idx_test = data.get_split(split_idx)
+        hyper_grid_config = ConfigHandler.load_hyper_grid(model_type="GSAGE",grid_name="hyper_grid")
+        modelSelector = ModelSelector(
+            config_dict= hyper_grid_config,
+            idx_train=idx_train,
+            idx_val= idx_val,
+            idx_test= idx_test,
+            data=data,
+            device=args.device
+        )
+        start = timeit.default_timer()
+        modelSelector.process_model_selection()
+        end = timeit.default_timer()
+        modelSelector.save_config(split_idx)
+        print("Total time:{}".format(end -start))
+        print(modelSelector.get_best_config())
+    
      
 
     
