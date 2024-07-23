@@ -26,7 +26,7 @@ if __name__ == "__main__":
     split_config = ConfigHandler.load_split_config(config_name="default")
    
     data.init_train_test_splits(**split_config)
-    split_idx_list = [0]
+    split_idx_list = [1,2,3,4]
     for split_idx in split_idx_list:
         idx_train,idx_val,idx_test = data.get_split(split_idx)
         hyper_grid_config = ConfigHandler.load_hyper_grid(model_type="GSAGE",grid_name="hyper_grid")
