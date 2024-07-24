@@ -21,15 +21,13 @@ from utility.ConfigHandler import ConfigHandler
 from evaluation.Grid import Grid
 
 if __name__ == "__main__":
-    args.dataset = "cora"
     data = DataLoader.load(args.dataset)
     split_config = ConfigHandler.load_split_config(config_name="default")
    
     data.init_train_test_splits(**split_config)
-    split_idx_list = [1,2,3,4]
-    for split_idx in split_idx_list:
+    for split_idx in range(5):
         idx_train,idx_val,idx_test = data.get_split(split_idx)
-        hyper_grid_config = ConfigHandler.load_hyper_grid(model_type="GSAGE",grid_name="hyper_grid")
+        hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="toy_grid")
         modelSelector = ModelSelector(
             config_dict= hyper_grid_config,
             idx_train=idx_train,

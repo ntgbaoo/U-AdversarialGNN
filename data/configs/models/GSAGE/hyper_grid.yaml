@@ -27,8 +27,8 @@ weight_decay:
   - 0.001
 num_epochs: 
   - 1000
-optimizer_state:
-  optimizer: "ADAM"
 patience: 
   - 50
+optimizer_state:
+  optimizer: "ADAM"
 

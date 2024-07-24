@@ -10,7 +10,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utility.util import logger
 from static import *
 
-def load_model(in_channel,out_channel,**kwargs):
+def load_model(in_channel,out_channel,degree_dist,**kwargs):
+
     model_name = kwargs.get(MODEL)
     nhid = kwargs.get(HIDDEN_UNITS,16)
     nlayers = kwargs.get(NUM_LAYERS,2)
@@ -43,12 +44,16 @@ def load_model(in_channel,out_channel,**kwargs):
                     drop_out,
                     aggr = aggr)
     elif model_name == "PNA":
+        aggregators = ['mean', 'min', 'max', 'std']
+        scalers = ['identity', 'amplification', 'attenuation']
         model = PNA(in_channel,
                     nhid,
                     nlayers,
                     out_channel,
                     drop_out,
-                    aggr = aggr)
+                    aggregators=aggregators, 
+                    scalers=scalers,
+                    deg= degree_dist)
     elif model_name == "GAT":
         model = GAT(in_channel,
                     nhid,
