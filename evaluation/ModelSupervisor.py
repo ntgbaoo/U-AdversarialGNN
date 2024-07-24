@@ -29,6 +29,10 @@ from static import *
 class ModelSupervisor(IModelSupervisor):
     def __init__(self,data:IData,device = "cpu",train_early_stopping = True,**kwargs) -> None:
         super().__init__()
+
+        degrees = torch.tensor(np.array(data.adj.sum(axis=1)).flatten(),dtype=torch.long)  # Sum of rows (or columns, as it's symmetric)
+        degree_dist = torch.bincount(degrees)
+        
         if args.wandb:
             self._init_wandb(args)
 
@@ -45,8 +49,9 @@ class ModelSupervisor(IModelSupervisor):
         self.lr = kwargs.get(LEARNING_RATE)
         self.weight_decay = float(kwargs.get(WEIGHT_DECAY,0))
         self.batch_size = kwargs.get(BATCH_SIZE)
-        self.model = load_model(data.nfeat,data.nclass,**kwargs)
+        self.model = load_model(data.nfeat,data.nclass,degree_dist,**kwargs)
         opti_state = kwargs.get(OPTIMIZER_STATE)
+        
         if opti_state is not None:
             self.optimizer =  load_opt(kwargs.get(OPTIMIZER))(self.model.parameters(),lr= self.lr,weight_decay=self.weight_decay,**opti_state)
         else:
@@ -55,7 +60,7 @@ class ModelSupervisor(IModelSupervisor):
         self.scheduler = kwargs.get(SCHEDULER)
         if self.scheduler is not None:
             scheduler_state = kwargs.get(SCHEDULER_STATE)
-            self.scheduler = load_scheduler(kwargs.get(self.scheduler))(self.optimizer,**scheduler_state)
+            self.scheduler = load_scheduler(self.scheduler)(self.optimizer,**scheduler_state)
 
         #Data
         self.number_nodes = data.nnode

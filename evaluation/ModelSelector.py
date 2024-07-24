@@ -22,6 +22,7 @@ class ModelSelector:
                  data: IData,
                  device = 'cpu'
                  ) -> None:
+        self.model_name = config_dict.get("model")
         self.config_dict = config_dict
         self.grid_generator = Grid(self.config_dict)
         self.all_configs = self.grid_generator.init_grid()
@@ -42,7 +43,7 @@ class ModelSelector:
         print("\n")
 
     def get_best_config(self):
-        print(self.results)
+        print(max(self.results))
         return self.all_configs[self.results.index(max(self.results))]
     
     def _run_model_on_config(self,config,seed):
@@ -50,8 +51,8 @@ class ModelSelector:
         runner = ModelSupervisor(self.data,device=self.device,**config)
         runner.update_split(self.idx_train,self.idx_val,self.idx_test)
         runner.train_model()
-        _, _, test_acc = runner.get_prediction_accuracy()
-        return test_acc
+        _, val_acc, _ = runner.get_prediction_accuracy()
+        return val_acc
     
     def save_config(self,split_index):
         best_config = {
@@ -63,4 +64,4 @@ class ModelSelector:
             
             "model_config":self.get_best_config()
         }
-        ConfigHandler.save_model_config(best_config,"best_config_split_{}".format(split_index))
+        ConfigHandler.save_model_config(best_config,"best_config_split_{}".format(split_index),model_type=self.model_name,data=self.data.dataset_name)

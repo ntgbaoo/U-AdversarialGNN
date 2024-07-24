@@ -1,5 +1,6 @@
 model: 'GCN'
-aggr: "add"
+aggr: 
+  - "add"
 num_layers:
   - 2
   - 3
@@ -24,7 +25,10 @@ weight_decay:
   - 0.0005
   - 0.001
   - 0.01
-num_epochs: 1000
-optimizer: "ADAM"
-patience: 50
+num_epochs: 
+  - 1000
+optimizer_state:
+  optimizer: "ADAM"
+patience: 
+  - 50
 

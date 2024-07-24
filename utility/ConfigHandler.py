@@ -13,8 +13,8 @@ class ConfigHandler:
         return data
     
     @staticmethod
-    def save_model_config(config,config_name,model_type = "GCN"):
-        file_path = '{}{}/{}.yaml'.format(PATH_CONFIG_MODEL,model_type,config_name)
+    def save_model_config(config,config_name,model_type = "GCN",data="cora"):
+        file_path = '{}{}/{}/{}.yaml'.format(PATH_CONFIG_MODEL,model_type,data,config_name)
         with open(file_path,'w') as file:
             yaml.dump(config,file)
         print("INFO: save model config successfully at {}".format(file_path))

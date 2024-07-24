@@ -23,6 +23,9 @@ if __name__ == '__main__':
 
     from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
     from evaluation.ModelSupervisor import ModelSupervisor
+    from utility.ConfigHandler import ConfigHandler
+    from adversarial_attack.NodeSelector import NodeSelector
+
 
     from data_loader.DataLoader import DataLoader
     from static import *
@@ -33,18 +36,7 @@ if __name__ == '__main__':
     
     data = DataLoader.load(args.dataset)
     
-    gcn_config = {
-        MODEL:'GCN',
-        LEARNING_RATE:0.01,
-        OPTIMIZER:ADAM,
-        IN_CHANNEL:data.nfeat,
-        OUT_CHANNEL: data.nclass,
-        HIDDEN_UNITS:8,
-        NUM_LAYERS:2,
-        AGGREGATION:"add",
-        EPOCHS:500,
-        PATIENCE:40,
-    }
+    gcn_config = ConfigHandler.load_model_config()
     if args.verbose:
         init_logger(
                     prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
@@ -62,7 +54,8 @@ if __name__ == '__main__':
     
 
     #Select target nodes
-    node_list = select_nodes(supervisor_surrogate)        
+    high,low, highest_degree,lowest_degree = NodeSelector.select_node_margin_centrality(supervisor_surrogate)    
+    node_list = high + low + highest_degree + lowest_degree
     
     #Set up gcn model
     gcn_surrogate = SurrogateLoader.load_surrogate(data,idx_train, idx_val,device = args.device)
@@ -101,7 +94,6 @@ if __name__ == '__main__':
                                                            attack_structure= True,
                                                            attack_feature= False
                                                            )
-            
             success = adversarial_supervisor.attack(node,args.seed,**FGA_config)
             if success == 0:
                 miss += 1
