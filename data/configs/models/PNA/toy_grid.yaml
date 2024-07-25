@@ -15,9 +15,9 @@ drop_out:
 weight_decay:
   - 0.0005
 num_epochs: 
-  - 10000
+  - 1000
 optimizer_state:
   optimizer: "ADAM"
 patience: 
-  - 1000
+  - 40
 
