@@ -22,9 +22,12 @@ if __name__ == '__main__':
     from adversarial_attack.utils import select_nodes,select_nodes_margin
 
     from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
+    
     from evaluation.ModelSupervisor import ModelSupervisor
     from utility.ConfigHandler import ConfigHandler
     from adversarial_attack.NodeSelector import NodeSelector
+    from adversarial_attack.FGA import FGA
+    from adversarial_attack.Nettack import Nettack
 
 
     from data_loader.DataLoader import DataLoader
@@ -73,18 +76,18 @@ if __name__ == '__main__':
             }
         
         FGA_config = {
-            'ori_features': csr_matrix(features),
-            'ori_adj' : adj,
+            'features': csr_matrix(features),
+            'adj' : adj,
             'labels':labels,
             'idx_train':idx_train,
             'n_perturbations' :budget,
         }
         print("=="*30)
-        print("INFO: Apply Nettack on {} on {} dataset with budget {}".format(args.model, args.dataset,budget))
+        print("INFO: Apply Nettack/FGA on {} on {} dataset with budget {}".format(args.model, args.dataset,budget))
         start = timeit.default_timer()
         for node in node_list:
-            # adversarial = Nettack(gcn_surrogate, nnodes=adj.shape[0], attack_structure=True, attack_features=False, device=args.device)
-            adversarial =  FGA(gcn_surrogate, nnodes=data.nnode, attack_structure=True, attack_features=False, device=args.device).to(args.device)
+            adversarial = FGA(gcn_surrogate, nnodes=adj.shape[0], **FGA_config, attack_structure=True, attack_features=False, device=args.device)
+            # adversarial =  Nettack(gcn_surrogate, nnodes=data.nnode, **nettack_config, attack_structure=True, attack_features=False, device=args.device).to(args.device)
             supervisor_adversarial = ModelSupervisor(data,device= args.device,**gcn_config)
             adversarial_supervisor = AdversarialSupervisor(adversarial = adversarial,
                                                            model_supervisor = supervisor_adversarial,
@@ -94,7 +97,7 @@ if __name__ == '__main__':
                                                            attack_structure= True,
                                                            attack_feature= False
                                                            )
-            success = adversarial_supervisor.attack(node,args.seed,**FGA_config)
+            success = adversarial_supervisor.attack(node,args.seed)
             if success == 0:
                 miss += 1
                 false_nodes.append(node)

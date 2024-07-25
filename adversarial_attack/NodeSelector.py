@@ -1,5 +1,6 @@
 import numpy as np
-from deeprobust.graph.utils import *
+from DeepRobust.deeprobust.graph.utils import classification_margin
+from adversarial_attack import *
 import os 
 import sys
 import networkx as nx
