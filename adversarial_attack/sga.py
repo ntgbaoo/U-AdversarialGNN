@@ -62,7 +62,7 @@ class SGAttack(BaseAttack):
     >>> modified_features = model.modified_features
     """
 
-    def __init__(self, model, nnodes=None, attack_structure=True, attack_features=False, device='cpu'):
+    def __init__(self, model, n_perturbations, features, adj, labels, nnodes=None, attack_structure=True, attack_features=False, device='cpu'):
 
         super(SGAttack, self).__init__(model=None, nnodes=nnodes,
                                        attack_structure=attack_structure, attack_features=attack_features, device=device)
@@ -76,12 +76,16 @@ class SGAttack(BaseAttack):
             b = b.to(device)
 
         self.weight, self.bias = W, b
+        self.n_perturbations = n_perturbations
+        self.features = features
+        self.adj = adj
+        self.labels = labels
 
     @lru_cache(maxsize=1)
     def compute_XW(self):
         return F.linear(self.modified_features, self.weight)
 
-    def attack(self, features, adj, labels, target_node, n_perturbations, direct=True, n_influencers=3, **kwargs):
+    def attack(self, target_node, direct=True, n_influencers=3, **kwargs):
         """Generate perturbations on the input graph.
 
         Parameters
@@ -114,18 +118,17 @@ class SGAttack(BaseAttack):
 
         self.modified_features = features.requires_grad_(bool(self.attack_features))
 
-        target_label = torch.LongTensor([labels[target_node]])
+        target_label = torch.LongTensor([self.labels[target_node]])
         best_wrong_label = torch.LongTensor([(self.logits[target_node].cpu() - 1000 * torch.eye(self.logits.size(1))[target_label]).argmax()])
 
         self.selfloop_degree = torch.tensor(adj.sum(1).A1 + 1, device=self.device)
         self.target_label = target_label.to(self.device)
         self.best_wrong_label = best_wrong_label.to(self.device)
-        self.n_perturbations = n_perturbations
         self.ori_adj = adj
         self.target_node = target_node
         self.direct = direct
 
-        attacker_nodes = torch.where(torch.as_tensor(labels) == best_wrong_label)[0]
+        attacker_nodes = torch.where(torch.as_tensor(self.labels) == best_wrong_label)[0]
         subgraph = self.get_subgraph(attacker_nodes, n_influencers)
 
         if not direct:
@@ -135,7 +138,7 @@ class SGAttack(BaseAttack):
         structure_perturbations = []
         feature_perturbations = []
         num_features = features.shape[-1]
-        for _ in range(n_perturbations):
+        for _ in range(self.n_perturbations):
             edge_grad, non_edge_grad, features_grad = self.compute_gradient(subgraph)
             max_structure_score = max_feature_score = 0.
 
