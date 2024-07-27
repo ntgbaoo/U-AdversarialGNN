@@ -21,11 +21,12 @@ if __name__ == '__main__':
     from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
     from adversarial_attack.utils import select_nodes,select_nodes_margin
 
-    from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
+    from deeprobust.graph.targeted_attack import Nettack,FGA,RND,IGAttack
     from evaluation.ModelSupervisor import ModelSupervisor
 
     from data_loader.DataLoader import DataLoader
     from static import *
+    from adversarial_attack.SGA import SGAttack
 
     args.dataset = "cora"
     args.seed = 722
@@ -73,7 +74,15 @@ if __name__ == '__main__':
     print("INFO: Apply Nettack on {} on {} dataset with budget {}".format(args.model, args.dataset,budgets))
     start = timeit.default_timer()
     for node in node_list:
-        adversarial = SGAttack(sgc_surrogate, attack_structure=True, attack_features=False, device=args.device).to(args.device)
+        SGA_config = {
+                'features':csr_matrix(features),
+                'adj':adj, 
+                'labels':labels,
+                'n_perturbations':budgets,
+            }
+
+
+        adversarial = SGAttack(sgc_surrogate, **SGA_config, attack_structure=True, attack_features=False, device=args.device).to(args.device)
         supervisor_adversarial = ModelSupervisor(data,device= args.device,**gcn_config)
         adversarial_supervisor = AdversarialSupervisor(adversarial = adversarial,
                                                            model_supervisor = supervisor_adversarial,
@@ -83,14 +92,8 @@ if __name__ == '__main__':
                                                            attack_structure= True,
                                                            attack_feature= False
                                                            )
-        SGA_config = {
-                'features':csr_matrix(features),
-                'adj':adj, 
-                'labels':labels,
-                'n_perturbations':budgets,
-            }
 
-        success = adversarial_supervisor.attack(node,args.seed,**SGA_config)
+        success = adversarial_supervisor.attack(node,args.seed)
         if success == 0:
             miss += 1
             false_nodes.append(node)
