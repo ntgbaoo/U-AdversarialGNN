@@ -106,25 +106,25 @@ class SGAttack(BaseAttack):
         n_influencers : int
             number of the top influencers to choose. For direct attack, it will set as `n_perturbations`.
         """
-        if sp.issparse(features):
+        if sp.issparse(self.features):
             # to dense numpy matrix
-            features = features.A
+            self.features = self.features.A
 
-        if not torch.is_tensor(features):
-            features = torch.tensor(features, device=self.device)
+        if not torch.is_tensor(self.features):
+            self.features = torch.tensor(self.features, device=self.device)
 
-        if torch.is_tensor(adj):
-            adj = utils.to_scipy(adj).csr()
+        if torch.is_tensor(self.adj):
+            self.adj = utils.to_scipy(self.adj).csr()
 
-        self.modified_features = features.requires_grad_(bool(self.attack_features))
+        self.modified_features = self.features.requires_grad_(bool(self.attack_features))
 
         target_label = torch.LongTensor([self.labels[target_node]])
         best_wrong_label = torch.LongTensor([(self.logits[target_node].cpu() - 1000 * torch.eye(self.logits.size(1))[target_label]).argmax()])
 
-        self.selfloop_degree = torch.tensor(adj.sum(1).A1 + 1, device=self.device)
+        self.selfloop_degree = torch.tensor(self.adj.sum(1).A1 + 1, device=self.device)
         self.target_label = target_label.to(self.device)
         self.best_wrong_label = best_wrong_label.to(self.device)
-        self.ori_adj = adj
+        self.ori_adj = self.adj
         self.target_node = target_node
         self.direct = direct
 
@@ -137,7 +137,7 @@ class SGAttack(BaseAttack):
 
         structure_perturbations = []
         feature_perturbations = []
-        num_features = features.shape[-1]
+        num_features = self.features.shape[-1]
         for _ in range(self.n_perturbations):
             edge_grad, non_edge_grad, features_grad = self.compute_gradient(subgraph)
             max_structure_score = max_feature_score = 0.
@@ -182,13 +182,13 @@ class SGAttack(BaseAttack):
                 self.modified_features[u, v].data.fill_(1. - self.modified_features[u, v].data)
 
         if structure_perturbations:
-            modified_adj = adj.tolil(copy=True)
+            modified_adj = self.adj.tolil(copy=True)
             row, col = list(zip(*structure_perturbations))
             modified_adj[row, col] = modified_adj[col, row] = 1 - modified_adj[row, col].A
             modified_adj = modified_adj.tocsr(copy=False)
             modified_adj.eliminate_zeros()
         else:
-            modified_adj = adj.copy()
+            modified_adj = self.adj.copy()
 
         self.modified_adj = modified_adj
         self.modified_features = self.modified_features.detach().cpu().numpy()
