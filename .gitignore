@@ -1,0 +1,14 @@
+# Ignore Python compiled files
+__pycache__/
+*.pyc
+
+# Ignore all .DS_Store files (common on macOS)
+.DS_Store
+
+# Ignore all files in the build/ directory
+build/
+
+
+# Ignore all .log files
+*.log
+

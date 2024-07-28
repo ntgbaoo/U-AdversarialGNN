@@ -91,14 +91,14 @@ class FGA(BaseAttack):
 
         modified_adj = self.adj.todense()
         modified_features = self.features.todense()
-        modified_adj, modified_features, labels = utils.to_tensor(modified_adj, modified_features, labels, device=self.device)
+        modified_adj, modified_features, self.labels = utils.to_tensor(modified_adj, modified_features, self.labels, device=self.device)
 
         self.surrogate.eval()
         if verbose == True:
             print('number of pertubations: %s' % self.n_perturbations)
 
         pseudo_labels = self.surrogate.predict().detach().argmax(1)
-        pseudo_labels[self.idx_train] = labels[self.idx_train]
+        pseudo_labels[self.idx_train] = self.labels[self.idx_train]
 
         modified_adj.requires_grad = True
         for i in range(self.n_perturbations):
