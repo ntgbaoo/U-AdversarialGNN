@@ -42,6 +42,7 @@ class NodeSelector:
         (ii) the 10 nodes with lowest margin (but still correctly classified) and
         (iii) 10 nodes with highest degree
         (iv) 10 nodes with lowest degree
+        (v) 10 nodes with random
         '''
 
         target_runner.model.eval()
@@ -60,8 +61,10 @@ class NodeSelector:
         # other = np.random.choice(other, 20, replace=False).tolist()
         degree_values = NodeSelector._calculate_degrees(target_runner.adj,other)
         highest_degree,lowest_degree = NodeSelector._select_node_value_margin(degree_values)
+        remaining = list((set(other) - set(highest_degree)) - set(lowest_degree))
+        other = np.random.choice(remaining, 10, replace=False).tolist()
 
-        return high,low, highest_degree,lowest_degree
+        return high,low, highest_degree,lowest_degree,other
     
     @staticmethod
     def select_node_margin_centrality(target_runner:IModelSupervisor):

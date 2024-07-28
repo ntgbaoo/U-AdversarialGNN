@@ -33,6 +33,7 @@ STEP_LR = "StepLR"
 GAMMA = "gamma"
 
 #PATH
+BEST_CONFIG = "best_config_split_"
 PATH_DATA = "data/"
 PATH_CONFIG_MODEL = "{}configs/models/".format(PATH_DATA)
 PATH_CONFIG_SPLIT = "{}configs/split/".format(PATH_DATA)

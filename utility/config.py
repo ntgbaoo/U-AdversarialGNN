@@ -22,6 +22,8 @@ parser.add_argument('--log_interval', type=int, default=20, help='log interval, 
 parser.add_argument("--train_early_stopping", default=True, help="Apply early stopping for training")
 parser.add_argument("--verbose", default=False, help="Log training and attack process")
 parser.add_argument('--split_state', type=int, default=1024, help='initial state for split')
+parser.add_argument('--num_split', type=int, default=5, help='Number of split')
+
 
 
 

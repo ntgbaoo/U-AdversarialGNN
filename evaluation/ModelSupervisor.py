@@ -27,9 +27,9 @@ from static import *
 
 
 class ModelSupervisor(IModelSupervisor):
-    def __init__(self,data:IData,device = "cpu",train_early_stopping = True,**kwargs) -> None:
+    def __init__(self,data:IData,device = "cpu",seed = 720,train_early_stopping = True,**kwargs) -> None:
         super().__init__()
-
+        set_random(seed)
         degrees = torch.tensor(np.array(data.adj.sum(axis=1)).flatten(),dtype=torch.long)  # Sum of rows (or columns, as it's symmetric)
         degree_dist = torch.bincount(degrees)
         
