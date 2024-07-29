@@ -32,6 +32,10 @@ parser.add_argument('--model', type=str, default='GCN', help='models name')
 parser.add_argument('--in_channels', type=int, default=2, help='Size of each input sample')
 parser.add_argument('--out_channels', type=int, default=None, help='Size of output')
 
+# 4.adversarial
+parser.add_argument('--adversarial', type=str, default='nettack', help='adversarial methods')
+
+
 args = parser.parse_args()
 
 args.output_folder = '{}{}/{}/'.format(PATH_LOG,args.dataset, args.model)

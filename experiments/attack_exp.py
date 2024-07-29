@@ -6,7 +6,7 @@ from scipy.sparse import csr_matrix
 import statistics as stats
 import pandas as pd
 
-def attack_sga(list_node,sgc_surrogate,args,model_config,data,idx_train,idx_val,idx_test,features,adj,labels,budget,seed,attack_structure = True, attack_feature = False):
+def attack_sga(orbit_dict,list_node,sgc_surrogate,args,model_config,data,idx_train,idx_val,idx_test,features,adj,labels,budget,seed,attack_structure = True, attack_feature = False):
     miss = 0
     for node in list_node:
         adversarial = SGAttack(sgc_surrogate, attack_structure=attack_structure, attack_features=attack_feature, device=args.device).to(args.device)
@@ -32,7 +32,7 @@ def attack_sga(list_node,sgc_surrogate,args,model_config,data,idx_train,idx_val,
             miss += 1
     return miss
 
-def attack_nettack(list_node,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,features,adj,labels,budget,seed,attack_structure = True, attack_feature = False):
+def attack_nettack(orbit_dict,list_node,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,features,adj,labels,budget,seed,attack_structure = True, attack_feature = False):
     miss = 0
     for node in list_node:
         adversarial = Nettack(gcn_surrogate, nnodes=data.nnode, attack_structure=attack_structure, attack_features=attack_feature, device=args.device)
@@ -59,7 +59,7 @@ def attack_nettack(list_node,gcn_surrogate,args,model_config,data,idx_train,idx_
             miss += 1
     return miss
 
-def attack_fga(list_node,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,features,adj,labels,budget,seed,attack_structure = True, attack_feature = False):
+def attack_fga(orbit_dict,list_node,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,features,adj,labels,budget,seed,attack_structure = True, attack_feature = False):
     miss = 0
     for node in list_node:
         adversarial = FGA(gcn_surrogate, nnodes=data.nnode, attack_structure=True, attack_features=False, device=args.device).to(args.device)
@@ -86,9 +86,74 @@ def attack_fga(list_node,gcn_surrogate,args,model_config,data,idx_train,idx_val,
             miss += 1
     return miss
 
+def attack_gottack(orbit_dict,list_node,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,features,adj,labels,budget,seed,attack_structure = True, attack_feature = False):
+    miss = 0
+    for node in list_node:
+        adversarial = OrbitAttack(model = gcn_surrogate,orbit_dict = orbit_dict, nnodes=data.nnode, device=args.device).to(args.device)
+        supervisor_adversarial = ModelSupervisor(data,device= args.device,seed= seed,**model_config)
+        supervisor_adversarial.update_split(idx_train,idx_val,idx_test)
+        adversarial_supervisor = AdversarialSupervisor(adversarial = adversarial,
+                                                        model_supervisor = supervisor_adversarial,
+                                                        data = data,
+                                                        surrogate_model = gcn_surrogate,
+                                                        target_nodes = node,
+                                                        attack_structure= attack_structure,
+                                                        attack_feature= attack_feature
+                                                        )
+        nettack_config = {
+            'features':csr_matrix(features),
+            'adj':adj, 
+            'labels':labels,
+            'n_perturbations':budget,
+                
+        }
 
+        success = adversarial_supervisor.attack(node,seed,**nettack_config)
+        if success == 0:
+            miss += 1
+    return miss
 
+def attack_rnd(orbit_dict,list_node,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,features,adj,labels,budget,seed,attack_structure = True, attack_feature = False):
+    miss = 0
+    for node in list_node:        
+        adversarial = RND(device=args.device)
+        supervisor_adversarial = ModelSupervisor(data,device= args.device,seed= seed,**model_config)
+        supervisor_adversarial.update_split(idx_train,idx_val,idx_test)
+        adversarial_supervisor = AdversarialSupervisor(adversarial = adversarial,
+                                                        model_supervisor = supervisor_adversarial,
+                                                        data = data,
+                                                        surrogate_model = gcn_surrogate,
+                                                        target_nodes = node,
+                                                        attack_structure= attack_structure,
+                                                        attack_feature= attack_feature
+                                                        )
         
+        # ori_adj, labels, idx_train, target_node, n_perturbations
+        rnd_config = {
+            'ori_adj':adj, 
+            'labels':labels,
+            'n_perturbations':budget,
+            'idx_train': idx_train,
+                
+        }
+
+        success = adversarial_supervisor.attack(node,seed,**rnd_config)
+        if success == 0:
+            miss += 1
+    return miss
+
+def load_attack(attack_method):
+    if attack_method == SGA_NAME:
+        return attack_sga
+    elif attack_method == NETTACK_NAME:
+        return attack_nettack
+    elif attack_method == FGA_NAME:
+        return attack_fga
+    elif attack_method == GOTTACK_NAME:
+        return attack_gottack
+    elif attack_method == RND_NAME:
+        return attack_rnd
+    
 if __name__ == '__main__':
     import sys
     import os
@@ -111,12 +176,15 @@ if __name__ == '__main__':
     from static import *
     from utility.ConfigHandler import ConfigHandler
     from adversarial_attack.NodeSelector import NodeSelector
+    from adversarial_attack.GOttack.OrbitAttack import OrbitAttack
+
 
 
 
 
     data = DataLoader.load(args.dataset)
     adj, features, labels = data.adj, data.feature, data.label
+    orbit_dict = pd.read_csv("data/orbit/cora_orbit_table.csv")
     rowlist = []
     for budget in range(1,6):
         print("===================Budget {}===================".format(budget))
@@ -145,19 +213,20 @@ if __name__ == '__main__':
                 seed = args.seed +  run_idx
                 set_random(seed)
                 high_margin,low_margin,high_degree,low_degree,other = NodeSelector.select_nodes_margin_degree(surrogate_node_model)
-                miss_high_margin = attack_fga(high_margin,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,
+                attack_function = load_attack(args.adversarial)
+                miss_high_margin = attack_function(orbit_dict,high_margin,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,
                                 features,adj,labels,budget,seed)
                 
-                miss_low_margin = attack_fga(low_margin,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,
+                miss_low_margin = attack_function(orbit_dict,low_margin,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,
                                 features,adj,labels,budget,seed)
                 
-                miss_high_degree = attack_fga(high_degree,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,
+                miss_high_degree = attack_function(orbit_dict,high_degree,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,
                                 features,adj,labels,budget,seed)
                 
-                miss_low_degree = attack_fga(low_degree,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,
+                miss_low_degree = attack_function(orbit_dict,low_degree,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,
                                 features,adj,labels,budget,seed)
                 
-                miss_other = attack_fga(other,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,
+                miss_other = attack_function(orbit_dict,other,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,
                                 features,adj,labels,budget,seed)
                 
                 total_miss = miss_high_margin + miss_low_margin + miss_high_degree + miss_low_degree + miss_other
@@ -181,7 +250,9 @@ if __name__ == '__main__':
     df_result = pd.DataFrame(rowlist,columns=["high_margin","low_margin","high_degree","low_degree","other","total"])
     df_result.index =[1,2,3,4,5]
     print(df_result)
-    df_result.to_csv("results/{}/{}/{}.csv".format(args.model,args.dataset,"fga"))
+    if not os.path.exists("data/results/{}/{}/".format(args.model,args.dataset)):
+        os.makedirs("data/results/{}/{}/".format(args.model,args.dataset))
+    df_result.to_csv("data/results/{}/{}/{}.csv".format(args.model,args.dataset,"rnd"))
         
 
 

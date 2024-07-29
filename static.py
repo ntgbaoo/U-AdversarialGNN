@@ -40,3 +40,10 @@ PATH_CONFIG_SPLIT = "{}configs/split/".format(PATH_DATA)
 PATH_DATASET = "{}dataset".format(PATH_DATA)
 PATH_OUTPUT = "output/"
 PATH_LOG = "{}log/".format(PATH_OUTPUT)
+
+#Adversarial
+NETTACK_NAME = "nettack"
+GOTTACK_NAME = "gottack"
+FGA_NAME= "fga"
+SGA_NAME= "sga"
+RND_NAME = "rnd"
