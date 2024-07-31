@@ -6,6 +6,7 @@ from scipy.sparse import csr_matrix
 import statistics as stats
 import pandas as pd
 
+
 def attack_sga(orbit_dict,list_node,sgc_surrogate,args,model_config,data,idx_train,idx_val,idx_test,features,adj,labels,budget,seed,attack_structure = True, attack_feature = False):
     miss = 0
     for node in list_node:
@@ -177,14 +178,16 @@ if __name__ == '__main__':
     from utility.ConfigHandler import ConfigHandler
     from adversarial_attack.NodeSelector import NodeSelector
     from adversarial_attack.GOttack.OrbitAttack import OrbitAttack
+    from utility.orbit_table_generator import OrbitTableGenerator
 
 
 
+    print("Applying adversarial methods :{} on dataset {} on victim model {}".format(args.adversarial,args.dataset,args.model))
 
 
     data = DataLoader.load(args.dataset)
     adj, features, labels = data.adj, data.feature, data.label
-    orbit_dict = pd.read_csv("data/orbit/cora_orbit_table.csv")
+    orbit_dict = OrbitTableGenerator(args.dataset).generate_orbit_table()
     rowlist = []
     for budget in range(1,6):
         print("===================Budget {}===================".format(budget))
@@ -205,8 +208,10 @@ if __name__ == '__main__':
             surrogate_node_model.update_split(idx_train,idx_val,idx_test)
             
             surrogate_node_model.train_model()
-            # sgc_surrogate = SurrogateLoader.load_surrogate(data,idx_train, idx_val,device = args.device,model = 'sgc')
-            gcn_surrogate = SurrogateLoader.load_surrogate(data,idx_train, idx_val,device = args.device,model = 'gcn')
+            if args.adversarial == SGA_NAME:
+                surrogate_model = SurrogateLoader.load_surrogate(data,idx_train, idx_val,device = args.device,model = 'sgc')
+            else:
+                surrogate_model = SurrogateLoader.load_surrogate(data,idx_train, idx_val,device = args.device,model = 'gcn')
 
             
             for run_idx in range(3):
@@ -214,19 +219,19 @@ if __name__ == '__main__':
                 set_random(seed)
                 high_margin,low_margin,high_degree,low_degree,other = NodeSelector.select_nodes_margin_degree(surrogate_node_model)
                 attack_function = load_attack(args.adversarial)
-                miss_high_margin = attack_function(orbit_dict,high_margin,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,
+                miss_high_margin = attack_function(orbit_dict,high_margin,surrogate_model,args,model_config,data,idx_train,idx_val,idx_test,
                                 features,adj,labels,budget,seed)
                 
-                miss_low_margin = attack_function(orbit_dict,low_margin,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,
+                miss_low_margin = attack_function(orbit_dict,low_margin,surrogate_model,args,model_config,data,idx_train,idx_val,idx_test,
                                 features,adj,labels,budget,seed)
                 
-                miss_high_degree = attack_function(orbit_dict,high_degree,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,
+                miss_high_degree = attack_function(orbit_dict,high_degree,surrogate_model,args,model_config,data,idx_train,idx_val,idx_test,
                                 features,adj,labels,budget,seed)
                 
-                miss_low_degree = attack_function(orbit_dict,low_degree,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,
+                miss_low_degree = attack_function(orbit_dict,low_degree,surrogate_model,args,model_config,data,idx_train,idx_val,idx_test,
                                 features,adj,labels,budget,seed)
                 
-                miss_other = attack_function(orbit_dict,other,gcn_surrogate,args,model_config,data,idx_train,idx_val,idx_test,
+                miss_other = attack_function(orbit_dict,other,surrogate_model,args,model_config,data,idx_train,idx_val,idx_test,
                                 features,adj,labels,budget,seed)
                 
                 total_miss = miss_high_margin + miss_low_margin + miss_high_degree + miss_low_degree + miss_other
@@ -252,7 +257,7 @@ if __name__ == '__main__':
     print(df_result)
     if not os.path.exists("data/results/{}/{}/".format(args.model,args.dataset)):
         os.makedirs("data/results/{}/{}/".format(args.model,args.dataset))
-    df_result.to_csv("data/results/{}/{}/{}.csv".format(args.model,args.dataset,"rnd"))
+    df_result.to_csv("data/results/{}/{}/{}.csv".format(args.model,args.dataset,args.adversarial))
         
 
 

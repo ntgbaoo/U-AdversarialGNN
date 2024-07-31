@@ -6,7 +6,7 @@ for model in "${victim_models[@]}"
 do
    for adversarial in "${adversarial_methods[@]}"
    do
-        echo "python \experiments\attack_exp.py --model=$model --adversarial==$adversarial --dataset==$dataset"
-        # or do whatever with individual element of the array
+        echo "python experiments/attack_exp.py --model=$model --adversarial=$adversarial --dataset=$dataset"
+        python experiments/attack_exp.py --model=$model --adversarial=$adversarial --dataset=$dataset
    done
 done
