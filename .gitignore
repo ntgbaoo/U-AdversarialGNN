@@ -12,3 +12,6 @@ build/
 # Ignore all .log files
 *.log
 
+#Data folder
+data/dataset/
+
