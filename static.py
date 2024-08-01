@@ -1,4 +1,3 @@
-
 #Model set-up
 DEVICE = "device"
 IN_CHANNEL = "in_channel"
@@ -47,3 +46,4 @@ GOTTACK_NAME = "gottack"
 FGA_NAME= "fga"
 SGA_NAME= "sga"
 RND_NAME = "rnd"
+

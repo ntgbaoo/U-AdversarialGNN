@@ -15,3 +15,5 @@ build/
 #Data folder
 data/dataset/
 
+#Output log
+output/log/

@@ -6,8 +6,11 @@ from static import *
 
 class ConfigHandler:
     @staticmethod
-    def load_model_config(model_type="GCN",config_name = "default",dataset = "cora"):
-        file_path = '{}{}/{}/{}.yaml'.format(PATH_CONFIG_MODEL,model_type,dataset,config_name)
+    def load_model_config(model_type="GCN",config_name = "default",dataset = None):
+        if dataset is None:
+            file_path = '{}{}/{}.yaml'.format(PATH_CONFIG_MODEL,model_type,config_name)
+        else:
+            file_path = '{}{}/{}/{}.yaml'.format(PATH_CONFIG_MODEL,model_type,dataset,config_name)
         with open(file_path,'r') as file:
             data = yaml.safe_load(file)
         return data
