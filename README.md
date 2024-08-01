@@ -30,7 +30,12 @@ pip install deeprobust==0.2.9
 pip install wandb
 ```
 
-5. Test CUDA support
+5. install OGB
+```
+pip install ogb
+```
+
+6. Test CUDA support
 
 ```
 python test_GPU.py
@@ -38,13 +43,6 @@ python test_GPU.py
 
 
 *Expected result:* **True** *if you have GPU(s) available*
-
-6. Test DeepRobust
-
-```
-cd DeepRobust
-python examples/graph/test_gcn_jaccard.py --dataset cora
-```
 
 7. Install dependencies for Gradient-free Graph Advantage Actor Critic (G2A2C)
 
@@ -55,7 +53,7 @@ pip install  dgl -f https://data.dgl.ai/wheels/cu121/repo.html
 pip install pyro-ppl==1.8.1 pydantic
 ```
 
-8. Install packages for performing hyper-parameters tuniing in parallel
+8. Install packages for performing hyper-parameters tuning in parallel
 
 ```
 pip install tensorboard ray==2.10.0 
