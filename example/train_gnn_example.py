@@ -28,8 +28,12 @@ if __name__ == '__main__':
                     args.seed) + '_log.txt')
     
     data = DataLoader.load(args.dataset)
-    config = ConfigHandler.load_model_config(model_type="GCN",config_name="default")
-    runner = ModelSupervisor(data,device=args.device,**config)
+    config = ConfigHandler.load_model_config(model_type="GIN",config_name="best_config_split_0",dataset="cora")
+    model_config = config['model_config']
+    split_config = config['split']
+    runner = ModelSupervisor(data,device=args.device,**model_config)
+    idx_train,idx_val,idx_test = split_config['idx_train'],split_config['idx_val'],split_config['idx_test']
+    runner.update_split(idx_train,idx_val,idx_test)
     runner.train_model()
 
     train_acc, val_acc, test_acc = runner.get_prediction_accuracy()

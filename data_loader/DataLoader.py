@@ -3,13 +3,15 @@ import sys
 import os
 from deeprobust.graph.data import Dataset, Dpr2Pyg
 import numpy as np
+from ogb.nodeproppred import PygNodePropPredDataset
+
 
 
 
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from data_loader.IData import IData
-from data_loader.utils import sparse_adjacency_to_edge_list
+from data_loader.utils import sparse_adjacency_to_edge_list,edge_list_to_sparse_adjacency
 from data_loader.Data import Data
 from data_loader.IDataLoader import IDataLoader
 from data_loader.Splitter import Splitter
@@ -33,10 +35,31 @@ class DataLoader(IDataLoader):
                         idx_train = orgin_data.idx_train,
                         idx_val = orgin_data.idx_val,
                         idx_test = orgin_data.idx_test)
+        elif dataset in ['ogbn-products','ogbn-proteins','ogbn-arxiv','ogbn-papers100M','ogbn-mag']:
+            ogb_data = PygNodePropPredDataset(name = dataset, root = PATH_DATASET)
+            split_idx  = ogb_data.get_idx_split()
+            train_idx, valid_idx, test_idx = split_idx["train"], split_idx["valid"], split_idx["test"]
+
+            labels = np.array([int(tensor) for tensor in ogb_data[0].y])
+            data = Data(
+                        dataset_name= dataset,
+                        edgelist = ogb_data.edge_index.numpy(),
+                        adj=edge_list_to_sparse_adjacency(ogb_data.edge_index.numpy()),
+                        feature = ogb_data[0].x.numpy(),
+                        label = labels,
+                        idx_train = train_idx,
+                        idx_val = valid_idx,
+                        idx_test = test_idx)
         else:
             raise Exception("Unsupport datasets")
         return data
 
 if __name__ == '__main__':
-    dataset = DataLoader.load("cora")     
+    dataset = DataLoader.load("ogbn-arxiv")    
+    # dataset = PygNodePropPredDataset(name = "ogbn-arxiv", root = PATH_DATASET)
+    # labels = [int(tensor) for tensor in dataset[0].y]
+    # print(labels)
+ 
+
+
     

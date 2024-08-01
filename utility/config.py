@@ -22,6 +22,8 @@ parser.add_argument('--log_interval', type=int, default=20, help='log interval, 
 parser.add_argument("--train_early_stopping", default=True, help="Apply early stopping for training")
 parser.add_argument("--verbose", default=False, help="Log training and attack process")
 parser.add_argument('--split_state', type=int, default=1024, help='initial state for split')
+parser.add_argument('--num_split', type=int, default=5, help='Number of split')
+
 
 
 
@@ -29,6 +31,10 @@ parser.add_argument('--split_state', type=int, default=1024, help='initial state
 parser.add_argument('--model', type=str, default='GCN', help='models name')
 parser.add_argument('--in_channels', type=int, default=2, help='Size of each input sample')
 parser.add_argument('--out_channels', type=int, default=None, help='Size of output')
+
+# 4.adversarial
+parser.add_argument('--adversarial', type=str, default='nettack', help='adversarial methods')
+
 
 args = parser.parse_args()
 

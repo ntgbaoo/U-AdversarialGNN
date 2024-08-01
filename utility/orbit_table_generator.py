@@ -1,19 +1,20 @@
 import os
 import numpy as np
 import pandas as pd
+import os
+import sys
 
 
 class OrbitTableGenerator:
     def __init__(self,dataset):
         self.dataset = dataset
-        self.filepath = './dataset/orbit/'
+        self.filepath = 'data/orbit/'
 
     def generate_orbit_table(self):
-        if self.dataset == 'cora':
-            return self.generate_orbit_tables_from_sratch()
-        elif self.dataset == 'citeseer':
-            return self.generate_orbit_tables_from_sratch()
-        elif self.dataset == 'polblogs':
+        if self.dataset in['cora','citeseer','polblogs','pubmed'] :
+            print("Loaded existing orbit table")
+            if os.path.exists("{}{}_orbit_table.csv".format(self.filepath,self.dataset)):
+                return pd.read_csv("{}{}_orbit_table.csv".format(self.filepath,self.dataset))
             return self.generate_orbit_tables_from_sratch()
         else:
             raise Exception("Unsupport dataset")
@@ -42,6 +43,7 @@ class OrbitTableGenerator:
 
         my_array = np.array(mylist)
         df_2d = pd.DataFrame(my_array, columns=['node_number', 'Orbit_type_I', 'Orbit_type_II', 'two_Orbit_type'])
+        df_2d.to_csv("{}{}_orbit_table.csv".format(self.filepath,self.dataset))
         return df_2d
 
 def generate_orbit_tables_from_count(data_list,nodes_list):
@@ -62,3 +64,6 @@ def generate_orbit_tables_from_count(data_list,nodes_list):
     my_array = np.array(mylist)
     df_2d = pd.DataFrame(my_array, columns=['node_number', 'Orbit_type_I', 'Orbit_type_II', 'two_Orbit_type'])
     return df_2d
+
+if __name__ == "__main__":
+    OrbitTableGenerator("citeseer").generate_orbit_table()

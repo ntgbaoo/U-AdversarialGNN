@@ -1,4 +1,3 @@
-
 #Model set-up
 DEVICE = "device"
 IN_CHANNEL = "in_channel"
@@ -33,9 +32,18 @@ STEP_LR = "StepLR"
 GAMMA = "gamma"
 
 #PATH
+BEST_CONFIG = "best_config_split_"
 PATH_DATA = "data/"
 PATH_CONFIG_MODEL = "{}configs/models/".format(PATH_DATA)
 PATH_CONFIG_SPLIT = "{}configs/split/".format(PATH_DATA)
 PATH_DATASET = "{}dataset".format(PATH_DATA)
 PATH_OUTPUT = "output/"
 PATH_LOG = "{}log/".format(PATH_OUTPUT)
+
+#Adversarial
+NETTACK_NAME = "nettack"
+GOTTACK_NAME = "gottack"
+FGA_NAME= "fga"
+SGA_NAME= "sga"
+RND_NAME = "rnd"
+
