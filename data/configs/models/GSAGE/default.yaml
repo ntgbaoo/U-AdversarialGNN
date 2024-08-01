@@ -1,0 +1,11 @@
+model: 'GSAGE'
+lr: 0.01
+optimizer: "ADAM"
+num_layers: 2
+hidden_unit: 8
+aggr: "add"
+num_epochs: 500
+patience: 40
+drop_out: 0.5
+weight_decay: 0.0005
+
