@@ -40,4 +40,4 @@ class SurrogateLoader:
 
 if __name__ == '__main__':
     data = DataLoader.load('cora')
-    LoadSurrogateModel.load_surrogate(data,data.idx_train,data.idx_val,device = 'cuda',model = 'sgc')
+    # LoadSurrogateModel.load_surrogate(data,data.idx_train,data.idx_val,device = 'cuda',model = 'sgc')

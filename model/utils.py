@@ -2,6 +2,8 @@ from torch_geometric.nn.models.basic_gnn import GCN,GIN,GraphSAGE,PNA,GAT,EdgeCN
 import sys
 import os
 import warnings
+from torch_geometric.nn import aggr as torch_aggr
+
 # Hide all warnings
 warnings.filterwarnings("ignore")
     
@@ -17,6 +19,9 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
     nlayers = kwargs.get(NUM_LAYERS,2)
     drop_out = kwargs.get(DROPOUT,0)
     aggr = kwargs.get(AGGREGATION,"sum")
+
+    if aggr is "median":
+        aggr = torch_aggr.MedianAggregation()
     
     assert model_name is not None, "Please define model"
     assert in_channel is not None, "Please defne in_channel"
