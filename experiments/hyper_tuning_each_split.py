@@ -27,7 +27,7 @@ if __name__ == "__main__":
     data.init_train_test_splits(**split_config)
     for split_idx in range(5):
         idx_train,idx_val,idx_test = data.get_split(split_idx)
-        hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="toy_grid")
+        hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
         modelSelector = ModelSelector(
             config_dict= hyper_grid_config,
             idx_train=idx_train,
