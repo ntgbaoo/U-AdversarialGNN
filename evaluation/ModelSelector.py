@@ -35,7 +35,7 @@ class ModelSelector:
 
         self.all_config_results_dict = {}
         for agrr in self.all_aggrs:
-            self.best_results_dict[agrr] = [] 
+            self.all_config_results_dict[agrr] = [] 
         self.device = device
 
     def process_model_selection(self,seed = 720):
@@ -50,7 +50,6 @@ class ModelSelector:
         print("\n")
 
     def get_best_config(self):
-        # print(max(self.results))
         best_config_all_aggrs = {}
         for aggr in self.all_aggrs:
             best_config = max(self.all_config_results_dict[aggr],key=lambda x:x['perfomance'])

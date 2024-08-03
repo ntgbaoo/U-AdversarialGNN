@@ -17,12 +17,13 @@ class ConfigHandler:
     
     @staticmethod
     def save_model_config(config,config_name,model_type = "GCN",data="cora",split=None):
-        file_path = '{}{}/{}/{}/{}.yaml'.format(PATH_CONFIG_MODEL,model_type,data,split,config_name)
-        if not os.path.exists('{}{}/{}/'.format(PATH_CONFIG_MODEL,model_type,data)):
-            os.makedirs('{}{}/{}/'.format(PATH_CONFIG_MODEL,model_type,data))
-        with open(file_path,'w') as file:
+        file_path = '{}{}/{}/split_{}/'.format(PATH_CONFIG_MODEL,model_type,data,split)
+
+        if not os.path.exists(file_path):
+            os.makedirs(file_path)
+        with open('{}{}.yaml'.format(file_path,config_name),'w') as file:
             yaml.dump(config,file)
-        print("INFO: save model config successfully at {}".format(file_path))
+        print("INFO: save model config successfully at {}{}.yaml".format(file_path,config_name))
 
     @staticmethod
     def load_split_config(config_name = "default"):

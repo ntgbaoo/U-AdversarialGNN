@@ -45,7 +45,7 @@ if __name__ == '__main__':
                     prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
                         args.seed) + '_log.txt')
         
-    orbit_dict = pd.read_csv("../data/orbit/cora_orbit_table.csv")
+    orbit_dict = pd.read_csv("data/orbit/cora_orbit_table.csv")
 
     
     #Set up surrogate model
