@@ -1,72 +1,56 @@
-import timeit
-import torch.nn.functional as F
-from torch_geometric.datasets import Planetoid
+import os.path as osp
+
+import torch
 import torch_geometric.transforms as T
-from scipy.sparse import csr_matrix
-import statistics as stats
-import pandas as pd
+from ogb.nodeproppred import PygNodePropPredDataset
+import os 
+import sys
 
-if __name__ == '__main__':
-    import sys
-    import os
-    import warnings
-    # Hide all warnings
-    warnings.filterwarnings("ignore")
-    
-    # Edit path to import from different module
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
-    from adversarial_attack.SurrogateLoader import SurrogateLoader
-    from utility.config import args
-    from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-    from adversarial_attack.utils import select_nodes,select_nodes_margin
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-    from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
-    from evaluation.ModelSupervisor import ModelSupervisor
+from GreatX.greatx.attack.targeted import SGAttack
+from GreatX.greatx.nn.models import SGC,GCN
+from GreatX.greatx.training import Trainer
+from GreatX.greatx.training.callbacks import ModelCheckpoint
+from GreatX.greatx.utils import BunchDict, mark
+from adversarial_attack.utils import select_nodes,select_nodes_margin
 
-    from data_loader.DataLoader import DataLoader
-    from static import *
-    from utility.ConfigHandler import ConfigHandler
-    from adversarial_attack.NodeSelector import NodeSelector
-    from adversarial_attack.GOttack.OrbitAttack import OrbitAttack
-    from utility.orbit_table_generator import OrbitTableGenerator
-    from adversarial_attack.Nettack import Nettack
-    from adversarial_attack.SGA import SGAttack
-    from adversarial_attack.Nettack import Nettack
+root = 'data/dataset/'
+dataset = PygNodePropPredDataset(root=root, name='ogbn-arxiv',
+                                 transform=T.ToUndirected())
+data = dataset[0]
+splits = dataset.get_idx_split()
+splits = BunchDict(train_nodes=splits['train'], val_nodes=splits['valid'],
+                   test_nodes=splits['test'])
+
+num_features = data.x.size(-1)
+num_classes = data.y.max().item() + 1
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-    args.dataset ="ogbn-arxiv"
-    data = DataLoader.load(args.dataset)
-    
-    gcn_config = ConfigHandler.load_model_config()
-    
-    #Set up surrogate model
-    supervisor_surrogate = ModelSupervisor(data,device=args.device,**gcn_config)
-    supervisor_surrogate.train_model()
-
-    adj, features, labels = data.adj, data.feature, data.label
-    idx_train, idx_val, idx_test = data.idx_train, data.idx_val, data.idx_test
+target = 1  # target node to attack
+target_label = data.y[target].item()
 
 
-    #Select target nodes
-    high,low,other = NodeSelector.select_nodes_margin(supervisor_surrogate)    
-    node_list = high + low  + other
-    
+trainer_before = Trainer(SGC(num_features, num_classes), device=device, lr=0.1,
+                         weight_decay=1e-5)
+ckp = ModelCheckpoint('model_before.pth', monitor='val_acc')
+trainer_before.fit(data, mask=(splits.train_nodes, splits.val_nodes),
+                   callbacks=[ckp])
 
-    gcn_surrogate = SurrogateLoader.load_surrogate(data,idx_train, idx_val,device = args.device,model='sgc')
+trainer_before.cache_clear()
+attacker = SGAttack(data, device=device)
+attacker.setup_surrogate(trainer_before.model)
+attacker.reset()
+attacker.attack(target)
 
-    adversarial = SGAttack(model = gcn_surrogate, features = csr_matrix(features), adj = adj,
-                           labels = labels, n_perturbations = 1, nnodes=data.nnode, attack_structure=True, attack_features=False, device=args.device)
-    supervisor_adversarial = ModelSupervisor(data,device= args.device,**gcn_config)
-    adversarial_supervisor = AdversarialSupervisor(adversarial = adversarial,
-                                                           model_supervisor = supervisor_adversarial,
-                                                           data = data,
-                                                           surrogate_model = gcn_surrogate,
-                                                           target_nodes = node_list[0],
-                                                           attack_structure= True,
-                                                           attack_feature= False
-                                                           )
-    
-    classified = adversarial_supervisor.attack(node_list[0],720)
-    print(classified)
 
+trainer_after = Trainer(GCN(num_features, num_classes), device=device)
+ckp = ModelCheckpoint('model_after.pth', monitor='val_acc')
+trainer_after.fit(attacker.data(), mask=(splits.train_nodes, splits.val_nodes),
+                  callbacks=[ckp])
+trainer_after.cache_clear()
+output = trainer_after.predict(attacker.data(), mask=target)
+print("After poisoning attack:")
+print(mark(output, target_label))

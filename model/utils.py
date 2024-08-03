@@ -89,6 +89,4 @@ if __name__ == "__main__":
         OUT_CHANNEL:1,
     }
 
-    load_model_v2(**config_dict)
-
 
