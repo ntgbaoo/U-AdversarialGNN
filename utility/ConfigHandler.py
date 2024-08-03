@@ -6,18 +6,18 @@ from static import *
 
 class ConfigHandler:
     @staticmethod
-    def load_model_config(model_type="GCN",config_name = "default",dataset = None):
+    def load_model_config(model_type="GCN",config_name = "default",dataset = None,split = None):
         if dataset is None:
             file_path = '{}{}/{}.yaml'.format(PATH_CONFIG_MODEL,model_type,config_name)
         else:
-            file_path = '{}{}/{}/{}.yaml'.format(PATH_CONFIG_MODEL,model_type,dataset,config_name)
+            file_path = '{}{}/{}/{}/{}.yaml'.format(PATH_CONFIG_MODEL,model_type,dataset,split,config_name)
         with open(file_path,'r') as file:
             data = yaml.safe_load(file)
         return data
     
     @staticmethod
-    def save_model_config(config,config_name,model_type = "GCN",data="cora"):
-        file_path = '{}{}/{}/{}.yaml'.format(PATH_CONFIG_MODEL,model_type,data,config_name)
+    def save_model_config(config,config_name,model_type = "GCN",data="cora",split=None):
+        file_path = '{}{}/{}/{}/{}.yaml'.format(PATH_CONFIG_MODEL,model_type,data,split,config_name)
         if not os.path.exists('{}{}/{}/'.format(PATH_CONFIG_MODEL,model_type,data)):
             os.makedirs('{}{}/{}/'.format(PATH_CONFIG_MODEL,model_type,data))
         with open(file_path,'w') as file:

@@ -140,6 +140,7 @@ class SGAttack(BaseAttack):
         num_features = self.features.shape[-1]
         for _ in range(self.n_perturbations):
             edge_grad, non_edge_grad, features_grad = self.compute_gradient(subgraph)
+            print(edge_grad,non_edge_grad,features_grad)
             max_structure_score = max_feature_score = 0.
 
             if self.attack_structure:

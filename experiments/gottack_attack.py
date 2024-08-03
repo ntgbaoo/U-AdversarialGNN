@@ -26,7 +26,8 @@ if __name__ == '__main__':
     from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
     from evaluation.ModelSupervisor import ModelSupervisor
     from adversarial_attack.GOttack.OrbitAttack import OrbitAttack
-    from utility.util import load_model_config
+    from utility.ConfigHandler import ConfigHandler
+
 
 
     from data_loader.DataLoader import DataLoader
@@ -37,7 +38,7 @@ if __name__ == '__main__':
     set_random(args.seed)
     
     data = DataLoader.load(args.dataset)
-    gcn_config = load_model_config()
+    gcn_config = ConfigHandler.load_model_config(model_type="GCN")
     
     if args.verbose:
         init_logger(

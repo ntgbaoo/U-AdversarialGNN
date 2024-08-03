@@ -23,6 +23,7 @@ class ModelSelector:
                  device = 'cpu'
                  ) -> None:
         self.model_name = config_dict.get("model")
+        self.all_aggrs = config_dict.get(AGGREGATION)
         self.config_dict = config_dict
         self.grid_generator = Grid(self.config_dict)
         self.all_configs = self.grid_generator.init_grid()
@@ -31,20 +32,32 @@ class ModelSelector:
         self.idx_test = idx_test
         self.data = data
         self.results = [0]*len(self.all_configs)
+
+        self.all_config_results_dict = {}
+        for agrr in self.all_aggrs:
+            self.best_results_dict[agrr] = [] 
         self.device = device
 
     def process_model_selection(self,seed = 720):
         counter = 1
         print("Finding the best configuration over {} configurataions".format(len(self.all_configs)))
         for index,config in enumerate(self.all_configs):
-            self.results[index] = self._run_model_on_config(config,seed)
+            aggre_type = config.get(AGGREGATION)
+            config_perf = self._run_model_on_config(config,seed)
+            self.all_config_results_dict[aggre_type].append({"config_idx": index,"perfomance": config_perf})
             print(f'\rINFO : finished {counter}/{len(self.all_configs)}', end='')
             counter +=1
         print("\n")
 
     def get_best_config(self):
-        print(max(self.results))
-        return self.all_configs[self.results.index(max(self.results))]
+        # print(max(self.results))
+        best_config_all_aggrs = {}
+        for aggr in self.all_aggrs:
+            best_config = max(self.all_config_results_dict[aggr],key=lambda x:x['perfomance'])
+            best_config_all_aggrs[aggr] = best_config
+        
+        best_config = max(best_config_all_aggrs.values(),key=lambda x:x['perfomance'])
+        return best_config_all_aggrs,best_config
     
     def _run_model_on_config(self,config,seed):
         set_random(seed)
@@ -55,13 +68,31 @@ class ModelSelector:
         return val_acc
     
     def save_config(self,split_index):
-        best_config = {
+        best_config_all_aggrs,best_config = self.get_best_config()
+        for aggr in self.all_aggrs:
+            aggr_best_config = {
+                "split" :{
+                    IDX_TRAIN : self.idx_train.tolist(),
+                    IDX_VAL : self.idx_val.tolist(),
+                    IDX_TEST : self.idx_test.tolist()
+                },
+                
+                "model_config":self.all_configs[best_config_all_aggrs[aggr]['config_idx']],
+                "performance":best_config_all_aggrs[aggr]['perfomance']
+            }
+            ConfigHandler.save_model_config(aggr_best_config,"{}_best_config".format(aggr),model_type=self.model_name,data=self.data.dataset_name,split=split_index)
+
+        best_config_dict = {
             "split" :{
-                IDX_TRAIN : self.idx_train.tolist(),
-                IDX_VAL : self.idx_val.tolist(),
-                IDX_TEST : self.idx_test.tolist()
-            },
-            
-            "model_config":self.get_best_config()
-        }
-        ConfigHandler.save_model_config(best_config,"best_config_split_{}".format(split_index),model_type=self.model_name,data=self.data.dataset_name)
+                    IDX_TRAIN : self.idx_train.tolist(),
+                    IDX_VAL : self.idx_val.tolist(),
+                    IDX_TEST : self.idx_test.tolist()
+                },
+                
+                "model_config":self.all_configs[best_config['config_idx']],
+                "performance":best_config['perfomance']
+        }    
+        ConfigHandler.save_model_config(best_config_dict,"best_config",model_type=self.model_name,data=self.data.dataset_name,split=split_index)
+
+        
+

@@ -1,6 +1,9 @@
 model: 'GSAGE'
 aggr: 
-  - "add"
+  - "sum"
+  - "mean"
+  - "max"
+  - "median"
 num_layers:
   - 2
   - 3

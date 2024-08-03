@@ -18,7 +18,7 @@ if __name__ == '__main__':
     from utility.ConfigHandler import ConfigHandler
     from static import *
 
-    args.dataset = "cora"
+    args.dataset = "ogbn-arxiv"
     args.seed = 710
     set_random(args.seed)
 
@@ -28,12 +28,12 @@ if __name__ == '__main__':
                     args.seed) + '_log.txt')
     
     data = DataLoader.load(args.dataset)
-    config = ConfigHandler.load_model_config(model_type="GIN",config_name="best_config_split_0",dataset="cora")
-    model_config = config['model_config']
-    split_config = config['split']
+    model_config = ConfigHandler.load_model_config(model_type="GCN")
+    # model_config = config['model_config']
+    # split_config = config['split']
     runner = ModelSupervisor(data,device=args.device,**model_config)
-    idx_train,idx_val,idx_test = split_config['idx_train'],split_config['idx_val'],split_config['idx_test']
-    runner.update_split(idx_train,idx_val,idx_test)
+    # idx_train,idx_val,idx_test = split_config['idx_train'],split_config['idx_val'],split_config['idx_test']
+    # runner.update_split(idx_train,idx_val,idx_test)
     runner.train_model()
 
     train_acc, val_acc, test_acc = runner.get_prediction_accuracy()
