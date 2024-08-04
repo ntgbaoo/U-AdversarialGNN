@@ -53,7 +53,7 @@ for budget in range(1,6):
         miss = [0,0]
         node_select_model = Trainer(GCN(num_features, num_classes), device=device)
         target_nodes_list = select_nodes_margin(node_select_model,data,splits.test_nodes,data.y)
-
+        
         for target_node in target_nodes_list:
 
             attacker_sga.setup_surrogate(surrogate_model.model)
