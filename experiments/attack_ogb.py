@@ -8,6 +8,7 @@ import sys
 import numpy as np
 import statistics as stats
 import pandas as pd
+import timeit
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -15,9 +16,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from GreatX.greatx.attack.targeted import SGAttack,Nettack,RandomAttack
 from GreatX.greatx.nn.models import SGC,GCN
 from GreatX.greatx.training import Trainer
-from GreatX.greatx.training.callbacks import ModelCheckpoint
 from GreatX.greatx.utils import BunchDict, mark
 from adversarial_attack.utils import select_nodes_margin
+
 
 root = 'data/dataset/'
 dataset = PygNodePropPredDataset(root=root, name='ogbn-arxiv',
@@ -45,22 +46,24 @@ surrogate_model.cache_clear()
 attacker_sga = SGAttack(data, device=device)
 attacker_rnd = RandomAttack(data,device=device)
 rowlist = []
+time_rowlist = []
 for budget in range(1,6):
     row = []
-    budget_result = {'sga':[],'rnd':[]}
+    time_row = []
+    budget_result = {'sga':[],'rnd':[],'time_sga':[],'time_rnd':[]}
 
     for i in range(5):
         miss = [0,0]
         node_select_model = Trainer(GCN(num_features, num_classes), device=device)
         target_nodes_list = select_nodes_margin(node_select_model,data,splits.test_nodes,data.y)
-        
+        start = timeit.default_timer()
         for target_node in target_nodes_list:
 
             attacker_sga.setup_surrogate(surrogate_model.model)
             attacker_sga.reset()
-            attacker_rnd.reset()
+            
             attacker_sga.attack(target_node,num_budgets=budget)
-            attacker_rnd.attack(target_node,num_budgets=budget)
+            attacker_sga.set_max_perturbations(budget)
 
             #SGA
             trainer_after = Trainer(GCN(num_features, num_classes), device=device)
@@ -70,6 +73,18 @@ for budget in range(1,6):
             if torch.argmax(output).item() != data.y[target_node]:
                 miss[0] += 1
 
+            if torch.argmax(output).item() != data.y[target_node]:
+                miss[1] += 1
+        duration = timeit.default_timer() - start
+        budget_result['time_sga'].append(duration)
+
+        start = timeit.default_timer()
+        for target_node in target_nodes_list:
+            attacker_rnd.reset()
+            attacker_rnd.attack(target_node,num_budgets=budget)
+            attacker_rnd.set_max_perturbations(budget)
+
+            
             #RND
             trainer_after = Trainer(GCN(num_features, num_classes), device=device)
             trainer_after.fit(attacker_rnd.data(), mask=(splits.train_nodes, splits.val_nodes),verbose = False)
@@ -77,6 +92,10 @@ for budget in range(1,6):
             output = trainer_after.predict(attacker_rnd.data(), mask=target_node)
             if torch.argmax(output).item() != data.y[target_node]:
                 miss[1] += 1
+        
+        duration = timeit.default_timer() - start
+        budget_result['time_rnd'].append(duration)
+
         miss = np.array(miss)  
         miss = miss/40
     
@@ -84,12 +103,19 @@ for budget in range(1,6):
         budget_result['rnd'].append(miss[1])
     row.append("{:.3f},{:.3f}".format(stats.mean(budget_result['sga']), stats.stdev(budget_result['sga'])))
     row.append("{:.3f},{:.3f}".format(stats.mean(budget_result['rnd']), stats.stdev(budget_result['rnd'])))
+    time_row.append(round(stats.mean(budget_result['time_sga'])))
+    time_row.append(round(stats.mean(budget_result['time_rnd'])))
     
     rowlist.append(row)
+    time_rowlist.append(time_row)
 df_result = pd.DataFrame(rowlist,columns=['sga','rnd'])
+df_time = pd.DataFrame(time_rowlist,columns=['sga','rnd'])
 df_result.index = [1,2,3,4,5,6]
+df_time.index = [1,2,3,4,5,6]
+print(df_time)
 print(df_result)
 df_result.to_csv("arxiv_sga_rnd.csv")
+df_result.to_dict("arxiv_sga_rnd_time.csv")
     
     
 
