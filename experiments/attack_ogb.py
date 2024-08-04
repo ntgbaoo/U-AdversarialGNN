@@ -61,9 +61,9 @@ for budget in range(1,6):
 
             attacker_sga.setup_surrogate(surrogate_model.model)
             attacker_sga.reset()
-            
-            attacker_sga.attack(target_node,num_budgets=budget)
             attacker_sga.set_max_perturbations(budget)
+
+            attacker_sga.attack(target_node,num_budgets=budget)
 
             #SGA
             trainer_after = Trainer(GCN(num_features, num_classes), device=device)
@@ -81,10 +81,9 @@ for budget in range(1,6):
         start = timeit.default_timer()
         for target_node in target_nodes_list:
             attacker_rnd.reset()
-            attacker_rnd.attack(target_node,num_budgets=budget)
             attacker_rnd.set_max_perturbations(budget)
+            attacker_rnd.attack(target_node,num_budgets=budget)
 
-            
             #RND
             trainer_after = Trainer(GCN(num_features, num_classes), device=device)
             trainer_after.fit(attacker_rnd.data(), mask=(splits.train_nodes, splits.val_nodes),verbose = False)
