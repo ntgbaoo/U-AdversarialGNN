@@ -6,7 +6,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from evaluation.Grid import Grid
 from evaluation.ModelSupervisor import ModelSupervisor
 from data_loader.IData import IData
-from adversarial_attack.utils import select_nodes
 from utility.util import set_random
 from utility.ConfigHandler import ConfigHandler
 from static import *
@@ -43,7 +42,11 @@ class ModelSelector:
         print("Finding the best configuration over {} configurataions".format(len(self.all_configs)))
         for index,config in enumerate(self.all_configs):
             aggre_type = config.get(AGGREGATION)
-            config_perf = self._run_model_on_config(config,seed)
+            try:
+                config_perf = self._run_model_on_config(config,seed)
+            except Exception as e:
+                print("WARNING: can't process config{}".format(config))
+                config_perf = -1
             self.all_config_results_dict[aggre_type].append({"config_idx": index,"perfomance": config_perf})
             print(f'\rINFO : finished {counter}/{len(self.all_configs)}', end='')
             counter +=1
@@ -94,4 +97,5 @@ class ModelSelector:
         ConfigHandler.save_model_config(best_config_dict,"best_config",model_type=self.model_name,data=self.data.dataset_name,split=split_index)
 
         
+
 

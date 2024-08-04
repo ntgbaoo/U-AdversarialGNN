@@ -21,6 +21,10 @@ from utility.ConfigHandler import ConfigHandler
 from evaluation.Grid import Grid
 
 if __name__ == "__main__":
+    args.model = "GIN"
+    hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
+    grid_generator = Grid(hyper_grid_config)
+    all_configs = grid_generator.init_grid()
     data = DataLoader.load(args.dataset)
     split_config = ConfigHandler.load_split_config(config_name="default")
    

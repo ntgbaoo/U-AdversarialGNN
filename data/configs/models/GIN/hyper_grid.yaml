@@ -3,7 +3,6 @@ aggr:
   - "sum"
   - "mean"
   - "max"
-  - "median"
 num_layers:
   - 3
   - 4
