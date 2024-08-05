@@ -42,11 +42,8 @@ class ModelSelector:
         print("Finding the best configuration over {} configurataions".format(len(self.all_configs)))
         for index,config in enumerate(self.all_configs):
             aggre_type = config.get(AGGREGATION)
-            try:
-                config_perf = self._run_model_on_config(config,seed)
-            except Exception as e:
-                print("WARNING: can't process config{}".format(config))
-                config_perf = -1
+            
+            config_perf = self._run_model_on_config(config,seed)        
             self.all_config_results_dict[aggre_type].append({"config_idx": index,"perfomance": config_perf})
             print(f'\rINFO : finished {counter}/{len(self.all_configs)}', end='')
             counter +=1
@@ -64,9 +61,8 @@ class ModelSelector:
     def _run_model_on_config(self,config,seed):
         set_random(seed)
         runner = ModelSupervisor(self.data,device=self.device,**config)
-        runner.update_split(self.idx_train,self.idx_val,self.idx_test)
-        runner.train_model()
-        _, val_acc, _ = runner.get_prediction_accuracy()
+        runner.train_model(idx_train=self.idx_train,idx_val=self.idx_val,idx_test= self.idx_test)
+        val_acc = runner.get_prediction_accuracy(self.idx_val,self.data)
         return val_acc
     
     def save_config(self,split_index):

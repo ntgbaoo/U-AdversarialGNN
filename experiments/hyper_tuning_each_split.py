@@ -25,12 +25,14 @@ if __name__ == "__main__":
     hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
     grid_generator = Grid(hyper_grid_config)
     all_configs = grid_generator.init_grid()
-    data = DataLoader.load(args.dataset)
+    data,_ = DataLoader.load(args.dataset)
     split_config = ConfigHandler.load_split_config(config_name="default")
    
-    data.init_train_test_splits(**split_config)
+    splitter = Splitter(**split_config)
+    folds = splitter.split(data.x.numpy(),data.y.numpy())
     for split_idx in range(5):
-        idx_train,idx_val,idx_test = data.get_split(split_idx)
+        fold = folds[split_idx]
+        idx_train,idx_val,idx_test =fold.idx_train,fold.idx_val,fold.idx_test
         hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
         modelSelector = ModelSelector(
             config_dict= hyper_grid_config,

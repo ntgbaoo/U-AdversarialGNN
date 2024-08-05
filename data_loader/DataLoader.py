@@ -46,7 +46,7 @@ DATASETS_greatX = {
 
 class DataLoader(IDataLoader):
     @abstractmethod
-    def load_v1(dataset:str) :
+    def load(dataset:str) :
         if dataset in DATASETS_greatX:
             if not os.path.exists(PATH_DATASET):
                 os.makedirs(PATH_DATASET)
@@ -64,39 +64,6 @@ class DataLoader(IDataLoader):
             raise Exception("Unsupport datasets")
         return data,default_split
     
-    @abstractmethod
-    def load(dataset:str) -> IData:
-        if dataset in ['cora', 'citeseer', 'cora_ml', 'polblogs','pubmed', 'acm', 'blogcatalog', 'uai', 'flickr']:
-            if not os.path.exists(PATH_DATASET):
-                os.makedirs(PATH_DATASET)
-            orgin_data = Dataset(root=PATH_DATASET,name = dataset)
-            data = Data(
-                        dataset_name= dataset,
-                        edgelist = np.array(sparse_adjacency_to_edge_list(orgin_data.adj)),
-                        adj=orgin_data.adj,
-                        feature = np.array(orgin_data.features.toarray()),
-                        label = orgin_data.labels,
-                        idx_train = orgin_data.idx_train,
-                        idx_val = orgin_data.idx_val,
-                        idx_test = orgin_data.idx_test)
-        elif dataset in ['ogbn-products','ogbn-proteins','ogbn-arxiv','ogbn-papers100M','ogbn-mag']:
-            ogb_data = PygNodePropPredDataset(name = dataset, root = PATH_DATASET)
-            split_idx  = ogb_data.get_idx_split()
-            train_idx, valid_idx, test_idx = split_idx["train"], split_idx["valid"], split_idx["test"]
-
-            labels = np.array([int(tensor) for tensor in ogb_data[0].y],dtype=np.int8)
-            data = Data(
-                        dataset_name= dataset,
-                        edgelist = ogb_data.edge_index.numpy().astype('int32'),
-                        adj=edge_list_to_sysmetric_sparse_adjacency(ogb_data.edge_index.numpy()).astype('float32'),
-                        feature = ogb_data[0].x.numpy(),
-                        label = labels,
-                        idx_train = train_idx.numpy().astype('int32'),
-                        idx_val = valid_idx.numpy().astype('int32'),
-                        idx_test = test_idx.numpy().astype('int32'))
-        else:
-            raise Exception("Unsupport datasets")
-        return data
 
 if __name__ == '__main__':
     data_ogbn = DataLoader.load("ogbn-products")    
