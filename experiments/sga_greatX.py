@@ -8,11 +8,11 @@ import statistics as stats
 import pandas as pd
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from GreatX.greatx.attack.targeted import SGAttack
-from GreatX.greatx.datasets import GraphDataset
-from GreatX.greatx.nn.models import SGC,GCN
-from GreatX.greatx.training import Trainer
-from GreatX.greatx.utils import mark, split_nodes
+from greatx.attack.targeted import SGAttack
+from greatx.datasets import GraphDataset
+from greatx.nn.models import SGC,GCN
+from greatx.training import Trainer
+from greatx.utils import mark, split_nodes
 from adversarial_attack.utils import select_nodes_margin
 
 
