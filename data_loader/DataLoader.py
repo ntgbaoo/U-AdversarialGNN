@@ -55,7 +55,7 @@ class DataLoader(IDataLoader):
                        transform=T.LargestConnectedComponents())
             data = dataset[0]
             split = split_nodes(data.y,random_state=720)
-            default_split = {'train':split.train_nodes,'valid':split.val_nodes,'test':split.test_nodes}
+            default_split = {IDX_TRAIN:split.train_nodes,IDX_VAL:split.val_nodes,IDX_TEST:split.test_nodes}
         elif dataset in ['ogbn-products','ogbn-proteins','ogbn-arxiv','ogbn-papers100M','ogbn-mag']:
             ogb_dataset = PygNodePropPredDataset(name = dataset, root = PATH_DATASET,transform=T.ToUndirected())
             default_split  = ogb_dataset.get_idx_split()

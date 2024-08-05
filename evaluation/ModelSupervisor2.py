@@ -122,9 +122,9 @@ class ModelSupervisor2(IModelSupervisor2):
             epoch_output = self.get_model_output(self.data)
             epoch_prediction = epoch_output.argmax(dim=-1)
             val_loss = F.cross_entropy(epoch_output[idx_val],self.labels_torch[idx_val])
-            train_acc = self.get_prediction_accuracy(idx_train,epoch_prediction)
-            test_acc =  self.get_prediction_accuracy(idx_test,epoch_prediction)
-            val_acc =  self.get_prediction_accuracy(idx_val,epoch_prediction)
+            train_acc = self.get_prediction_accuracy(idx_train,self.data,epoch_prediction)
+            test_acc =  self.get_prediction_accuracy(idx_test,self.data,epoch_prediction)
+            val_acc =  self.get_prediction_accuracy(idx_val,self.data,epoch_prediction)
 
 
             if val_loss  < best_val_loss:
