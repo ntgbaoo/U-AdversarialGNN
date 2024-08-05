@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     from utility.config import args
     from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-    from evaluation.ModelSupervisor2 import ModelSupervisor2
+    from evaluation.ModelSupervisor import ModelSupervisor
     from data_loader.DataLoader import DataLoader
     from utility.ConfigHandler import ConfigHandler
     from static import *
@@ -28,16 +28,15 @@ if __name__ == '__main__':
                     args.seed) + '_log.txt')
     
     data,split = DataLoader.load_v1(args.dataset)
-    model_config = ConfigHandler.load_model_config(model_type="GCN")
-    print(model_config)
-    # model_config = config['model_config']
-    # split_config = config['split']
-    runner = ModelSupervisor2(data,device=args.device,**model_config)
-    # idx_train,idx_val,idx_test = split_config['idx_train'],split_config['idx_val'],split_config['idx_test']
-    # runner.update_split(idx_train,idx_val,idx_test)
-    runner.train_model(idx_train=split[IDX_TRAIN],idx_val=split[IDX_VAL],idx_test= split[IDX_TEST])
+    # model_type="GCN",config_name = "default",dataset = None,split = None
+    config = ConfigHandler.load_model_config(model_type="GCN",config_name="best_config",dataset="cora",split=0)
+    model_config = config['model_config']
+    split_config = config['split']
+    runner = ModelSupervisor(data,device=args.device,**model_config)
+    idx_train,idx_val,idx_test = split_config['idx_train'],split_config['idx_val'],split_config['idx_test']
+    runner.train_model(idx_train=idx_train,idx_val=idx_val,idx_test= idx_test)
 
-    test_acc = runner.get_prediction_accuracy(split[IDX_TEST],data)
+    test_acc = runner.get_prediction_accuracy(idx_test,data)
     print(test_acc)
    
     
