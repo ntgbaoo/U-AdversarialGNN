@@ -21,7 +21,7 @@ if __name__ == '__main__':
     from adversarial_attack.SurrogateLoader import SurrogateLoader
     from utility.config import args
     from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-    from adversarial_attack.utils import select_nodes,select_nodes_margin
+    from adversarial_attack.utils import select_nodes_margin,select_nodes_margin_v1
 
     from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
     from evaluation.ModelSupervisor import ModelSupervisor
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     from data_loader.DataLoader import DataLoader
     from static import *
 
-    args.dataset = "cora"
+    args.dataset = "ogbn-arxiv"
     args.seed = 722
     set_random(args.seed)
     
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     
 
     #Select target nodes
-    node_list = select_nodes(supervisor_surrogate)        
+    node_list = select_nodes_margin_v1(supervisor_surrogate)        
     
     #Set up gcn model
     gcn_surrogate = SurrogateLoader.load_surrogate(data,idx_train, idx_val,device = args.device)

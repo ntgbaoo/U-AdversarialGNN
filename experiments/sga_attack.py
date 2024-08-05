@@ -1,111 +1,79 @@
-import timeit
-import torch.nn.functional as F
-from torch_geometric.datasets import Planetoid
+import os.path as osp
+
+import torch
 import torch_geometric.transforms as T
-from scipy.sparse import csr_matrix
+from ogb.nodeproppred import PygNodePropPredDataset
+import os 
+import sys
+import numpy as np
+import statistics as stats
+import pandas as pd
+import timeit
 
 
-        
-if __name__ == '__main__':
-    import sys
-    import os
-    import warnings
-    # Hide all warnings
-    warnings.filterwarnings("ignore")
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from GreatX.greatx.attack.targeted import SGAttack,Nettack,RandomAttack
+from GreatX.greatx.nn.models import SGC,GCN
+from GreatX.greatx.training import Trainer
+from GreatX.greatx.utils import BunchDict, mark
+from adversarial_attack.utils import select_nodes_margin
+
+
+root = 'data/dataset/'
+dataset = PygNodePropPredDataset(root=root, name='ogbn-arxiv',
+                                 transform=T.ToUndirected())
+data = dataset[0]
+splits = dataset.get_idx_split()
+splits = BunchDict(train_nodes=splits['train'], val_nodes=splits['valid'],
+                   test_nodes=splits['test'])
+
+num_features = data.x.size(-1)
+num_classes = data.y.max().item() + 1
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+
+surrogate_model = Trainer(SGC(num_features, num_classes), device=device, lr=0.1,weight_decay=1e-5)
+surrogate_model.fit(data, mask=(splits.train_nodes, splits.val_nodes))
+
+node_select_model = Trainer(GCN(num_features, num_classes), device=device)
+node_select_model.fit(data, mask=(splits.train_nodes, splits.val_nodes))
+
+
+target_nodes_list = select_nodes_margin(node_select_model,data,splits.test_nodes,data.y)
+surrogate_model.cache_clear()
+attacker_sga = SGAttack(data, device=device)
+attacker_rnd = RandomAttack(data,device=device)
+rowlist = []
+for budget in range(1,6):
+
+    for i in range(5):
+        node_select_model = Trainer(GCN(num_features, num_classes), device=device)
+        target_nodes_list = select_nodes_margin(node_select_model,data,splits.test_nodes,data.y)
+        start = timeit.default_timer()
+        miss = 0
+        for target_node in target_nodes_list:
+
+            attacker_sga.setup_surrogate(surrogate_model.model)
+            attacker_sga.reset()
+            attacker_sga.set_max_perturbations(budget)
+
+            attacker_sga.attack(target_node,num_budgets=budget)
+
+            #SGA
+            trainer_after = Trainer(GCN(num_features, num_classes), device=device)
+            trainer_after.fit(attacker_sga.data(), mask=(splits.train_nodes, splits.val_nodes),verbose = False)
+            trainer_after.cache_clear()
+            output = trainer_after.predict(attacker_sga.data(), mask=target_node)
+            if torch.argmax(output).item() != data.y[target_node]:
+                miss[0] += 1
+
+            
     
-    # Edit path to import from different module
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
-    from adversarial_attack.SurrogateLoader import SurrogateLoader
-    from utility.config import args
-    from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-    from adversarial_attack.utils import select_nodes,select_nodes_margin
-
-    from deeprobust.graph.targeted_attack import Nettack,FGA,RND,IGAttack
-    from evaluation.ModelSupervisor import ModelSupervisor
-
-    from data_loader.DataLoader import DataLoader
-    from static import *
-    from adversarial_attack.SGA import SGAttack
-
-    args.dataset = "cora"
-    args.seed = 722
-    set_random(args.seed)
-    
-    data = DataLoader.load(args.dataset)
-    
-    gcn_config = {
-        MODEL:'GCN',
-        LEARNING_RATE:0.01,
-        OPTIMIZER:ADAM,
-        HIDDEN_UNITS:8,
-        NUM_LAYERS:2,
-        AGGREGATION:"add",
-        EPOCHS:500,
-        PATIENCE:40,
-    }
-    if args.verbose:
-        init_logger(
-                    prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
-                        args.seed) + '_log.txt')
-        
-
-    
-
-    supervisor_surrogate = ModelSupervisor(data,device=args.device,**gcn_config)
-    supervisor_surrogate.train_model()
-
-    adj, features, labels = data.adj, data.feature, data.label
-    idx_train, idx_val, idx_test = data.idx_train, data.idx_val, data.idx_test
-
-    
-
-    #Select target nodes
-    node_list = select_nodes(supervisor_surrogate)        
-    
-    #Set up gcn model
-    sgc_surrogate = SurrogateLoader.load_surrogate(data,idx_train, idx_val,device = args.device,model = 'sgc')
-    miss = 0
-    budgets = 1
-    counter = 0
-    false_nodes = []
-    # for budget in budgets:
-    print("=="*30)
-    print("INFO: Apply Nettack on {} on {} dataset with budget {}".format(args.model, args.dataset,budgets))
-    start = timeit.default_timer()
-    for node in node_list:
-        SGA_config = {
-                'features':csr_matrix(features),
-                'adj':adj, 
-                'labels':labels,
-                'n_perturbations':budgets,
-            }
 
 
-        adversarial = SGAttack(sgc_surrogate, **SGA_config, attack_structure=True, attack_features=False, device=args.device).to(args.device)
-        supervisor_adversarial = ModelSupervisor(data,device= args.device,**gcn_config)
-        adversarial_supervisor = AdversarialSupervisor(adversarial = adversarial,
-                                                           model_supervisor = supervisor_adversarial,
-                                                           data = data,
-                                                           surrogate_model = sgc_surrogate,
-                                                           target_nodes = node,
-                                                           attack_structure= True,
-                                                           attack_feature= False
-                                                           )
-
-        success = adversarial_supervisor.attack(node,args.seed)
-        if success == 0:
-            miss += 1
-            false_nodes.append(node)
-        counter += 1
-        print(f'\rINFO : finished {counter}/{len(node_list)}', end='')
-        
-    duration = timeit.default_timer() - start
-    print("\nWrong classified ratio:{:.3f}".format(miss/len(node_list)))
-    print("Total time:{:.2f}".format(duration))
 
 
-    
-    
-    
-    
+
+
