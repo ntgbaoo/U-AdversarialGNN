@@ -46,7 +46,7 @@ DATASETS_greatX = {
 
 class DataLoader(IDataLoader):
     @abstractmethod
-    def load_v1(dataset:str) -> IData:
+    def load_v1(dataset:str) :
         if dataset in DATASETS_greatX:
             if not os.path.exists(PATH_DATASET):
                 os.makedirs(PATH_DATASET)

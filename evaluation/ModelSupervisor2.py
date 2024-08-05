@@ -179,7 +179,7 @@ class ModelSupervisor2(IModelSupervisor2):
         return self.get_model_output(data).argmax(dim=-1)
 
     @torch.no_grad
-    def get_prediction_accuracy(self,mask,prediction = None):
+    def get_prediction_accuracy(self,mask,data:Data,prediction = None):
         if prediction is None:
-            prediction = self.get_model_prediction()
+            prediction = self.get_model_prediction(data)
         return int((prediction[mask] == self.labels_torch[mask]).sum()) / len(mask)
