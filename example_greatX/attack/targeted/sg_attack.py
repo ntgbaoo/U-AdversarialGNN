@@ -3,6 +3,11 @@ import os.path as osp
 import torch
 import torch_geometric.transforms as T
 
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+
 from greatx.attack.targeted import SGAttack
 from greatx.datasets import GraphDataset
 from greatx.nn.models import SGC
@@ -32,7 +37,7 @@ target_label = data.y[target].item()
 # ================================================================== #
 #                      Before Attack                                 #
 # ================================================================== #
-trainer_before = Trainer(SGC(num_features, num_classes), device=device, lr=0.1,
+trainer_before = Trainer(SGC(num_features, num_classes,hids = [16,16],acts=['elu']), device=device, lr=0.1,
                          weight_decay=1e-5)
 ckp = ModelCheckpoint('model_before.pth', monitor='val_acc')
 trainer_before.fit(data, mask=(splits.train_nodes, splits.val_nodes),

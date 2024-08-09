@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 import sys
 import os
-from deeprobust.graph.data import Dataset, Dpr2Pyg
 import numpy as np
 from ogb.nodeproppred import PygNodePropPredDataset
 import torch_geometric.transforms as T
@@ -13,9 +12,7 @@ import torch_geometric.transforms as T
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from greatx.datasets import GraphDataset
-from data_loader.IData import IData
 from data_loader.utils import sparse_adjacency_to_edge_list,edge_list_to_sparse_adjacency,edge_list_to_sysmetric_sparse_adjacency
-from data_loader.Data import Data
 from data_loader.IDataLoader import IDataLoader
 from data_loader.Splitter import Splitter
 from static import *

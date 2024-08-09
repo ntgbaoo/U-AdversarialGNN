@@ -5,10 +5,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from evaluation.Grid import Grid
 from evaluation.ModelSupervisor import ModelSupervisor
-from data_loader.IData import IData
 from utility.util import set_random
 from utility.ConfigHandler import ConfigHandler
 from static import *
+from torch_geometric.data import Data
+
 
 
 
@@ -18,7 +19,7 @@ class ModelSelector:
                  idx_train:np.ndarray,
                  idx_val :np.ndarray,
                  idx_test:np.ndarray,
-                 data: IData,
+                 data: Data,
                  device = 'cpu'
                  ) -> None:
         self.model_name = config_dict.get("model")
@@ -65,7 +66,7 @@ class ModelSelector:
         val_acc = runner.get_prediction_accuracy(self.idx_val,self.data)
         return val_acc
     
-    def save_config(self,split_index):
+    def save_config(self,split_index,dataset_name):
         best_config_all_aggrs,best_config = self.get_best_config()
         for aggr in self.all_aggrs:
             aggr_best_config = {
@@ -78,7 +79,7 @@ class ModelSelector:
                 "model_config":self.all_configs[best_config_all_aggrs[aggr]['config_idx']],
                 "performance":best_config_all_aggrs[aggr]['perfomance']
             }
-            ConfigHandler.save_model_config(aggr_best_config,"{}_best_config".format(aggr),model_type=self.model_name,data=self.data.dataset_name,split=split_index)
+            ConfigHandler.save_model_config(aggr_best_config,"{}_best_config".format(aggr),model_type=self.model_name,data=dataset_name,split=split_index)
 
         best_config_dict = {
             "split" :{
@@ -90,7 +91,7 @@ class ModelSelector:
                 "model_config":self.all_configs[best_config['config_idx']],
                 "performance":best_config['perfomance']
         }    
-        ConfigHandler.save_model_config(best_config_dict,"best_config",model_type=self.model_name,data=self.data.dataset_name,split=split_index)
+        ConfigHandler.save_model_config(best_config_dict,"best_config",model_type=self.model_name,data=dataset_name,split=split_index)
 
         
 

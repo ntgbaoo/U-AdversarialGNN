@@ -19,13 +19,12 @@ if __name__ == '__main__':
     from static import *
 
     args.dataset = "cora"
-
     init_logger(
                 prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
                     args.seed) + '_log.txt')
     
     data,split = DataLoader.load(args.dataset)
-    config = ConfigHandler.load_model_config(model_type="GCN",config_name="best_config",dataset="cora",split=0)
+    config = ConfigHandler.load_model_config(model_type="GCN",config_name="max_best_config",dataset="cora",split=0)
     model_config = config['model_config']
     split_config = config['split']
     set_random(720)

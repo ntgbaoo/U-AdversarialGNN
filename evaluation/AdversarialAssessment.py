@@ -4,23 +4,26 @@ import os
 import numpy as np
 import statistics as stats
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from greatx.attack.attacker import Attacker
 from adversarial_attack.SurrogateLoader import SurrogateLoader
 from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
+from torch_geometric.data import Data
+from adversarial_attack.NodeSelector import NodeSelector
 
 from evaluation.ModelSupervisor import ModelSupervisor
-from data_loader.IData import IData
 from utility.util import set_random
 from adversarial_attack.utils import select_nodes
 from utility.util import load_model_config
 
 class AdversarialAssessment:
     def __init__(self,
-                 data: IData,
+                 data: Data,
                  fold_config_list : list,
-                 adversarial_method,
+                 adversarial_method:Attacker,
                  device = 'cpu',
                  base_seed = 710,
                  R = 3,
+                 surogate = 'gcn',
                  **adversarial_args
                  ) -> None:
         self.data = data
@@ -30,40 +33,59 @@ class AdversarialAssessment:
         self.base_seed = base_seed
         self.R = R
         self.adversarial_args = adversarial_args
+        self.surogate = surogate
+        
 
-    def evaluate(self,budget):
-        method_accuracy = []
+    def evaluate(self,budget,attack_structure,attack_feature):
+        high_margin_acc_list = []
+        low_margin_acc_list = []
+        high_degree_acc_list = []
+        low_degree_acc_list  = []
+        other_acc_list = []
+
+        high_degree = []
         for fold_config in self.fold_config_list:
-            fold = fold_config.get('fold')
+            split = fold_config.get('split')
             best_config = fold_config.get('model_config')
-            idx_train, idx_val, idx_test = fold['idx_train'],fold['idx_val'],fold['idx_train']
+            idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_train']
 
-            gcn_surrogate = SurrogateLoader.load_surrogate(self.data,idx_train, idx_val,device = self.device)
+            # data:Data,idx_train,idx_val,model = 'gcn',device = 'cpu',model_configs:dict = dict(),seed = 720
+            
             fold_accuracies = []
             for r in range(0,self.R):
+                self.adversarial_method.reset()
+                if self.surogate is not None:
+                    surrogate = SurrogateLoader.load_surrogate(self.data,idx_train, idx_val,device = self.device,seed = r + self.base_seed,model = self.surogate)
+                    self.adversarial_method.reset()
+                    self.adversarial_method.setup_surrogate(surrogate)
                 set_random(r + self.base_seed)
-                node_list = select_nodes(gcn_surrogate)
-                miss = 0
-                false_nodes = []
-                for node in node_list:
-                   adversarial_method = self.adversarial_method(**self.adversarial_args)
-                   supervisor_adversarial = ModelSupervisor(self.data,device=self.device,**best_config)
+                node_select_model = ModelSupervisor(self.data,device=self.device,seed= r + self.base_seed,**best_config)
+                node_select_model.train_model(self.idx_train,self.idx_val,self.idx_test)
+                high,low,high_degree,low_degree,others = NodeSelector.select_nodes_margin_degree(node_select_model)
+                adv_super =AdversarialSupervisor(adversarial = self.adversarial_method, 
+                 data = self.data,
+                 idx_train =  idx_train,
+                 idx_val = idx_val,
+                 idx_test = idx_test,
+                 attack_structure = attack_structure,
+                 attack_feature = attack_feature,
+                 device = self.device,
+                 **best_config)
+                high_margin_acc_list.append(AdversarialSupervisor.target_attack(high))
+                low_margin_acc_list.append(AdversarialSupervisor.target_attack(low))
+                high_degree_acc_list.append(AdversarialSupervisor.target_attack(high_degree))
+                low_degree_acc_list.append(AdversarialSupervisor.target_attack(low_degree))
+                other_acc_list.append(AdversarialSupervisor.target_attack(others))
 
-                   adversarial_supervisor = AdversarialSupervisor(adversarial = adversarial_method,
-                                                           model_supervisor = supervisor_adversarial,
-                                                           data = self.data,
-                                                           surrogate_model = gcn_surrogate,
-                                                           target_nodes = node,
-                                                           attack_structure= True,
-                                                           attack_feature= False
-                                                           )
-                   success = 0
-                   # @TODO:**FGA_config need to be changed to fixed input
-                   # success = adversarial_supervisor.attack(node,r + self.base_seed,**FGA_config)
-                   if success == 0:
-                    miss += 1
-                    false_nodes.append(node)
-                accuracy = miss /len(node_list)
-                fold_accuracies.append(accuracy)
-            method_accuracy.append(stats.mean(fold_accuracies))
-        return stats.mean(method_accuracy),stats.stdev(method_accuracy)
+                
+                
+                
+        result_dict = {
+            'high_margin':(stats.mean(high_margin_acc_list),stats.stdev(high_margin_acc_list)),
+            'low_margin':(stats.mean(low_margin_acc_list),stats.stdev(low_margin_acc_list)),
+            'high_degree':(stats.mean(high_degree_acc_list),stats.stdev(high_degree_acc_list)),
+            'low_degree':(stats.mean(low_degree_acc_list),stats.stdev(low_degree_acc_list)),
+            'other':(stats.mean(other_acc_list),stats.stdev(other_acc_list)),
+        }
+               
+        return result_dict

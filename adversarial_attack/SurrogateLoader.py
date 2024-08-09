@@ -3,41 +3,46 @@ import sys
 import os
 import warnings
 import numpy as np
-from deeprobust.graph.defense import GCN
-
+from torch_geometric.data import Data
+from greatx.nn.models import GCN
+from greatx.nn.models import SGC
+from greatx.training import Trainer
 
     # Hide all warnings
 warnings.filterwarnings("ignore")
     
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from data_loader.IData import IData
-from model.SGC import SGC
+from utility.util import set_random
 from data_loader.DataLoader import DataLoader
+from static import *
 
 
 
 class SurrogateLoader:
     @abstractmethod
-    def load_surrogate(data:IData,idx_train,idx_val,model = 'gcn',device = 'cpu',lr = 0.01):
+    def load_surrogate(data:Data,idx_train,idx_val,model = 'gcn',device = 'cpu',model_configs:dict = dict(),seed = 720):
+        num_features = data.x.size(-1)
+        num_classes = data.y.max().item() + 1
+        lr = model_configs.get(LEARNING_RATE,0.1)
+        nhid = model_configs.get(HIDDEN_UNITS,16)
+        nlayer = model_configs.get(NUM_LAYERS,2)
+        weight_decay = model_configs.get(WEIGHT_DECAY,1e-5)
+        dropout = model_configs.get(WEIGHT_DECAY,0.5)
+        set_random(seed)
+
         if model == 'gcn':
-            surrogate = GCN(nfeat=data.nfeat, nclass=data.nclass, nhid=16, dropout=0, with_relu=False,
-                    with_bias=False, device=device,lr=lr)
-            surrogate.to(device)
-            surrogate.fit(data.feature, data.adj, data.label, idx_train, idx_val, patience=30)
+            trainer = Trainer(GCN(num_features, num_classes,acts = ['relu'],dropout = dropout, hids = [nhid] *nlayer), device=device,weight_decay =weight_decay,lr =  lr)
+            trainer.fit(data, mask=(idx_train, idx_val))
             
         elif model == 'sgc':
-            surrogate = SGC(nfeat=data.nfeat, nclass=data.nclass,K=2,lr=0.01,
-                    with_bias=True, device=device)
-            surrogate.to(device)
-            surrogate.fit(data.get_tensor_feature(), data.get_tensor_edgelist(), data.get_tensor_label(), idx_train, idx_val)
+            trainer = Trainer(SGC(num_features, num_classes,acts = ['relu'],dropout = dropout,weight_decay =weight_decay,lr =  lr,hids = [nhid] *nlayer), device=device, lr=lr,
+                         weight_decay=weight_decay)
+            trainer.fit(data, mask=(idx_train, idx_val))
         else:
             raise Exception("{} is not support as surrogate models. Choosing gcn/sgc".format(model))
         
-        return surrogate
+        return trainer
 
 
-if __name__ == '__main__':
-    data = DataLoader.load('cora')
-    # LoadSurrogateModel.load_surrogate(data,data.idx_train,data.idx_val,device = 'cuda',model = 'sgc')
+    
