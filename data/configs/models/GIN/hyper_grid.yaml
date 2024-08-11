@@ -1,6 +1,8 @@
 model: 'GIN'
 aggr: 
-  - "add"
+  - "sum"
+  - "mean"
+  - "max"
 num_layers:
   - 3
   - 4

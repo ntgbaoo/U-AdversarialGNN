@@ -50,3 +50,30 @@ def edge_list_to_sparse_adjacency(edge_list: np.ndarray) -> csr_matrix:
     sparse_adj_matrix = csr_matrix((data, (row_indices, col_indices)), shape=(num_nodes, num_nodes))
 
     return sparse_adj_matrix
+
+def edge_list_to_sysmetric_sparse_adjacency(edge_list: np.ndarray) -> csr_matrix:
+    """
+    Converts a NumPy edge list to a sparse adjacency matrix in CSR format.
+
+    Parameters:
+    edge_list (np.ndarray): A 2D NumPy array with shape (2, number of edges),
+                            where each column represents an edge.
+
+    Returns:
+    csr_matrix: A sparse adjacency matrix in CSR format.
+    """
+    if edge_list.shape[0] != 2:
+        raise ValueError("Edge list must have shape (2, number of edges)")
+
+    row = edge_list[:, 0]
+    col = edge_list[:, 1]
+    data = np.ones(edge_list.shape[0])
+
+    # Create symmetric matrix
+    adj_matrix = csr_matrix((data, (row, col)), shape=(edge_list.max() + 1, edge_list.max() + 1))
+    adj_matrix = adj_matrix + adj_matrix.T
+
+    # Ensure no double counting of self-loops
+    adj_matrix.setdiag(adj_matrix.diagonal() / 2)
+
+    return adj_matrix

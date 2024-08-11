@@ -1,6 +1,9 @@
 model: 'GCN'
 aggr: 
-  - "add"
+  - "sum"
+  - "mean"
+  - "max"
+  - "median"
 num_layers:
   - 2
 hidden_unit:

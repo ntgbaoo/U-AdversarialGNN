@@ -19,24 +19,20 @@ if __name__ == '__main__':
     from static import *
 
     args.dataset = "cora"
-    args.seed = 710
-    set_random(args.seed)
-
-
     init_logger(
                 prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
                     args.seed) + '_log.txt')
     
-    data = DataLoader.load(args.dataset)
-    config = ConfigHandler.load_model_config(model_type="GIN",config_name="best_config_split_0",dataset="cora")
+    data,split = DataLoader.load(args.dataset)
+    config = ConfigHandler.load_model_config(model_type="GCN",config_name="max_best_config",dataset="cora",split=0)
     model_config = config['model_config']
     split_config = config['split']
+    set_random(720)
     runner = ModelSupervisor(data,device=args.device,**model_config)
     idx_train,idx_val,idx_test = split_config['idx_train'],split_config['idx_val'],split_config['idx_test']
-    runner.update_split(idx_train,idx_val,idx_test)
-    runner.train_model()
+    runner.train_model(idx_train=idx_train,idx_val=idx_val,idx_test= idx_test)
 
-    train_acc, val_acc, test_acc = runner.get_prediction_accuracy()
-    print(train_acc, val_acc, test_acc)
+    test_acc = runner.get_prediction_accuracy(idx_test,data)
+    print(test_acc)
    
     

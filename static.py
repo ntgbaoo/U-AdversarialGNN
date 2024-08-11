@@ -46,4 +46,11 @@ GOTTACK_NAME = "gottack"
 FGA_NAME= "fga"
 SGA_NAME= "sga"
 RND_NAME = "rnd"
+GFATTACK_NAME = "gfattack"
+IGATTACK_NAME = "igattack"
+PGDATTACK_NAME = "pgdattack"
+DICE_NAME = "dice"
+
+
+
 

@@ -1,116 +1,42 @@
-import timeit
-import torch.nn.functional as F
-from torch_geometric.datasets import Planetoid
+
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import torch
 import torch_geometric.transforms as T
-from scipy.sparse import csr_matrix
+
+from greatx.attack.targeted import Nettack,SGAttack
+from evaluation.ModelSupervisor import ModelSupervisor
+from data_loader.DataLoader import DataLoader
+from utility.ConfigHandler import ConfigHandler
+from static import *
+from adversarial_attack.SurrogateLoader import SurrogateLoader
+from adversarial_attack.NodeSelector import NodeSelector
+from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
 
 
-        
-if __name__ == '__main__':
-    import sys
-    import os
-    import warnings
-    # Hide all warnings
-    warnings.filterwarnings("ignore")
-    
-    # Edit path to import from different module
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
-    from adversarial_attack.SurrogateLoader import SurrogateLoader
+if __name__=="__main__":
     from utility.config import args
-    from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-    from adversarial_attack.utils import select_nodes,select_nodes_margin
 
-    from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
-    
-    from evaluation.ModelSupervisor import ModelSupervisor
-    from utility.ConfigHandler import ConfigHandler
-    from adversarial_attack.NodeSelector import NodeSelector
-    from adversarial_attack.FGA import FGA
-    from adversarial_attack.Nettack import Nettack
+    args.dataset = 'cora'
+    args.seed = 720
+    data,split = DataLoader.load(args.dataset)
+    idx_train,idx_val,idx_test = split[IDX_TRAIN],split[IDX_VAL],split[IDX_TEST]
+    config = ConfigHandler.load_model_config()
 
+    surrogate_supervisor = ModelSupervisor(data,args.device,**config)
+    surrogate_supervisor.train_model(idx_train,idx_val,idx_test)
+    high,low, highest_degree,lowest_degree,other = NodeSelector.select_nodes_margin_degree(surrogate_supervisor,data,idx_test,seed=args.seed)
+    node_list = high + low + highest_degree +lowest_degree + other
 
-    from data_loader.DataLoader import DataLoader
-    from static import *
+    adversarial_surrogate = SurrogateLoader.load_surrogate(data,idx_train,idx_val,device= args.device,seed=args.seed,model='SGC')
+    nettack = SGAttack(data,args.device,args.seed)
+    nettack.setup_surrogate(adversarial_surrogate)
 
-    args.dataset = "cora"
-    args.seed = 722
-    set_random(args.seed)
-    
-    data = DataLoader.load(args.dataset)
-    
-    gcn_config = ConfigHandler.load_model_config()
-    if args.verbose:
-        init_logger(
-                    prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
-                        args.seed) + '_log.txt')
-        
-
-    
-    #Set up surrogate model
-    supervisor_surrogate = ModelSupervisor(data,device=args.device,**gcn_config)
-    supervisor_surrogate.train_model()
-
-    adj, features, labels = data.adj, data.feature, data.label
-    idx_train, idx_val, idx_test = data.idx_train, data.idx_val, data.idx_test
-
-    
-
-    #Select target nodes
-    high,low, highest_degree,lowest_degree = NodeSelector.select_node_margin_centrality(supervisor_surrogate)    
-    node_list = high + low + highest_degree + lowest_degree
-    
-    #Set up gcn model
-    gcn_surrogate = SurrogateLoader.load_surrogate(data,idx_train, idx_val,device = args.device)
-    miss = 0
-    budgets = [1]
-    counter = 0
-    false_nodes = []
-    for budget in budgets:
-        nettack_config = {
-                'features':csr_matrix(features),
-                'adj':adj, 
-                'labels':labels,
-                'n_perturbations':budget,
-                
-            }
-        
-        FGA_config = {
-            'features': csr_matrix(features),
-            'adj' : adj,
-            'labels':labels,
-            'idx_train':idx_train,
-            'n_perturbations' :budget,
-        }
-        print("=="*30)
-        print("INFO: Apply Nettack/FGA on {} on {} dataset with budget {}".format(args.model, args.dataset,budget))
-        start = timeit.default_timer()
-        for node in node_list:
-            # adversarial = FGA(gcn_surrogate, nnodes=adj.shape[0], **FGA_config, attack_structure=True, attack_features=False, device=args.device)
-            adversarial =  Nettack(gcn_surrogate, nnodes=data.nnode, **nettack_config, attack_structure=True, attack_features=False, device=args.device).to(args.device)
-            supervisor_adversarial = ModelSupervisor(data,device= args.device,**gcn_config)
-            adversarial_supervisor = AdversarialSupervisor(adversarial = adversarial,
-                                                           model_supervisor = supervisor_adversarial,
-                                                           data = data,
-                                                           surrogate_model = gcn_surrogate,
-                                                           target_nodes = node,
-                                                           attack_structure= True,
-                                                           attack_feature= False
-                                                           )
-            success = adversarial_supervisor.attack(node,args.seed)
-            if success == 0:
-                miss += 1
-                false_nodes.append(node)
-            counter += 1
-            print(f'\rINFO : finished {counter}/{len(node_list)}', end='')
-        
-        duration = timeit.default_timer() - start
-        print("\nWrong classified ratio:{:.3f}".format(miss/len(node_list)))
-        print("Total time:{:.2f}".format(duration))
+    adv_supervisor = AdversarialSupervisor(nettack,data,idx_train,idx_val,idx_test,device=args.device,**config)
+    miss_rate = adv_supervisor.target_attack(node_list,720,1,evasion=True,train_before_model=surrogate_supervisor)
+    print(miss_rate)
 
 
-
-    
-    
-    
+   
     
