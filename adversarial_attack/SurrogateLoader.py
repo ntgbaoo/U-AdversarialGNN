@@ -21,7 +21,7 @@ from static import *
 
 class SurrogateLoader:
     @abstractmethod
-    def load_surrogate(data:Data,idx_train,idx_val,model = 'gcn',device = 'cpu',model_configs:dict = dict(),seed = 720):
+    def load_surrogate(data:Data,idx_train,idx_val,model = 'GCN',device = 'cpu',model_configs:dict = dict(),seed = 720):
         num_features = data.x.size(-1)
         num_classes = data.y.max().item() + 1
         lr = model_configs.get(LEARNING_RATE,0.1)
@@ -31,18 +31,18 @@ class SurrogateLoader:
         dropout = model_configs.get(WEIGHT_DECAY,0.5)
         set_random(seed)
 
-        if model == 'gcn':
+        if model == 'GCN':
             trainer = Trainer(GCN(num_features, num_classes,acts = ['relu'],dropout = dropout, hids = [nhid] *nlayer), device=device,weight_decay =weight_decay,lr =  lr)
-            trainer.fit(data, mask=(idx_train, idx_val))
+            trainer.fit(data, mask=(idx_train, idx_val),verbose=0)
             
-        elif model == 'sgc':
-            trainer = Trainer(SGC(num_features, num_classes,acts = ['relu'],dropout = dropout,weight_decay =weight_decay,lr =  lr,hids = [nhid] *nlayer), device=device, lr=lr,
+        elif model == 'SGC':
+            trainer = Trainer(SGC(num_features, num_classes,acts = ['relu'],dropout = dropout,hids = [nhid] *nlayer), device=device, lr=lr,
                          weight_decay=weight_decay)
-            trainer.fit(data, mask=(idx_train, idx_val))
+            trainer.fit(data, mask=(idx_train, idx_val),verbose=0)
         else:
             raise Exception("{} is not support as surrogate models. Choosing gcn/sgc".format(model))
         
-        return trainer
+        return trainer.model
 
 
     

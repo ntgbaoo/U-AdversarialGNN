@@ -12,31 +12,30 @@ from adversarial_attack.NodeSelector import NodeSelector
 
 from evaluation.ModelSupervisor import ModelSupervisor
 from utility.util import set_random
-from adversarial_attack.utils import select_nodes
-from utility.util import load_model_config
 
 class AdversarialAssessment:
     def __init__(self,
                  data: Data,
                  fold_config_list : list,
-                 adversarial_method:Attacker,
+                 adversarial_class:Attacker,
                  device = 'cpu',
                  base_seed = 710,
                  R = 3,
-                 surogate = 'gcn',
+                 surogate_name = None,
                  **adversarial_args
                  ) -> None:
         self.data = data
         self.fold_config_list = fold_config_list
-        self.adversarial_method = adversarial_method
+        self.adversarial_class = adversarial_class
+        self.adversarial_method = adversarial_class(data)
         self.device = device
         self.base_seed = base_seed
         self.R = R
         self.adversarial_args = adversarial_args
-        self.surogate = surogate
+        self.surogate_name = surogate_name
         
 
-    def evaluate(self,budget,attack_structure,attack_feature):
+    def evaluate(self,budget,attack_structure = True,attack_feature = False,poision = True,evasion = False):
         high_margin_acc_list = []
         low_margin_acc_list = []
         high_degree_acc_list = []
@@ -48,34 +47,35 @@ class AdversarialAssessment:
             split = fold_config.get('split')
             best_config = fold_config.get('model_config')
             idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_train']
-
-            # data:Data,idx_train,idx_val,model = 'gcn',device = 'cpu',model_configs:dict = dict(),seed = 720
-            
-            fold_accuracies = []
+                        
             for r in range(0,self.R):
+                seed = r + self.base_seed
                 self.adversarial_method.reset()
-                if self.surogate is not None:
-                    surrogate = SurrogateLoader.load_surrogate(self.data,idx_train, idx_val,device = self.device,seed = r + self.base_seed,model = self.surogate)
+                if self.surogate_name is not None:
+                    self.adversarial_method = self.adversarial_class(self.data,device = self.device)
+                    surrogate = SurrogateLoader.load_surrogate(self.data,idx_train, idx_val,device = self.device,seed = seed,model = self.surogate_name)
                     self.adversarial_method.reset()
                     self.adversarial_method.setup_surrogate(surrogate)
+                
                 set_random(r + self.base_seed)
-                node_select_model = ModelSupervisor(self.data,device=self.device,seed= r + self.base_seed,**best_config)
-                node_select_model.train_model(self.idx_train,self.idx_val,self.idx_test)
-                high,low,high_degree,low_degree,others = NodeSelector.select_nodes_margin_degree(node_select_model)
+                node_select_model = ModelSupervisor(self.data,device=self.device,seed= seed,**best_config)
+                node_select_model.train_model(idx_train,idx_val,idx_test)
+                high,low,high_degree,low_degree,others = NodeSelector.select_nodes_margin_degree(node_select_model,self.data,idx_test,seed=seed)
                 adv_super =AdversarialSupervisor(adversarial = self.adversarial_method, 
-                 data = self.data,
-                 idx_train =  idx_train,
-                 idx_val = idx_val,
-                 idx_test = idx_test,
-                 attack_structure = attack_structure,
-                 attack_feature = attack_feature,
-                 device = self.device,
-                 **best_config)
-                high_margin_acc_list.append(AdversarialSupervisor.target_attack(high))
-                low_margin_acc_list.append(AdversarialSupervisor.target_attack(low))
-                high_degree_acc_list.append(AdversarialSupervisor.target_attack(high_degree))
-                low_degree_acc_list.append(AdversarialSupervisor.target_attack(low_degree))
-                other_acc_list.append(AdversarialSupervisor.target_attack(others))
+                                                data = self.data,
+                                                idx_train =  idx_train,
+                                                idx_val = idx_val,
+                                                idx_test = idx_test,
+                                                attack_structure = attack_structure,
+                                                attack_feature = attack_feature,
+                                                device = self.device,
+                                                **best_config)
+                
+                high_margin_acc_list.append(adv_super.target_attack(high,seed=seed,poison=poision,evasion=evasion,budget=budget,train_before_model=node_select_model))
+                low_margin_acc_list.append(adv_super.target_attack(low,seed=seed,poison=poision,evasion=evasion,budget=budget,train_before_model=node_select_model))
+                high_degree_acc_list.append(adv_super.target_attack(high_degree,seed=seed,poison=poision,evasion=evasion,budget=budget,train_before_model=node_select_model))
+                low_degree_acc_list.append(adv_super.target_attack(low_degree,seed=seed,poison=poision,evasion=evasion,budget=budget,train_before_model=node_select_model))
+                other_acc_list.append(adv_super.target_attack(others,seed=seed,poison=poision,evasion=evasion,budget=budget,train_before_model=node_select_model))
 
                 
                 

@@ -5,6 +5,11 @@ import sys
 import networkx as nx
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from evaluation import IModelSupervisor
+from utility.util import set_random
+from torch_geometric.utils import to_scipy_sparse_matrix
+from torch_geometric.data import Data
+
+
 
 
 class NodeSelector:
@@ -35,7 +40,7 @@ class NodeSelector:
         return high,low,other
     
     @staticmethod
-    def select_nodes_margin_degree(target_runner:IModelSupervisor):
+    def select_nodes_margin_degree(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720):
         '''
         selecting nodes as reported in nettack paper:
         (i) the 10 nodes with highest margin of classification, i.e. they are clearly correctly classified,
@@ -45,12 +50,13 @@ class NodeSelector:
         (v) 10 nodes with random
         '''
 
+        set_random(seed)
         target_runner.model.eval()
-        output = target_runner.get_model_output()
+        output = target_runner.get_model_output(data)
         
         margin_dict = {}
-        for idx in target_runner.idx_test:
-            margin = classification_margin(output[idx], target_runner.labels_torch[idx])
+        for idx in idx_test:
+            margin = classification_margin(output[idx], data.y[idx])
             if margin < 0: # only keep the nodes correctly classified
                 continue
             margin_dict[idx] = margin
@@ -59,11 +65,12 @@ class NodeSelector:
         low = [x for x, y in sorted_margins[-10: ]]
         other = [x for x, y in sorted_margins[10: -10]]
         # other = np.random.choice(other, 20, replace=False).tolist()
-        degree_values = NodeSelector._calculate_degrees(target_runner.adj,other)
+        adj = to_scipy_sparse_matrix(data.edge_index)
+        degree_values = NodeSelector._calculate_degrees(adj,other)
         highest_degree,lowest_degree = NodeSelector._select_node_value_margin(degree_values)
         remaining = list((set(other) - set(highest_degree)) - set(lowest_degree))
+       
         other = np.random.choice(remaining, 10, replace=False).tolist()
-
         return high,low, highest_degree,lowest_degree,other
     
     @staticmethod
