@@ -22,7 +22,7 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
     drop_out = kwargs.get(DROPOUT,0)
     aggr = kwargs.get(AGGREGATION,"sum")
 
-    if aggr is "median":
+    if aggr == "median":
         aggr = torch_aggr.MedianAggregation()
     
     assert model_name is not None, "Please define model"

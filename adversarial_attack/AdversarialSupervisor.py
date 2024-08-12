@@ -54,9 +54,10 @@ class AdversarialSupervisor:
             self.adversarial.set_max_perturbations(budget,verbose=False)
 
             start = timeit.default_timer()
-           
-            self.adversarial.attack(target = target_node,num_budgets = budget, structure_attack = self.attack_structure, feature_attack = self.attack_feature)
-
+            try:
+                self.adversarial.attack(target = target_node,num_budgets = budget, structure_attack = self.attack_structure, feature_attack = self.attack_feature)
+            except Exception as e:
+                continue
             duration = timeit.default_timer() - start
             attack_time.append(duration)
 
@@ -82,7 +83,7 @@ class AdversarialSupervisor:
         }
 
         if poison:
-            result_dict['poison'] = miss_poison/len(target_nodes)
+            result_dict['poision'] = miss_poison/len(target_nodes)
 
         if evasion:
             result_dict['evasion'] = miss_evasion/len(target_nodes)

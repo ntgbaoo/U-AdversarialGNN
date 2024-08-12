@@ -22,6 +22,7 @@ class AdversarialAssessment:
                  base_seed = 710,
                  R = 3,
                  surogate_name = None,
+                 surogate_model_configs = None,
                  **adversarial_args
                  ) -> None:
         self.data = data
@@ -33,27 +34,46 @@ class AdversarialAssessment:
         self.R = R
         self.adversarial_args = adversarial_args
         self.surogate_name = surogate_name
+        self.surogate_model_configs = surogate_model_configs
         
 
     def evaluate(self,budget,attack_structure = True,attack_feature = False,poision = True,evasion = False):
-        high_margin_acc_list = []
-        low_margin_acc_list = []
-        high_degree_acc_list = []
-        low_degree_acc_list  = []
-        other_acc_list = []
+        
+        result = {
+            'time':[]
+        }
+        if poision:
+            result['poision'] = {
+                'high_margin':[],
+                'low_margin':[],
+                'high_degree':[],
+                'low_degree':[],
+                'other':[],
+                'total':[]
+            }
+        
+        if evasion:
+            result['evasion'] = {
+                'high_margin':[],
+                'low_margin':[],
+                'high_degree':[],
+                'low_degree':[],
+                'other':[],
+                'total':[]
+            }
 
-        high_degree = []
-        for fold_config in self.fold_config_list:
+        
+        for index,fold_config in enumerate(self.fold_config_list):
             split = fold_config.get('split')
             best_config = fold_config.get('model_config')
             idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_train']
                         
             for r in range(0,self.R):
                 seed = r + self.base_seed
-                self.adversarial_method.reset()
+                self.adversarial_method = self.adversarial_class(self.data,device = self.device)
                 if self.surogate_name is not None:
-                    self.adversarial_method = self.adversarial_class(self.data,device = self.device)
-                    surrogate = SurrogateLoader.load_surrogate(self.data,idx_train, idx_val,device = self.device,seed = seed,model = self.surogate_name)
+                    surrogate = SurrogateLoader.load_surrogate(self.data,idx_train, idx_val,device = self.device,
+                                                               seed = seed,model = self.surogate_name,model_configs = self.surogate_model_configs[index])
                     self.adversarial_method.reset()
                     self.adversarial_method.setup_surrogate(surrogate)
                 
@@ -71,21 +91,49 @@ class AdversarialAssessment:
                                                 device = self.device,
                                                 **best_config)
                 
-                high_margin_acc_list.append(adv_super.target_attack(high,seed=seed,poison=poision,evasion=evasion,budget=budget,train_before_model=node_select_model))
-                low_margin_acc_list.append(adv_super.target_attack(low,seed=seed,poison=poision,evasion=evasion,budget=budget,train_before_model=node_select_model))
-                high_degree_acc_list.append(adv_super.target_attack(high_degree,seed=seed,poison=poision,evasion=evasion,budget=budget,train_before_model=node_select_model))
-                low_degree_acc_list.append(adv_super.target_attack(low_degree,seed=seed,poison=poision,evasion=evasion,budget=budget,train_before_model=node_select_model))
-                other_acc_list.append(adv_super.target_attack(others,seed=seed,poison=poision,evasion=evasion,budget=budget,train_before_model=node_select_model))
+                high_margin_acc = adv_super.target_attack(high,seed=seed,poison=poision,evasion=evasion,budget=budget,train_before_model=node_select_model)
+                low_margin_acc = adv_super.target_attack(low,seed=seed,poison=poision,evasion=evasion,budget=budget,train_before_model=node_select_model)
+                high_degree_acc = adv_super.target_attack(high_degree,seed=seed,poison=poision,evasion=evasion,budget=budget,train_before_model=node_select_model)
+                low_degree_acc = adv_super.target_attack(low_degree,seed=seed,poison=poision,evasion=evasion,budget=budget,train_before_model=node_select_model)
+                other_acc = adv_super.target_attack(others,seed=seed,poison=poision,evasion=evasion,budget=budget,train_before_model=node_select_model)
+
+                total_time = high_margin_acc['time'] + low_margin_acc['time'] + high_degree_acc['time'] + low_degree_acc['time'] + other_acc['time']
+                result['time'].append(total_time)
+
+
+                if poision:
+                    result['poision']['high_margin'].append(high_margin_acc['poision'])
+                    result['poision']['low_margin'].append(low_margin_acc['poision'])
+                    result['poision']['high_degree'].append(high_degree_acc['poision'])
+                    result['poision']['low_degree'].append(low_degree_acc['poision'])
+                    result['poision']['other'].append(other_acc['poision'])
+                    result['poision']['total'].append((high_margin_acc['poision'] + low_margin_acc['poision'] + high_degree_acc['poision'] + low_degree_acc['poision'] + other_acc['poision'])*10/50)
+
+                if evasion:
+                    result['evasion']['high_margin'].append(high_margin_acc['evasion'])
+                    result['evasion']['low_margin'].append(low_margin_acc['evasion'])
+                    result['evasion']['high_degree'].append(high_degree_acc['evasion'])
+                    result['evasion']['low_degree'].append(low_degree_acc['evasion'])
+                    result['evasion']['other'].append(other_acc['evasion'])
+                    result['evasion']['total'].append((high_margin_acc['evasion'] + low_margin_acc['evasion'] + high_degree_acc['evasion'] + low_degree_acc['evasion'] + other_acc['evasion'])*10/50)
 
                 
-                
-                
-        result_dict = {
-            'high_margin':(stats.mean(high_margin_acc_list),stats.stdev(high_margin_acc_list)),
-            'low_margin':(stats.mean(low_margin_acc_list),stats.stdev(low_margin_acc_list)),
-            'high_degree':(stats.mean(high_degree_acc_list),stats.stdev(high_degree_acc_list)),
-            'low_degree':(stats.mean(low_degree_acc_list),stats.stdev(low_degree_acc_list)),
-            'other':(stats.mean(other_acc_list),stats.stdev(other_acc_list)),
+        return_dict = {
+            'time':(stats.mean(result['time']),stats.stdev(result['time']))
         }
+        if poision:
+            return_dict['poision'] = {}
+            poision_dict = result['poision']
+            for key,value in poision_dict.items():
+                return_dict['poision'][key] = (stats.mean(value),stats.mean(value))
+
+            
+        if evasion:
+            return_dict['evasion'] = {}
+            poision_dict = result['evasion']
+            for key,value in poision_dict.items():
+                return_dict['evasion'][key] = (stats.mean(value),stats.mean(value))
+
+
                
-        return result_dict
+        return return_dict
