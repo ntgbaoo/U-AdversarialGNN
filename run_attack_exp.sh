@@ -1,6 +1,6 @@
-dataset=cora
-declare -a victim_models=("GIN" "GSAGE")
-declare -a adversarial_methods=("nettack" "gottack" "fga" "sga" "rnd")
+dataset=citeseer
+declare -a victim_models=("GCN" "GIN" "GSAGE" "PNA")
+declare -a adversarial_methods=("nettack" "gottack" "fga" "sga" "rnd" "gfattack" "pgdattack")
 
 for model in "${victim_models[@]}"
 do
