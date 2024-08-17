@@ -39,6 +39,7 @@ PATH_CONFIG_SPLIT = "{}configs/split/".format(PATH_DATA)
 PATH_DATASET = "{}dataset".format(PATH_DATA)
 PATH_OUTPUT = "output/"
 PATH_LOG = "{}log/".format(PATH_OUTPUT)
+PATH_RESULT = "{}results/".format(PATH_DATA)
 
 #Adversarial
 NETTACK_NAME = "nettack"
@@ -50,6 +51,8 @@ GFATTACK_NAME = "gfattack"
 IGATTACK_NAME = "igattack"
 PGDATTACK_NAME = "pgdattack"
 DICE_NAME = "dice"
+EVASION = "evasion"
+POSION = "poision"
 
 
 
