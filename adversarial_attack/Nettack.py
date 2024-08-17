@@ -158,7 +158,7 @@ class Nettack:
         W = surrogate.gc1.weight @ surrogate.gc2.weight
         return W.detach().cpu().numpy()
 
-    def attack(self, target,num_budgets=None,attack_structure =True,attack_features=False, direct=True, verbose=True, n_influencers= 0, ll_cutoff=0.004, **kwargs):
+    def attack(self, target,num_budgets=None,attack_structure =True,attack_features=False, direct=True, verbose=False, n_influencers= 0, ll_cutoff=0.004, **kwargs):
         """Generate perturbations on the input graph.
 
         Parameters
@@ -199,8 +199,6 @@ class Nettack:
         self.n_perturbations = num_budgets
         self.attack_features = attack_features
         if type(self.adj) is torch.Tensor:
-            print(self.adj.shape)
-            print(type(self.adj))
 
             self.ori_adj = utils.to_scipy(self.adj).tolil()
             self.modified_adj = utils.to_scipy(self.adj).tolil()
@@ -601,7 +599,6 @@ class Nettack:
         data = copy(self.ori_data)
         edge_weight = data.edge_weight
         assert edge_weight is None, 'weighted graph is not supported now.'
-        print(type(self.modified_adj))
 
         coo_matrix = self.modified_adj.tocoo()
         # Extract row and column indices (edges)

@@ -34,18 +34,17 @@ if __name__=="__main__":
 
     surrogate_supervisor = ModelSupervisor(data,args.device,**best_config)
     surrogate_supervisor.train_model(idx_train,idx_val,idx_test)
-    high,low, highest_degree,lowest_degree,other= NodeSelector.select_nodes_margin_degree(surrogate_supervisor,data,idx_test,seed=args.seed)
-    node_list = high +low + highest_degree + lowest_degree + other
-    print(node_list)
+    target_bucket= NodeSelector.select_nodes_margin_degree(surrogate_supervisor,data,idx_test,seed=args.seed)
 
-    adversarial_surrogate = SurrogateLoader.load_surrogate(data,idx_train,idx_val,device= args.device,seed=args.seed,model='SGC')
+    adversarial_surrogate = SurrogateLoader.load_surrogate(data,idx_train,idx_val,device= args.device,seed=args.seed,model='GCN')
     nettack = Nettack(data,args.device,args.seed)
     nettack.setup_surrogate(adversarial_surrogate)
 
-    adv_supervisor = AdversarialSupervisor(nettack,data,idx_train,idx_val,idx_test,device=args.device,**best_config)
-    miss_rate = adv_supervisor.target_attack(node_list,args.seed,5,evasion=True,train_before_model=surrogate_supervisor)
-    print(miss_rate)
-
+    adv_supervisor =  AdversarialSupervisor(data,nettack,idx_train,idx_val,idx_test,args.device,**best_config)
+    high_result,low_result, highest_degree_result,lowest_degree_result,other_result = adv_supervisor.target_attack(target_bucket,5,evasion=True,poision=True, evasion_model=surrogate_supervisor,seed = 720)
+    evasion_count = high_result[EVASION] + high_result[EVASION] + low_result[EVASION] + highest_degree_result[EVASION] + lowest_degree_result[EVASION] + other_result[EVASION]
+    poision_count = high_result[POSION] + high_result[EVASION] + low_result[POSION] + highest_degree_result[POSION] + lowest_degree_result[POSION] + other_result[POSION]
+    print(evasion_count,poision_count)
 
    
     

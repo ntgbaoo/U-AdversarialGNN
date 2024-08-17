@@ -10,7 +10,8 @@ import pandas as pd
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utility.ConfigHandler import ConfigHandler
 from data_loader.DataLoader import DataLoader
-from greatx.attack.targeted import Nettack,SGAttack,RandomAttack,DICEAttack,GFAttack,FGAttack,PGDAttack,IGAttack
+from greatx.attack.targeted import SGAttack,RandomAttack,DICEAttack,GFAttack,FGAttack,PGDAttack,IGAttack
+from adversarial_attack.Nettack import Nettack
 from greatx.datasets import GraphDataset
 from greatx.nn.models import GCN,SGC
 from greatx.training import Trainer
@@ -18,7 +19,7 @@ from greatx.training.callbacks import ModelCheckpoint
 from evaluation.ModelSupervisor import ModelSupervisor
 from adversarial_attack.NodeSelector import NodeSelector
 from adversarial_attack.SurrogateLoader import SurrogateLoader
-from adversarial_attack.AdversarialSupervisorv2 import AdversarialSupervisor
+from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
 from static import *
 from utility.config import args
 

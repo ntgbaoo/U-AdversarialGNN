@@ -1,21 +1,29 @@
+import os.path as osp
 
-import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import torch
 import torch_geometric.transforms as T
+import sys
+import os
 import statistics as stats
 import pandas as pd
 
-from greatx.attack.targeted import Nettack,SGAttack
-from evaluation.ModelSupervisor import ModelSupervisor
-from data_loader.DataLoader import DataLoader
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utility.ConfigHandler import ConfigHandler
-from static import *
-from adversarial_attack.SurrogateLoader import SurrogateLoader
+from data_loader.DataLoader import DataLoader
+from greatx.attack.targeted import SGAttack,RandomAttack,DICEAttack,GFAttack,FGAttack,PGDAttack,IGAttack
+from adversarial_attack.Nettack import Nettack
+from greatx.datasets import GraphDataset
+from greatx.nn.models import GCN,SGC
+from greatx.training import Trainer
+from greatx.training.callbacks import ModelCheckpoint
+from evaluation.ModelSupervisor import ModelSupervisor
 from adversarial_attack.NodeSelector import NodeSelector
+from adversarial_attack.SurrogateLoader import SurrogateLoader
 from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
-from greatx.attack.targeted import Nettack,SGAttack,RandomAttack,DICEAttack,GFAttack,FGAttack,PGDAttack,IGAttack
+from static import *
+from utility.config import args
+
+from greatx.utils import mark, split_nodes
 
 def load_attack(attack_method):
     if attack_method == SGA_NAME:
@@ -43,155 +51,127 @@ def get_surrogate_name(attack_method):
     else:
         return None
 
-if __name__=="__main__":
-    from utility.config import args
+def get_stat(results_list):
+    return (stats.mean(results_list),stats.stdev(results_list))
 
+if __name__ == "__main__":
+    # args.dataset = 'cora'
     # args.model = "GCN"
-    # args.dataset = "cora"
-    # args.adversarial =FGA_NAME
-    args.num_run = 3
+    # args.seed = 720
+    # args.adversarial = SGA_NAME
 
-    
-    data,_ = DataLoader.load(args.dataset)
-
-    columns = ['high_margin','low_margin','high_degree','low_degree','others','total','time']
-    rowlist_poision = []
+    data,split = DataLoader.load(args.dataset)
+    columns = ['budget','high_margin','low_margin','high_degree','low_degree','other','total','time']
     rowlist_evasion = []
+    rowlist_poision = []
+
     for budget in range(1,6):
-        result = {
-            'poision':{
-                'high_margin':[],
-                'low_margin':[],
-                'high_degree':[],
-                'low_degree':[],
-                'other':[],
-                'total':[]
-            },
-            'evasion':{
-                'high_margin':[],
-                'low_margin':[],
-                'high_degree':[],
-                'low_degree':[],
-                'other':[],
-                'total':[]
-            },
-            'time':[]
+        evasion_dict = {
+            'high_margin':[],
+            'low_margin':[],
+            'high_degree':[],
+            'low_degree':[],
+            'other':[],
+            'total':[]
         }
-        for split_indx in range(5):
-            split_model = ConfigHandler.load_model_config(args.model,"best_config",args.dataset,split_indx)
+        poision_dict = {
+            'high_margin':[],
+            'low_margin':[],
+            'high_degree':[],
+            'low_degree':[],
+            'other':[],
+            'total':[]
+        }
+        time = []
+
+        for split_idx in range(5):
+
+            split_model = ConfigHandler.load_model_config(args.model,"best_config",args.dataset,split_idx)
             split = split_model['split']
-            best_config = split_model.get('model_config')
+            configs = split_model.get('model_config')
             idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_train']
-        
-            for run_idx in range(args.num_run):
-                seed = args.seed + run_idx
-                miss_poision_count = 0
-                miss_evasion_count = 0
-                time = 0
-            
-                surrogate_supervisor = ModelSupervisor(data,args.device,**best_config,seed=seed)
-                surrogate_supervisor.train_model(idx_train,idx_val,idx_test)
-                high,low, highest_degree,lowest_degree,other = NodeSelector.select_nodes_margin_degree(surrogate_supervisor,data,idx_test,seed=seed)
+
+            for idx_run in range(args.num_run):
+                seed = args.seed + idx_run
+                node_selector = ModelSupervisor(data,args.device,**configs)
+                node_selector.train_model(idx_train,idx_val,idx_test)
+                bucket_target_nodes= NodeSelector.select_nodes_margin_degree(node_selector,data,idx_test,seed=seed)
+                # node_list = high +low + highest_degree + lowest_degree + other
+
+
+                # surrogate_supervisor = 
+                attacker = load_attack(args.adversarial)(data, device=args.device,seed=seed)
 
                 if get_surrogate_name(args.adversarial) is not None:
-                    adversarial_surrogate = SurrogateLoader.load_surrogate(data,idx_train,idx_val,device= args.device,seed=seed,model=get_surrogate_name(args.adversarial))
+                    adversarial_surrogate = SurrogateLoader.load_surrogate(data,idx_train,idx_val,device=args.device,seed=seed,model=get_surrogate_name(args.adversarial))
+                    attacker.setup_surrogate(adversarial_surrogate)
+
+
+                adversarial_supervisor = AdversarialSupervisor(data,attacker,idx_train,idx_val,idx_test,args.device,**configs)
+                high_result,low_result, highest_degree_result,lowest_degree_result,other_result = adversarial_supervisor.target_attack(bucket_target_nodes,budget,evasion=True,poision=True, evasion_model=node_selector,seed = seed)
                 
-                attack = load_attack(args.adversarial)(data = data,device = args.device,seed = seed)
-                if get_surrogate_name(args.adversarial) is not None:
-                    attack.setup_surrogate(adversarial_surrogate)
-                adv_supervisor = AdversarialSupervisor(attack,data,idx_train,idx_val,idx_test,device=args.device,**best_config)
-                miss_rate_dict = adv_supervisor.target_attack(high,seed,budget,evasion=True,train_before_model=surrogate_supervisor)
-                result['poision']['high_margin'].append(miss_rate_dict['poision'])
-                result['evasion']['high_margin'].append(miss_rate_dict['evasion'])
-                miss_poision_count += miss_rate_dict['poision'] *10
-                miss_evasion_count += miss_rate_dict['evasion'] *10
-                time += miss_rate_dict['time']
+                evasion_dict['high_margin'].append( high_result[EVASION]/10)
+                poision_dict['high_margin'].append( high_result[POSION]/10)
 
-                attack = load_attack(args.adversarial)(data = data,device = args.device,seed = seed)
-                if get_surrogate_name(args.adversarial) is not None:
-                    attack.setup_surrogate(adversarial_surrogate)
-                adv_supervisor = AdversarialSupervisor(attack,data,idx_train,idx_val,idx_test,device=args.device,**best_config)
-                miss_rate_dict = adv_supervisor.target_attack(low,seed,budget,evasion=True,train_before_model=surrogate_supervisor)
-                result['poision']['low_margin'].append(miss_rate_dict['poision'])
-                result['evasion']['low_margin'].append(miss_rate_dict['evasion'])
-                miss_poision_count += miss_rate_dict['poision'] *10
-                miss_evasion_count += miss_rate_dict['evasion'] *10
-                time += miss_rate_dict['time']
+                evasion_dict['low_margin'].append( low_result[EVASION]/10)
+                poision_dict['low_margin'].append( low_result[POSION]/10)
 
-                attack = load_attack(args.adversarial)(data = data,device = args.device,seed = seed)
-                if get_surrogate_name(args.adversarial) is not None:
-                    attack.setup_surrogate(adversarial_surrogate)
-                adv_supervisor = AdversarialSupervisor(attack,data,idx_train,idx_val,idx_test,device=args.device,**best_config)
-                miss_rate_dict = adv_supervisor.target_attack(highest_degree,seed,budget,evasion=True,train_before_model=surrogate_supervisor)
-                result['poision']['high_degree'].append(miss_rate_dict['poision'])
-                result['evasion']['high_degree'].append(miss_rate_dict['evasion'])
-                miss_poision_count += miss_rate_dict['poision'] *10
-                miss_evasion_count += miss_rate_dict['evasion'] *10
-                time += miss_rate_dict['time']
+                evasion_dict['high_degree'].append( highest_degree_result[EVASION]/10)
+                poision_dict['high_degree'].append( highest_degree_result[POSION]/10)
 
-                attack = load_attack(args.adversarial)(data = data,device = args.device,seed = seed)
-                if get_surrogate_name(args.adversarial) is not None:
-                    attack.setup_surrogate(adversarial_surrogate)
-                adv_supervisor = AdversarialSupervisor(attack,data,idx_train,idx_val,idx_test,device=args.device,**best_config)
-                miss_rate_dict = adv_supervisor.target_attack(lowest_degree,seed,budget,evasion=True,train_before_model=surrogate_supervisor)
-                result['poision']['low_degree'].append(miss_rate_dict['poision'])
-                result['evasion']['low_degree'].append(miss_rate_dict['evasion'])
-                miss_poision_count += miss_rate_dict['poision'] *10
-                miss_evasion_count += miss_rate_dict['evasion'] *10
-                time += miss_rate_dict['time']
+                evasion_dict['low_degree'].append( lowest_degree_result[EVASION]/10)
+                poision_dict['low_degree'].append( lowest_degree_result[POSION]/10)
 
-                attack = load_attack(args.adversarial)(data = data,device = args.device,seed = seed)
-                if get_surrogate_name(args.adversarial) is not None:
-                    attack.setup_surrogate(adversarial_surrogate)
-                adv_supervisor = AdversarialSupervisor(attack,data,idx_train,idx_val,idx_test,device=args.device,**best_config)
-                miss_rate = adv_supervisor.target_attack(other,seed,budget,evasion=True,train_before_model=surrogate_supervisor)
-                result['poision']['other'].append(miss_rate_dict['poision'])
-                result['evasion']['other'].append(miss_rate_dict['evasion'])
-                miss_poision_count += miss_rate_dict['poision'] *10
-                miss_evasion_count += miss_rate_dict['evasion'] *10
-                time += miss_rate_dict['time']
+                evasion_dict['other'].append( other_result[EVASION]/10)
+                poision_dict['other'].append( other_result[POSION]/10)
+                
+                evasion_count = high_result[EVASION] + high_result[EVASION] + low_result[EVASION] + highest_degree_result[EVASION] + lowest_degree_result[EVASION] + other_result[EVASION]
+                poision_count = high_result[POSION] + high_result[EVASION] + low_result[POSION] + highest_degree_result[POSION] + lowest_degree_result[POSION] + other_result[POSION]
+                evasion_dict['total'].append(evasion_count/50)
+                poision_dict['total'].append(poision_count/50)
 
-                result['time'].append(time)
-                result['poision']['total'].append(miss_poision_count)
-                result['evasion']['total'].append(miss_evasion_count)
+                time_total = high_result['time'] + high_result['time'] + low_result['time'] + highest_degree_result['time'] + lowest_degree_result['time'] + other_result['time']
+                time.append(time_total)
 
-        
-        rowlist_poision.append([
-            (stats.mean(result['poision']['high_margin']),stats.stdev(result['poision']['high_margin'])),
-            (stats.mean(result['poision']['low_margin']),stats.stdev(result['poision']['low_margin'])),
-            (stats.mean(result['poision']['high_degree']),stats.stdev(result['poision']['high_degree'])),
-            (stats.mean(result['poision']['low_degree']),stats.stdev(result['poision']['low_degree'])),
-            (stats.mean(result['poision']['other']),stats.stdev(result['poision']['other'])),
-            (stats.mean(result['poision']['total']),stats.stdev(result['poision']['total'])),
-            (stats.mean(result['time']),stats.stdev(result['time']))
-        ])
+        print(evasion_dict)
+        print(poision_dict)
+        print(time) 
 
-        rowlist_evasion.append([
-            (stats.mean(result['evasion']['high_margin']),stats.stdev(result['evasion']['high_margin'])),
-            (stats.mean(result['evasion']['low_margin']),stats.stdev(result['evasion']['low_margin'])),
-            (stats.mean(result['evasion']['high_degree']),stats.stdev(result['evasion']['high_degree'])),
-            (stats.mean(result['evasion']['low_degree']),stats.stdev(result['evasion']['low_degree'])),
-            (stats.mean(result['evasion']['other']),stats.stdev(result['evasion']['other'])),
-            (stats.mean(result['evasion']['total']),stats.stdev(result['evasion']['total'])),
-            (stats.mean(result['time']),stats.stdev(result['time']))
-        ])
+        row_evasion = [
+            budget,
+            get_stat(evasion_dict['high_margin']),
+            get_stat(evasion_dict['low_margin']),
+            get_stat(evasion_dict['high_degree']),
+            get_stat(evasion_dict['low_degree']),
+            get_stat(evasion_dict['other']),
+            get_stat(evasion_dict['total']),
+            get_stat(time),
+        ]
+        rowlist_evasion.append(row_evasion)
 
-    row_indx = [1,2,3,4,5]
+        row_poision = [
+            budget,
+            get_stat(poision_dict['high_margin']),
+            get_stat(poision_dict['low_margin']),
+            get_stat(poision_dict['high_degree']),
+            get_stat(poision_dict['low_degree']),
+            get_stat(poision_dict['other']),
+            get_stat(poision_dict['total']),
+            get_stat(time),
+        ]
+        rowlist_poision.append(row_poision)
+        print(evasion_dict)
+        print(poision_dict)
+
+    df_poision = pd.DataFrame(rowlist_poision,columns=columns)
+    df_evasion = pd.DataFrame(rowlist_evasion,columns=columns)
+
     if not os.path.exists("{}{}/{}/".format(PATH_RESULT,args.model,args.dataset)):
         os.makedirs("{}{}/{}/".format(PATH_RESULT,args.model,args.dataset))
-    poision_df = pd.DataFrame(rowlist_poision,columns=columns)
-    poision_df.index = row_indx
-    poision_df.to_csv("{}{}/{}/{}_poision.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
-
-    evasion_df = pd.DataFrame(rowlist_evasion,columns=columns)
-    evasion_df.index = row_indx
-    evasion_df.to_csv("{}{}/{}/{}_evasion.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
+    df_poision.to_csv("{}{}/{}/{}_poision.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
+    df_evasion.to_csv("{}{}/{}/{}_evasion.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
 
 
 
 
-                
-
-
-   
-    
+  
