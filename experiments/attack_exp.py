@@ -94,11 +94,11 @@ if __name__ == "__main__":
         os.makedirs("{}{}/{}/".format(PATH_RESULT,args.model,args.dataset))
     poision_df = pd.DataFrame(rowlist_poision,columns=columns)
     poision_df.index = row_indx
-    poision_df.to_csv("{}{}/{}/{}_poision.csv".format(PATH_RESULT,args.model,args.dataset,args.args.adversarial))
+    poision_df.to_csv("{}{}/{}/{}_poision.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
 
     evasion_df = pd.DataFrame(rowlist_evasion,columns=columns)
     evasion_df.index = row_indx
-    evasion_df.to_csv("{}{}/{}/{}_evasion.csv".format(PATH_RESULT,args.model,args.dataset,args.args.adversarial))
+    evasion_df.to_csv("{}{}/{}/{}_evasion.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
 
 
 

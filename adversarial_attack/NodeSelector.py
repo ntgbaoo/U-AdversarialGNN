@@ -53,7 +53,6 @@ class NodeSelector:
         (iv) 10 nodes with lowest degree
         (v) 10 nodes with random
         '''
-
         set_random(seed)
         target_runner.model.eval()
         output = target_runner.get_model_output(data)

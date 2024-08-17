@@ -51,6 +51,8 @@ GFATTACK_NAME = "gfattack"
 IGATTACK_NAME = "igattack"
 PGDATTACK_NAME = "pgdattack"
 DICE_NAME = "dice"
+EVASION = "evasion"
+POSION = "poision"
 
 
 
