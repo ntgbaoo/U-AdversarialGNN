@@ -62,9 +62,10 @@ class GRBCDAttack(PRBCDAttack):
     def __init__(
         self,
        data:Data,
+       device = "cpu",
        seed=720
     ):
-        super().__init__(data,seed)
+        super().__init__(data,device,seed)
     
     def update_config(self,
         block_size: int,

@@ -20,16 +20,16 @@ from utility.ConfigHandler import ConfigHandler
 from evaluation.Grid import Grid
 
 if __name__ == "__main__":
-    args.model = "SGC"
+       
     hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
     grid_generator = Grid(hyper_grid_config)
     all_configs = grid_generator.init_grid()
     data,_ = DataLoader.load(args.dataset)
     split_config = ConfigHandler.load_split_config(config_name="default")
-   
+
     splitter = Splitter(**split_config)
     folds = splitter.split(data.x.numpy(),data.y.numpy())
-    for split_idx in range(2,5):
+    for split_idx in range(0,5):
         fold = folds[split_idx]
         idx_train,idx_val,idx_test =fold.idx_train,fold.idx_val,fold.idx_test
         hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
