@@ -78,7 +78,8 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
          model = SGC(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
     
     elif model_name == "RobustGCN":
-        model = RobustGCN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
+        gamma = kwargs.get(GAMMA_ATTENTION,1)
+        model = RobustGCN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out,gamma = gamma)
 
     elif model_name == "GNNGuard":
         model = GNNGUARD(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)

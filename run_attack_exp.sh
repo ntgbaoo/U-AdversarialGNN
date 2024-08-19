@@ -6,7 +6,7 @@ for model in "${victim_models[@]}"
 do
    for adversarial in "${adversarial_methods[@]}"
    do
-        echo "python experiments/attack_exp.py --model=$model --adversarial=$adversarial --dataset=$dataset"
-        python experiments/attack_exp.py --model=$model --adversarial=$adversarial --dataset=$dataset
+        echo "python example/fga_example.py --model=$model --adversarial=$adversarial --dataset=$dataset --seed=720"
+        python example/fga_example.py --model=$model --adversarial=$adversarial --dataset=$dataset --seed=720
    done
 done

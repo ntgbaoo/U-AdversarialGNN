@@ -22,6 +22,8 @@ from adversarial_attack.SurrogateLoader import SurrogateLoader
 from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
 from static import *
 from utility.config import args
+from adversarial_attack.PRBCDAttack import PRBCDAttack
+
 
 from greatx.utils import mark, split_nodes
 
@@ -42,6 +44,10 @@ def load_attack(attack_method):
         return PGDAttack
     elif attack_method == IGATTACK_NAME:
         return IGAttack
+    elif attack_method == PRBCD_NAME:
+        return PRBCDAttack
+
+    
 
 def get_surrogate_name(attack_method):
     if attack_method == SGA_NAME:
@@ -102,7 +108,14 @@ if __name__ == "__main__":
                 # surrogate_supervisor = 
                 attacker = load_attack(args.adversarial)(data, device=args.device,seed=seed)
 
+                if args.adversarial == PRBCD_NAME:
+                    attacker.update_config(10000,500)
+                
+                if args.adversarial == PRBCD_NAME:
+                    attacker.setup_surrogate(node_selector.model)
+
                 if get_surrogate_name(args.adversarial) is not None:
+                    
                     adversarial_surrogate = SurrogateLoader.load_surrogate(data,idx_train,idx_val,device=args.device,seed=seed,model=get_surrogate_name(args.adversarial))
                     attacker.setup_surrogate(adversarial_surrogate)
 

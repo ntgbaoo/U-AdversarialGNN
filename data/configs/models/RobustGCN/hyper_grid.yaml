@@ -25,4 +25,8 @@ optimizer_state:
   optimizer: "ADAM"
 patience: 
   - 50
+gamma_attention:
+  - 0.5
+  - 1
+  - 1.5
 
