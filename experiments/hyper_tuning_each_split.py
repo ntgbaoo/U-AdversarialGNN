@@ -43,7 +43,7 @@ if __name__ == "__main__":
     start = timeit.default_timer()
     modelSelector.process_model_selection()
     end = timeit.default_timer()
-    modelSelector.save_config(split_idx,args.dataset)
+    modelSelector.save_config(args.split_idx,args.dataset)
     print("Total time:{}".format(end -start))
     print(modelSelector.get_best_config())
     
