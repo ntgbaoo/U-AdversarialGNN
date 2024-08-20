@@ -92,6 +92,7 @@ class ModelSupervisor(IModelSupervisor):
             out = self.model( self.features_torch, self.edge_index_torch, batch_size = int(self.batch_size) )
         else:
             out = self.model( self.features_torch, self.edge_index_torch)
+
         loss = F.cross_entropy(out[idx_train], self.labels_torch[idx_train])
         loss.backward()
         self.optimizer.step()

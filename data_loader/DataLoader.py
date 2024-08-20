@@ -57,6 +57,7 @@ class DataLoader(IDataLoader):
             ogb_dataset = PygNodePropPredDataset(name = dataset, root = PATH_DATASET,transform=T.ToUndirected())
             default_split  = ogb_dataset.get_idx_split()
             data = ogb_dataset[0]
+            data.y = data.y.squeeze()
         else:
             raise Exception("Unsupport datasets")
         return data,default_split

@@ -32,6 +32,7 @@ class Grid:
         self.scheduler_state = config_dict.get(SCHEDULER_STATE)
         self.optimizer_state = config_dict.get(OPTIMIZER_STATE)
         self.aggregation = config_dict.get(AGGREGATION)
+        self.gamma_attention = config_dict.get(GAMMA_ATTENTION)
         self._assert_config_dict()
         self.all_configs = []
     
@@ -50,6 +51,9 @@ class Grid:
         self.all_configs = self._update_config(self.all_configs,self.lr,LEARNING_RATE)
         self.all_configs = self._update_config(self.all_configs,self.epoch,EPOCHS)
         self.all_configs = self._update_config(self.all_configs,self.nhid,HIDDEN_UNITS)
+
+        if self.gamma_attention is not None and len(self.gamma_attention) > 0:
+            self.all_configs = self._update_config(self.all_configs,self.gamma_attention,GAMMA_ATTENTION)
 
         if self.batch_size is not None and len(self.batch_size) > 0:
             self.all_configs = self._update_config(self.all_configs,self.batch_size,BATCH_SIZE)

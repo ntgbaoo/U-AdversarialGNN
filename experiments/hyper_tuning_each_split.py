@@ -20,33 +20,32 @@ from utility.ConfigHandler import ConfigHandler
 from evaluation.Grid import Grid
 
 if __name__ == "__main__":
-    args.model = "SGC"
     hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
     grid_generator = Grid(hyper_grid_config)
     all_configs = grid_generator.init_grid()
     data,_ = DataLoader.load(args.dataset)
     split_config = ConfigHandler.load_split_config(config_name="default")
-   
+
     splitter = Splitter(**split_config)
     folds = splitter.split(data.x.numpy(),data.y.numpy())
-    for split_idx in range(2,5):
-        fold = folds[split_idx]
-        idx_train,idx_val,idx_test =fold.idx_train,fold.idx_val,fold.idx_test
-        hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
-        modelSelector = ModelSelector(
-            config_dict= hyper_grid_config,
-            idx_train=idx_train,
-            idx_val= idx_val,
-            idx_test= idx_test,
-            data=data,
-            device=args.device
-        )
-        start = timeit.default_timer()
-        modelSelector.process_model_selection()
-        end = timeit.default_timer()
-        modelSelector.save_config(split_idx,args.dataset)
-        print("Total time:{}".format(end -start))
-        print(modelSelector.get_best_config())
+    
+    fold = folds[args.split_idx]
+    idx_train,idx_val,idx_test =fold.idx_train,fold.idx_val,fold.idx_test
+    hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
+    modelSelector = ModelSelector(
+        config_dict= hyper_grid_config,
+        idx_train=idx_train,
+        idx_val= idx_val,
+        idx_test= idx_test,
+        data=data,
+        device=args.device
+    )
+    start = timeit.default_timer()
+    modelSelector.process_model_selection()
+    end = timeit.default_timer()
+    modelSelector.save_config(split_idx,args.dataset)
+    print("Total time:{}".format(end -start))
+    print(modelSelector.get_best_config())
     
      
 

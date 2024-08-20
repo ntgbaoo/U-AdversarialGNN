@@ -3,8 +3,7 @@ import sys
 import os
 import warnings
 from torch_geometric.nn import aggr as torch_aggr
-from greatx.nn.models import SGC
-
+from greatx.nn.models import SGC,RobustGCN,GNNGUARD
 
 # Hide all warnings
 warnings.filterwarnings("ignore")
@@ -77,6 +76,13 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
                     aggr = aggr)
     elif model_name == "SGC":
          model = SGC(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
+    
+    elif model_name == "RobustGCN":
+        gamma = kwargs.get(GAMMA_ATTENTION,1)
+        model = RobustGCN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out,gamma = gamma)
+
+    elif model_name == "GNNGuard":
+        model = GNNGUARD(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
 
     else:
         raise Exception('Unsupport or undefined model. Please select one of the following model: GCN, GIN, GSAGE,GAT, PNA, EdgeCNN')
