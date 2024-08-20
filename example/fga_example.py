@@ -112,7 +112,14 @@ if __name__ == "__main__":
                     attacker.update_config(10000,500)
                 
                 if args.adversarial == PRBCD_NAME:
-                    attacker.setup_surrogate(node_selector.model)
+                    if args.model == "GCN":
+                        attacker.setup_surrogate(node_selector.model)
+                    else:
+                        split_model_surrogate = ConfigHandler.load_model_config("GCN","best_config",args.dataset,split_idx)
+                        configs_surrogate = split_model_surrogate.get('model_config')
+                        surrogate = ModelSupervisor(data,args.device,**configs_surrogate)
+                        surrogate.train_model(idx_train,idx_val,idx_test)
+                        attacker.setup_surrogate(surrogate.model)
 
                 if get_surrogate_name(args.adversarial) is not None:
                     
