@@ -198,6 +198,8 @@ class Nettack:
         self.target_node = target
         self.n_perturbations = num_budgets
         self.attack_features = attack_features
+        self.attack_structure = attack_structure
+
         if type(self.adj) is torch.Tensor:
 
             self.ori_adj = utils.to_scipy(self.adj).tolil()

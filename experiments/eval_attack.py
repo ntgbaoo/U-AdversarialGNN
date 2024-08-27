@@ -22,6 +22,8 @@ from adversarial_attack.SurrogateLoader import SurrogateLoader
 from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
 from static import *
 from utility.config import args
+from adversarial_attack.PRBCDAttack import PRBCDAttack
+
 
 from greatx.utils import mark, split_nodes
 
@@ -42,12 +44,16 @@ def load_attack(attack_method):
         return PGDAttack
     elif attack_method == IGATTACK_NAME:
         return IGAttack
+    elif attack_method == PRBCD_NAME:
+        return PRBCDAttack
+
+    
 
 def get_surrogate_name(attack_method):
     if attack_method == SGA_NAME:
         return 'SGC'
     elif attack_method in [NETTACK_NAME,FGA_NAME,PGDATTACK_NAME,IGATTACK_NAME]:
-        return 'GCN'
+        return 'GCN_surrogate'
     else:
         return None
 
@@ -101,15 +107,38 @@ if __name__ == "__main__":
 
                 # surrogate_supervisor = 
                 attacker = load_attack(args.adversarial)(data, device=args.device,seed=seed)
+                surrogate_name = get_surrogate_name(args.adversarial)
 
-                if get_surrogate_name(args.adversarial) is not None:
-                    adversarial_surrogate = SurrogateLoader.load_surrogate(data,idx_train,idx_val,device=args.device,seed=seed,model=get_surrogate_name(args.adversarial))
-                    attacker.setup_surrogate(adversarial_surrogate)
+                if args.adversarial is GFATTACK_NAME and args.dataset == "cora":
+                    attacker.T = data.num_nodes//2                    
+                
+                if args.adversarial == PRBCD_NAME:
+                    attacker.update_config(10000,500)
+                    if args.model == "GCN":
+                        attacker.setup_surrogate(node_selector.model)
+                    else:
+                        split_model_surrogate = ConfigHandler.load_model_config("GCN","best_config",args.dataset,split_idx)
+                        configs_surrogate = split_model_surrogate.get('model_config')
+                        surrogate = ModelSupervisor(data,args.device,**configs_surrogate)
+                        surrogate.train_model(idx_train,idx_val,idx_test)
+                        attacker.setup_surrogate(surrogate.model)
+
+                if surrogate_name is not None:
+                    # split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"best_config",args.dataset,split_idx)
+                    # configs_surrogate = split_model.get('model_config')
+                    # # adversarial_surrogate = SurrogateLoader.load_surrogate(data,idx_train,idx_val,device=args.device,seed=seed,model=get_surrogate_name(args.adversarial),model_configs = configs_surrogate)
+                    # attacker.setup_surrogate(node_selector.model)
+
+                    split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"best_config",args.dataset,split_idx)
+                    configs_surrogate = split_model_surrogate.get('model_config')
+                    surrogate = ModelSupervisor(data,args.device,**configs_surrogate)
+                    surrogate.train_model(idx_train,idx_val,idx_test)
+                    attacker.setup_surrogate(surrogate.model)
 
 
                 adversarial_supervisor = AdversarialSupervisor(data,attacker,idx_train,idx_val,idx_test,args.device,**configs)
                 high_result,low_result, highest_degree_result,lowest_degree_result,other_result = adversarial_supervisor.target_attack(bucket_target_nodes,budget,evasion=True,poision=True, evasion_model=node_selector,seed = seed)
-                
+                adversarial_supervisor.save_result(args.adversarial,seed,args.dataset,args.model,budget)
                 evasion_dict['high_margin'].append( high_result[EVASION]/10)
                 poision_dict['high_margin'].append( high_result[POSION]/10)
 

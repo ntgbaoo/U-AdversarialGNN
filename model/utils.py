@@ -1,4 +1,4 @@
-from torch_geometric.nn.models.basic_gnn import GCN,GIN,GraphSAGE,PNA,GAT,EdgeCNN
+from torch_geometric.nn.models.basic_gnn import GIN,GraphSAGE,PNA,GAT,EdgeCNN
 import sys
 import os
 import warnings
@@ -29,6 +29,7 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
     assert out_channel is not None, "Please define out_channel"
     
     if model_name == "GCN":
+        from torch_geometric.nn.models.basic_gnn import GCN
         model = GCN(in_channel,
                     nhid,
                     nlayers,
@@ -76,6 +77,10 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
                     aggr = aggr)
     elif model_name == "SGC":
          model = SGC(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
+    
+    elif model_name == "GCN_surrogate":
+        from greatx.nn.models import GCN
+        model = GCN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
     
     elif model_name == "RobustGCN":
         gamma = kwargs.get(GAMMA_ATTENTION,1)
