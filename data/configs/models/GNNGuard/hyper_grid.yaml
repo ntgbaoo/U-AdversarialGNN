@@ -5,7 +5,7 @@ num_layers:
   - 2
   - 3
 hidden_unit:
-  - 3
+  - 32
   - 64
   - 128
 lr:

@@ -3,7 +3,7 @@ import sys
 import os
 import warnings
 from torch_geometric.nn import aggr as torch_aggr
-from greatx.nn.models import SGC,RobustGCN,GNNGUARD,SoftMedianGCN
+from greatx.nn.models import SGC,RobustGCN,GNNGUARD,SoftMedianGCN,ElasticGNN
 
 # Hide all warnings
 warnings.filterwarnings("ignore")
@@ -90,8 +90,22 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
         model = GNNGUARD(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
     
     elif model_name == "SoftMedianGCN":
-        model = SoftMedianGCN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
+        # model = SoftMedianGCN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
+        from torch_geometric.nn.models.basic_gnn import GCN
+        from model.soft_median import SoftMedianAggregation
+        model = GCN(in_channel,
+                    nhid,
+                    nlayers,
+                    out_channel,
+                    drop_out,
+                    aggr = SoftMedianAggregation())
 
+
+    elif model_name == "ElasticGNN":
+        prop_step_k = kwargs.get(PROPA_STEP_K)
+        lambda1 = kwargs.get(LAMBDA1)
+        lambda2 = kwargs.get(LAMBDA2)
+        model = ElasticGNN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out,K=prop_step_k,lambda1= lambda1,lambda2=lambda2)
 
     else:
         raise Exception('Unsupport or undefined model. Please select one of the following model: GCN, GIN, GSAGE,GAT, PNA, EdgeCNN')

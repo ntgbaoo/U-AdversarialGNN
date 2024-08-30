@@ -22,6 +22,10 @@ STEP_SIZE_LIST = "step_size_list"
 STEP_SIZE = "step_size"
 WEIGHT_DECAY = "weight_decay"
 GAMMA_ATTENTION ="gamma_attention"
+PROPA_STEP_K="propa_step_k"
+LAMBDA1 ="lambda1"
+LAMBDA2 ="lambda2"
+
 
 IDX_TRAIN = "idx_train"
 IDX_VAL = "idx_val"
