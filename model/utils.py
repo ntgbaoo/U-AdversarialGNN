@@ -1,9 +1,9 @@
-from torch_geometric.nn.models.basic_gnn import GCN,GIN,GraphSAGE,PNA,GAT,EdgeCNN
+from torch_geometric.nn.models.basic_gnn import GIN,GraphSAGE,PNA,GAT,EdgeCNN
 import sys
 import os
 import warnings
 from torch_geometric.nn import aggr as torch_aggr
-from greatx.nn.models import SGC,RobustGCN,GNNGUARD
+from greatx.nn.models import SGC,RobustGCN,GNNGUARD,SoftMedianGCN
 
 # Hide all warnings
 warnings.filterwarnings("ignore")
@@ -29,6 +29,7 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
     assert out_channel is not None, "Please define out_channel"
     
     if model_name == "GCN":
+        from torch_geometric.nn.models.basic_gnn import GCN
         model = GCN(in_channel,
                     nhid,
                     nlayers,
@@ -77,12 +78,20 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
     elif model_name == "SGC":
          model = SGC(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
     
+    elif model_name == "GCN_surrogate":
+        from greatx.nn.models import GCN
+        model = GCN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
+    
     elif model_name == "RobustGCN":
         gamma = kwargs.get(GAMMA_ATTENTION,1)
         model = RobustGCN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out,gamma = gamma)
 
     elif model_name == "GNNGuard":
         model = GNNGUARD(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
+    
+    elif model_name == "SoftMedianGCN":
+        model = SoftMedianGCN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
+
 
     else:
         raise Exception('Unsupport or undefined model. Please select one of the following model: GCN, GIN, GSAGE,GAT, PNA, EdgeCNN')

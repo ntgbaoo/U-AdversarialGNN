@@ -41,6 +41,7 @@ PATH_DATASET = "{}dataset".format(PATH_DATA)
 PATH_OUTPUT = "output/"
 PATH_LOG = "{}log/".format(PATH_OUTPUT)
 PATH_RESULT = "{}results/".format(PATH_DATA)
+PATH_CACHED_PRED = "{}pred_cache/".format(PATH_DATA)
 
 #Adversarial
 NETTACK_NAME = "nettack"
@@ -55,6 +56,7 @@ DICE_NAME = "dice"
 PRBCD_NAME = "prbcdattack"
 EVASION = "evasion"
 POSION = "poision"
+GOTTACK ="GOttack"
 
 
 
