@@ -51,6 +51,7 @@ class ModelSupervisor(IModelSupervisor):
         self.lr = kwargs.get(LEARNING_RATE)
         self.weight_decay = float(kwargs.get(WEIGHT_DECAY,0))
         self.batch_size = kwargs.get(BATCH_SIZE)
+        self.model_name = kwargs.get(MODEL)
         self.model = load_model(num_features,num_classes,degree_dist,**kwargs)
         opti_state = kwargs.get(OPTIMIZER_STATE)
         
@@ -92,6 +93,7 @@ class ModelSupervisor(IModelSupervisor):
             out = self.model( self.features_torch, self.edge_index_torch, batch_size = int(self.batch_size) )
         else:
             out = self.model( self.features_torch, self.edge_index_torch)
+
 
         loss = F.cross_entropy(out[idx_train], self.labels_torch[idx_train])
         loss.backward()
