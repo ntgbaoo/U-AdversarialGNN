@@ -89,13 +89,17 @@ class ModelSupervisor(IModelSupervisor):
     def _train(self,idx_train):
         self.model.train()
         self.optimizer.zero_grad()
-        if self.batch_size is not None:
-            out = self.model( self.features_torch, self.edge_index_torch, batch_size = int(self.batch_size) )
+
+        if self.model_name is not "GRAND":
+            if self.batch_size is not None:
+                out = self.model( self.features_torch, self.edge_index_torch, batch_size = int(self.batch_size) )
+            else:
+                out = self.model( self.features_torch, self.edge_index_torch)
+
+
+            loss = F.cross_entropy(out[idx_train], self.labels_torch[idx_train])
         else:
-            out = self.model( self.features_torch, self.edge_index_torch)
-
-
-        loss = F.cross_entropy(out[idx_train], self.labels_torch[idx_train])
+            loss = self.model(self.features_torch, self.edge_index_torch,idx_train,self.labels_torch)
         loss.backward()
         self.optimizer.step()
         if self.scheduler is not None:

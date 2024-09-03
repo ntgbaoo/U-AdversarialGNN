@@ -50,6 +50,8 @@ class GRAND(IBassicGNN):
         self.temp = temp
         self.sample = sample
 
+        self.train_mode = None
+
         
         
         
@@ -69,29 +71,44 @@ class GRAND(IBassicGNN):
         labels,
     ) -> Tensor:
         X = x
-    
-        self.mlp.train()
-        X_list = []
-        K = self.sample
-        A = to_dense_adj(edge_index)
-        for k in range(K):
-            X_list.append(self._rand_prop(X, training=True,A=A))
 
-        output_list = []
-        for k in range(K):
-            output_list.append(torch.log_softmax(self.mlp(X_list[k]), dim=-1))
+        if self.train_mode:
+            X_list = []
+            K = self.sample
+            A = to_dense_adj(edge_index)
+            for k in range(K):
+                X_list.append(self._rand_prop(X, training=self.train_mode,A=A))
 
-        
-        loss_train = 0.
-        for k in range(K):
-            loss_train += F.nll_loss(output_list[k][idx_train], labels[idx_train])
-        
+            output_list = []
+            for k in range(K):
+                output_list.append(torch.log_softmax(self.mlp(X_list[k]), dim=-1))
+
             
-        loss_train = loss_train/K
-        
-        loss_consis = self._consis_loss(output_list)
+            loss_train = 0.
+            for k in range(K):
+                loss_train += F.nll_loss(output_list[k][idx_train], labels[idx_train])
+            
+                
+            loss_train = loss_train/K
+            
+            loss_consis = self._consis_loss(output_list)
 
-        loss_train = loss_train + loss_consis 
+            loss_train = loss_train + loss_consis 
+            return loss_train
+        else:
+            X = x
+            X = self._rand_prop(X, training=self.train_mode,A=A)
+            output = self.mlp(X)
+            output = torch.log_softmax(output, dim=-1)
+            return output
+
+    def train(self):
+        self.train_mode = True
+        self.mlp.train()
+
+    def eval(self):
+        self.train_mode = False
+        self.mlp.eval()
 
     def _propagate(self,feature, A, order):
     #feature = F.dropout(feature, args.dropout, training=training)
