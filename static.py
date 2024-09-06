@@ -25,6 +25,10 @@ GAMMA_ATTENTION ="gamma_attention"
 PROPA_STEP_K="propa_step_k"
 LAMBDA1 ="lambda1"
 LAMBDA2 ="lambda2"
+DROP_NODE_RATE="drop_node_rate"
+ORDER = "order"
+TEMP = "temp"
+LAMBDA ="lambda"
 
 
 IDX_TRAIN = "idx_train"

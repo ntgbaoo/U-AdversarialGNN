@@ -37,6 +37,11 @@ class Grid:
         self.lambda1 = config_dict.get(LAMBDA1)
         self.lambda2 = config_dict.get(LAMBDA2)
 
+        self.drop_node_rate = config.get(DROP_NODE_RATE)
+        self.order = config.get(ORDER)
+        self.temp = config.get(TEMP)
+        self._lambda = config.get(LAMBDA)
+
         self._assert_config_dict()
         self.all_configs = []
     
@@ -55,6 +60,18 @@ class Grid:
         self.all_configs = self._update_config(self.all_configs,self.lr,LEARNING_RATE)
         self.all_configs = self._update_config(self.all_configs,self.epoch,EPOCHS)
         self.all_configs = self._update_config(self.all_configs,self.nhid,HIDDEN_UNITS)
+
+        if self.drop_node_rate is not None and len(self.drop_node_rate) > 0:
+            self.all_configs = self._update_config(self.all_configs,self.drop_node_rate,DROP_NODE_RATE)
+
+        if self.order is not None and len(self.order) > 0:
+            self.all_configs = self._update_config(self.all_configs,self.order,ORDER)
+
+        if self.temp is not None and len(self.temp) > 0:
+            self.all_configs = self._update_config(self.all_configs,self.temp,TEMP)
+
+        if self._lambda is not None and len(self._lambda) > 0:
+            self.all_configs = self._update_config(self.all_configs,self._lambda,LAMBDA)
 
         if self.propa_step_k is not None and len(self.propa_step_k) > 0:
             self.all_configs = self._update_config(self.all_configs,self.propa_step_k,PROPA_STEP_K)

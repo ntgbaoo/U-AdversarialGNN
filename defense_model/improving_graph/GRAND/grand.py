@@ -46,6 +46,7 @@ class GRAND(IBassicGNN):
         self.scaler = StandardScaler()
 
         self.drop_node_rate = drop_node_rate
+        self.lam = lam
         self.order = order
         self.temp = temp
         self.sample = sample
