@@ -20,7 +20,7 @@ from utility.ConfigHandler import ConfigHandler
 from evaluation.Grid import Grid
 
 if __name__ == "__main__":
-    hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
+    hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="toy_grid")
     grid_generator = Grid(hyper_grid_config)
     all_configs = grid_generator.init_grid()
     data,_ = DataLoader.load(args.dataset)
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     for split_idx in range(0,5):
         fold = folds[split_idx]
         idx_train,idx_val,idx_test =fold.idx_train,fold.idx_val,fold.idx_test
-        hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
+        hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="toy_grid")
         modelSelector = ModelSelector(
             config_dict= hyper_grid_config,
             idx_train=idx_train,

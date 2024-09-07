@@ -51,6 +51,7 @@ class ModelSupervisor(IModelSupervisor):
         self.lr = kwargs.get(LEARNING_RATE)
         self.weight_decay = float(kwargs.get(WEIGHT_DECAY,0))
         self.batch_size = kwargs.get(BATCH_SIZE)
+        self.model_name = kwargs.get(MODEL)
         self.model = load_model(num_features,num_classes,degree_dist,**kwargs)
         opti_state = kwargs.get(OPTIMIZER_STATE)
         
@@ -88,12 +89,14 @@ class ModelSupervisor(IModelSupervisor):
     def _train(self,idx_train):
         self.model.train()
         self.optimizer.zero_grad()
-        if self.batch_size is not None:
-            out = self.model( self.features_torch, self.edge_index_torch, batch_size = int(self.batch_size) )
+        if self.model_name != "GRAND":
+            if self.batch_size is not None:
+                out = self.model( self.features_torch, self.edge_index_torch, batch_size = int(self.batch_size) )
+            else:
+                out = self.model( self.features_torch, self.edge_index_torch)
+            loss = F.cross_entropy(out[idx_train], self.labels_torch[idx_train])
         else:
-            out = self.model( self.features_torch, self.edge_index_torch)
-
-        loss = F.cross_entropy(out[idx_train], self.labels_torch[idx_train])
+            loss = self.model(self.features_torch, self.edge_index_torch,idx_train,self.labels_torch)
         loss.backward()
         self.optimizer.step()
         if self.scheduler is not None:
@@ -107,7 +110,6 @@ class ModelSupervisor(IModelSupervisor):
         logger.info(">>Start traing {} on {} for node classification".format(args.model,args.dataset))
         logger.info("Number of nodes:{}".format(self.number_nodes))
         logger.info("Training node:{} , Validation node: {} , Test node: {}".format(len(idx_train),len(idx_val),len(idx_test)))
-
         self.model.train()
 
         best_val_acc = best_test_acc = 0

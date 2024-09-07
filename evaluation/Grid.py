@@ -33,6 +33,16 @@ class Grid:
         self.optimizer_state = config_dict.get(OPTIMIZER_STATE)
         self.aggregation = config_dict.get(AGGREGATION)
         self.gamma_attention = config_dict.get(GAMMA_ATTENTION)
+        self.propa_step_k = config_dict.get(PROPA_STEP_K)
+        self.lambda1 = config_dict.get(LAMBDA1)
+        self.lambda2 = config_dict.get(LAMBDA2)
+
+        self.drop_node_rate = config_dict.get(DROP_NODE_RATE)
+        self.order = config_dict.get(ORDER)
+        self.temp = config_dict.get(TEMP)
+        self._lambda = config_dict.get(LAMBDA)
+        self.sample = config_dict.get(SAMPLE)
+
         self._assert_config_dict()
         self.all_configs = []
     
@@ -52,8 +62,33 @@ class Grid:
         self.all_configs = self._update_config(self.all_configs,self.epoch,EPOCHS)
         self.all_configs = self._update_config(self.all_configs,self.nhid,HIDDEN_UNITS)
 
+        if self.drop_node_rate is not None and len(self.drop_node_rate) > 0:
+            self.all_configs = self._update_config(self.all_configs,self.drop_node_rate,DROP_NODE_RATE)
+
+        if self.sample is not None and len(self.sample) > 0:
+            self.all_configs = self._update_config(self.all_configs,self.sample,SAMPLE)
+
+        if self.order is not None and len(self.order) > 0:
+            self.all_configs = self._update_config(self.all_configs,self.order,ORDER)
+
+        if self.temp is not None and len(self.temp) > 0:
+            self.all_configs = self._update_config(self.all_configs,self.temp,TEMP)
+
+        if self._lambda is not None and len(self._lambda) > 0:
+            self.all_configs = self._update_config(self.all_configs,self._lambda,LAMBDA)
+
+        if self.propa_step_k is not None and len(self.propa_step_k) > 0:
+            self.all_configs = self._update_config(self.all_configs,self.propa_step_k,PROPA_STEP_K)
+
+        if self.lambda1 is not None and len(self.lambda1) > 0:
+            self.all_configs = self._update_config(self.all_configs,self.lambda1,LAMBDA1)
+
+        if self.lambda2 is not None and len(self.lambda2) > 0:
+            self.all_configs = self._update_config(self.all_configs,self.lambda2,LAMBDA2)
+
         if self.gamma_attention is not None and len(self.gamma_attention) > 0:
             self.all_configs = self._update_config(self.all_configs,self.gamma_attention,GAMMA_ATTENTION)
+
 
         if self.batch_size is not None and len(self.batch_size) > 0:
             self.all_configs = self._update_config(self.all_configs,self.batch_size,BATCH_SIZE)

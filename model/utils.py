@@ -3,13 +3,14 @@ import sys
 import os
 import warnings
 from torch_geometric.nn import aggr as torch_aggr
-from greatx.nn.models import SGC,RobustGCN,GNNGUARD,SoftMedianGCN
+from greatx.nn.models import SGC,RobustGCN,GNNGUARD,SoftMedianGCN,ElasticGNN
 
 # Hide all warnings
 warnings.filterwarnings("ignore")
     
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from defense_model.improving_graph.GRAND.grand import GRAND
 from utility.util import logger
 from static import *
 
@@ -90,7 +91,31 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
         model = GNNGUARD(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
     
     elif model_name == "SoftMedianGCN":
-        model = SoftMedianGCN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
+        # model = SoftMedianGCN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
+        from torch_geometric.nn.models.basic_gnn import GCN
+        from model.soft_median import SoftMedianAggregation
+        model = GCN(in_channel,
+                    nhid,
+                    nlayers,
+                    out_channel,
+                    drop_out,
+                    aggr = SoftMedianAggregation())
+
+
+    elif model_name == "ElasticGNN":
+        prop_step_k = kwargs.get(PROPA_STEP_K)
+        lambda1 = kwargs.get(LAMBDA1)
+        lambda2 = kwargs.get(LAMBDA2)
+        model = ElasticGNN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out,K=prop_step_k,lambda1= lambda1,lambda2=lambda2)
+
+    elif model_name == "GRAND":
+        drop_node_rate = kwargs.get(DROP_NODE_RATE)
+        temp = kwargs.get(TEMP)
+        lambda_param = kwargs.get(LAMBDA)
+        sample = kwargs.get(SAMPLE)
+
+        model = GRAND(in_channel,nhid,nlayers,out_channel,
+                      drop_out,drop_node_rate=drop_node_rate,temp=temp,lam=lambda_param,sample=sample)
 
 
     else:
