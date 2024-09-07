@@ -64,6 +64,7 @@ class IBassicGNN(torch.nn.Module):
         jk: Optional[str] = None,
         **kwargs,
     ):
+        super.__init__()
         pass
     
     def reset_parameters(self):

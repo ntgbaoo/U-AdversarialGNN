@@ -37,10 +37,11 @@ class Grid:
         self.lambda1 = config_dict.get(LAMBDA1)
         self.lambda2 = config_dict.get(LAMBDA2)
 
-        self.drop_node_rate = config.get(DROP_NODE_RATE)
-        self.order = config.get(ORDER)
-        self.temp = config.get(TEMP)
-        self._lambda = config.get(LAMBDA)
+        self.drop_node_rate = config_dict.get(DROP_NODE_RATE)
+        self.order = config_dict.get(ORDER)
+        self.temp = config_dict.get(TEMP)
+        self._lambda = config_dict.get(LAMBDA)
+        self.sample = config_dict.get(SAMPLE)
 
         self._assert_config_dict()
         self.all_configs = []
@@ -63,6 +64,9 @@ class Grid:
 
         if self.drop_node_rate is not None and len(self.drop_node_rate) > 0:
             self.all_configs = self._update_config(self.all_configs,self.drop_node_rate,DROP_NODE_RATE)
+
+        if self.sample is not None and len(self.sample) > 0:
+            self.all_configs = self._update_config(self.all_configs,self.sample,SAMPLE)
 
         if self.order is not None and len(self.order) > 0:
             self.all_configs = self._update_config(self.all_configs,self.order,ORDER)

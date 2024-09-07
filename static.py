@@ -29,6 +29,7 @@ DROP_NODE_RATE="drop_node_rate"
 ORDER = "order"
 TEMP = "temp"
 LAMBDA ="lambda"
+SAMPLE = "sample"
 
 
 IDX_TRAIN = "idx_train"

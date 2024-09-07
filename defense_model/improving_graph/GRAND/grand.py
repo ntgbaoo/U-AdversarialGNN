@@ -12,13 +12,14 @@ from sklearn.preprocessing import StandardScaler
 import numpy as np
 from torch_geometric.utils import to_dense_adj
 import torch.nn.functional as F
+import torch
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from model.IBassicGNN import IBassicGNN
 
 
-class GRAND(IBassicGNN):
+class GRAND(torch.nn.Module):
     def __init__(self,  in_channels: int,
         hidden_channels: int,
         num_layers: int,
@@ -36,7 +37,9 @@ class GRAND(IBassicGNN):
         lam :Optional[float]=1.0,
         sample :Optional[int]=4,
         **kwargs,) -> None:
+
         super().__init__()
+
 
         #set up MLP
         self.mlp = MLP(in_channels=in_channels,hidden_channels=hidden_channels,out_channels= out_channels,num_layers=num_layers,dropout= dropout,
@@ -54,29 +57,33 @@ class GRAND(IBassicGNN):
         self.train_mode = None
 
         
-        
+    
+    def to(self,device="cpu"):
+        self.mlp.to(device)
+        return self
         
 
     def reset_parameters(self):
         self.mlp.reset_parameters()
 
 
-    def parameters(self, recurse: bool = True) -> os.Iterator[Parameter]:
-        return self.mlp
+    def parameters(self, recurse: bool = True):
+        return self.mlp.parameters()
 
     def forward(
         self,
         x: Tensor,
         edge_index,
-        idx_train,
-        labels,
+        idx_train = None,
+        labels = None,
     ) -> Tensor:
         X = x
+        K = self.sample
+        A = to_dense_adj(edge_index).squeeze(0)
 
         if self.train_mode:
             X_list = []
-            K = self.sample
-            A = to_dense_adj(edge_index)
+            
             for k in range(K):
                 X_list.append(self._rand_prop(X, training=self.train_mode,A=A))
 

@@ -10,6 +10,7 @@ warnings.filterwarnings("ignore")
     
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from defense_model.improving_graph.GRAND.grand import GRAND
 from utility.util import logger
 from static import *
 
@@ -106,6 +107,16 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
         lambda1 = kwargs.get(LAMBDA1)
         lambda2 = kwargs.get(LAMBDA2)
         model = ElasticGNN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out,K=prop_step_k,lambda1= lambda1,lambda2=lambda2)
+
+    elif model_name == "GRAND":
+        drop_node_rate = kwargs.get(DROP_NODE_RATE)
+        temp = kwargs.get(TEMP)
+        lambda_param = kwargs.get(LAMBDA)
+        sample = kwargs.get(SAMPLE)
+
+        model = GRAND(in_channel,nhid,nlayers,out_channel,
+                      drop_out,drop_node_rate=drop_node_rate,temp=temp,lam=lambda_param,sample=sample)
+
 
     else:
         raise Exception('Unsupport or undefined model. Please select one of the following model: GCN, GIN, GSAGE,GAT, PNA, EdgeCNN')
