@@ -10,7 +10,7 @@ warnings.filterwarnings("ignore")
     
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from defense_model.improving_graph.GRAND.grand import GRAND
+from defense_model.improving_training.GRAND.grand import GRAND
 from utility.util import logger
 from static import *
 
