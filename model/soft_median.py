@@ -5,9 +5,124 @@ from torch import Tensor
 
 from torch_geometric.nn.aggr import Aggregation
 from torch_geometric.utils import softmax
+from torch_geometric.utils import scatter, segment, to_dense_batch
 
 
-class WeightedQuantileAggregation(Aggregation):
+
+class WeightedAggregation(Aggregation):
+    r"""An abstract base class for implementing custom weighted aggregations.
+
+    In addition to :obj:`Aggregation`, :class:`WeightedAggregation` assigns a
+    custom :obj:`weight` value to each element in the input tensor :obj:`x`.
+
+    Shapes:
+        - **input:**
+          node features :math:`(*, |\mathcal{V}|, F_{in})` or edge features
+          :math:`(*, |\mathcal{E}|, F_{in})`,
+          node weights :math:`(|\mathcal{V}|)` or edge weights
+          :math:`(|\mathcal{E}|)`,
+          index vector :math:`(|\mathcal{V}|)` or :math:`(|\mathcal{E}|)`,
+        - **output:** graph features :math:`(*, |\mathcal{G}|, F_{out})` or
+          node features :math:`(*, |\mathcal{V}|, F_{out})`
+    """
+    def forward(
+        self,
+        x: Tensor,
+        index: Optional[Tensor] = None,
+        weight: Optional[Tensor] = None,
+        ptr: Optional[Tensor] = None,
+        dim_size: Optional[int] = None,
+        dim: int = -2,
+    ) -> Tensor:
+        r"""
+        Args:
+            x (torch.Tensor): The source tensor.
+            index (torch.Tensor, optional): The indices of elements for
+                applying the aggregation.
+                One of :obj:`index` or :obj:`ptr` must be defined.
+                (default: :obj:`None`)
+            weight (torch.Tensor, optional): The weight vector.
+            ptr (torch.Tensor, optional): If given, computes the aggregation
+                based on sorted inputs in CSR representation.
+                One of :obj:`index` or :obj:`ptr` must be defined.
+                (default: :obj:`None`)
+            dim_size (int, optional): The size of the output tensor at
+                dimension :obj:`dim` after aggregation. (default: :obj:`None`)
+            dim (int, optional): The dimension in which to aggregate.
+                (default: :obj:`-2`)
+        """
+        pass
+
+    def __call__(
+        self,
+        x: Tensor,
+        index: Optional[Tensor] = None,
+        weight: Optional[Tensor] = None,
+        ptr: Optional[Tensor] = None,
+        dim_size: Optional[int] = None,
+        dim: int = -2,
+        **kwargs,
+    ) -> Tensor:
+
+        if index is None and ptr is None:
+            index = x.new_zeros(x.size(dim), dtype=torch.long)
+
+        if weight is not None and weight.dim() != 1:
+            raise ValueError(f"The 'weight' vector needs to be one-"
+                             f"dimensional (got {weight.dim()} dimensions)")
+
+        if weight is not None and weight.size(0) != x.size(dim):
+            raise ValueError(f"The input tensor has {x.size(dim)} elements, "
+                             f"but the 'weight' vector holds {weight.size(0)} "
+                             f"elements. Please make sure that the size of "
+                             f"the inputs align")
+
+        return super().__call__(x, weight=weight, index=index, ptr=ptr,
+                                dim_size=dim_size, dim=dim, **kwargs)
+
+    # Helper methods ##########################################################
+
+    def weighted_reduce(
+        self,
+        x: Tensor,
+        index: Optional[Tensor] = None,
+        weight: Optional[Tensor] = None,
+        ptr: Optional[Tensor] = None,
+        dim_size: Optional[int] = None,
+        dim: int = -2,
+        reduce: str = 'sum',
+    ) -> Tensor:
+
+        sizes = [1] * x.dim()
+        sizes[dim] = x.size(dim)
+
+        self.assert_weight_present(weight)
+
+        weight = weight.view(sizes)
+
+        if ptr is not None:
+            ptr = expand_left(ptr, dim, dims=x.dim())
+
+            shape = [1] * x.dim()
+            shape[dim] = -1
+
+            return segment(x * weight.view(shape), ptr, reduce=reduce)
+
+        return scatter(x * weight, index, dim, dim_size, reduce)
+
+    # Assertions ##############################################################
+
+    def assert_weight_present(self, weight: Optional[Tensor]):
+        # TODO Currently, not all aggregators support `ptr`. This assert helps
+        # to ensure that we require `weight` to be passed to the computation:
+        if weight is None:
+            raise NotImplementedError(
+                "Weighted aggregation requires 'weight' to be specified")
+
+
+
+
+class WeightedQuantileAggregation(WeightedAggregation):
     r"""An aggregation operator that returns the dimension-/feature-wise
     :math:`q`-th quantile of a set :math:`\mathcal{X}` with positive weights
     :math:`\mathbb{w}`. That is, for every feature :math:`d`, it computes
@@ -155,7 +270,7 @@ class WeightedMedianAggregation(WeightedQuantileAggregation):
         return f"{self.__class__.__name__}()"
 
 
-class SoftMedianAggregation(Aggregation):
+class SoftMedianAggregation(WeightedAggregation):
     r"""The soft median aggregation operator based on a temperature term, as
     described in the `"Robustness of Graph Neural Networks at Scale"
     <https://arxiv.org/abs/2110.14038>`_ paper
@@ -210,7 +325,10 @@ class SoftMedianAggregation(Aggregation):
         weight_sums = self.reduce(weight, index, ptr, dim_size, dim,
                                   reduce='sum')
 
-        x_median = self.dimwise_median(x, index, weight, ptr=ptr,
+        # x: Tensor, index: Optional[Tensor] = None,
+        #         weight: Optional[Tensor] = None, ptr: Optional[Tensor] = None,
+        #         dim_size: Optional[int] = None, dim: int = -2
+        x_median = self.dimwise_median(x = x, index=index, weight=weight,
                                        dim_size=dim_size, dim=dim)
         x_median = x_median / weight_sums.view(shape)
         x_median = x_median.take_along_dim(index.view(shape), dim=dim)
@@ -232,3 +350,11 @@ class SoftMedianAggregation(Aggregation):
                                    reduce='sum')
 
         return out
+    
+
+
+
+def expand_left(ptr: Tensor, dim: int, dims: int) -> Tensor:
+    for _ in range(dims + dim if dim < 0 else dim):
+        ptr = ptr.unsqueeze(0)
+    return ptr
