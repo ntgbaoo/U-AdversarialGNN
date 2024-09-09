@@ -14,7 +14,7 @@ from torch_geometric.data import Data
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from evaluation.IModelSupervisor import IModelSupervisor
-from model.utils import load_model
+from defense_model.utils import load_model
 from utility.config import args
 from evaluation.utils import load_opt, sparse_adjacency_to_edge_list,load_scheduler
 from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
