@@ -1,3 +1,10 @@
+#Filter
+PURIFICATION = "purification"
+THRESHOLD = "threshold"
+TOP_K ="k"
+TOP_SINGULAR_R ="r"
+
+
 #Model set-up
 DEVICE = "device"
 IN_CHANNEL = "in_channel"

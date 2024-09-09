@@ -3,7 +3,8 @@ import sys
 import os
 import warnings
 from torch_geometric.nn import aggr as torch_aggr
-from greatx.nn.models import SGC,RobustGCN,GNNGUARD,SoftMedianGCN,ElasticGNN
+from greatx.nn.models import SGC,RobustGCN,GNNGUARD,ElasticGNN
+from greatx.defense.purification import JaccardPurification,SVDPurification
 
 # Hide all warnings
 warnings.filterwarnings("ignore")
@@ -11,6 +12,7 @@ warnings.filterwarnings("ignore")
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from defense_model.improving_training.GRAND.grand import GRAND
+from defense_model.improving_graph.GARNET.garnet import GarnetPurification
 from utility.util import logger
 from static import *
 
@@ -93,7 +95,7 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
     elif model_name == "SoftMedianGCN":
         # model = SoftMedianGCN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
         from torch_geometric.nn.models.basic_gnn import GCN
-        from model.soft_median import SoftMedianAggregation
+        from defense_model.improving_architecture.aggregation.soft_median import SoftMedianAggregation
         model = GCN(in_channel,
                     nhid,
                     nlayers,
@@ -119,9 +121,37 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
 
 
     else:
-        raise Exception('Unsupport or undefined model. Please select one of the following model: GCN, GIN, GSAGE,GAT, PNA, EdgeCNN')
+        raise Exception('Unsupport or undefined model{}'.format(model_name))
     logger.info('Using models {} '.format(model_name))
     return model
+
+def load_graph_purification(**kwargs):
+    purification_name = kwargs.get(PURIFICATION)
+    assert purification_name is not None
+
+    if purification_name == "Jaccard":
+        threshold = kwargs.get(THRESHOLD)
+        purification = JaccardPurification(threshold=threshold)
+    elif purification_name == "SVD":
+        threshold = kwargs.get(THRESHOLD)
+        top_k = kwargs.get(TOP_K)
+        purification = SVDPurification(K=top_k,threshold=threshold)
+
+    elif purification_name == "GARNET":
+        r = kwargs.get(TOP_SINGULAR_R)
+        k = kwargs.get(TOP_K)
+        gamma = GAMMA
+        purification = GarnetPurification(r,k,gamma)
+    else:
+        raise Exception('Unsupport or undefined model{}'.format(purification_name))
+    
+    return purification
+
+
+
+
+
+
 
 if __name__ == "__main__":
     # from config import args
