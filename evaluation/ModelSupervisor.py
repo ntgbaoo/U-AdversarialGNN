@@ -14,7 +14,7 @@ from torch_geometric.data import Data
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from evaluation.IModelSupervisor import IModelSupervisor
-from defense_model.utils import load_model
+from defense_model.utils import load_model,load_graph_purification
 from utility.config import args
 from evaluation.utils import load_opt, sparse_adjacency_to_edge_list,load_scheduler
 from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
@@ -26,17 +26,19 @@ from static import *
 
 
 class ModelSupervisor(IModelSupervisor):
-    def __init__(self,data:Data,device = "cpu",seed = 720,train_early_stopping = True,**kwargs) -> None:
+    def __init__(self,data:Data,device = "cpu",seed = 720,train_early_stopping = True,use_purification = False,purification_config = None,**model_args) -> None:
         super().__init__()
         set_random(seed)
 
+        
+        
         adj = to_scipy_sparse_matrix(
             data.edge_index, num_nodes=data.num_nodes)
         degrees = torch.tensor(np.array(adj.sum(axis=1)).flatten(),dtype=torch.long)  # Sum of rows (or columns, as it's symmetric)
         degree_dist = torch.bincount(degrees)
         
 
-        self.kwagrs = kwargs
+        self.kwagrs = model_args
         self.data = data
 
         #Config from args
@@ -46,25 +48,32 @@ class ModelSupervisor(IModelSupervisor):
         #Configs from kwargs for hyper-parameters
         num_features = data.x.size(-1)
         num_classes = data.y.max().item() + 1
-        self.epoch = kwargs.get(EPOCHS)
-        self.patience = kwargs.get(PATIENCE)
-        self.lr = kwargs.get(LEARNING_RATE)
-        self.weight_decay = float(kwargs.get(WEIGHT_DECAY,0))
-        self.batch_size = kwargs.get(BATCH_SIZE)
-        self.model_name = kwargs.get(MODEL)
-        self.model = load_model(num_features,num_classes,degree_dist,**kwargs)
-        opti_state = kwargs.get(OPTIMIZER_STATE)
+        self.epoch = model_args.get(EPOCHS)
+        self.patience = model_args.get(PATIENCE)
+        self.lr = model_args.get(LEARNING_RATE)
+        self.weight_decay = float(model_args.get(WEIGHT_DECAY,0))
+        self.batch_size = model_args.get(BATCH_SIZE)
+        self.model_name = model_args.get(MODEL)
+        self.model = load_model(num_features,num_classes,degree_dist,**model_args)
+        opti_state = model_args.get(OPTIMIZER_STATE)
         
         if opti_state is not None:
-            self.optimizer =  load_opt(kwargs.get(OPTIMIZER))(self.model.parameters(),lr= self.lr,weight_decay=self.weight_decay,**opti_state)
+            self.optimizer =  load_opt(model_args.get(OPTIMIZER))(self.model.parameters(),lr= self.lr,weight_decay=self.weight_decay,**opti_state)
         else:
-            self.optimizer =  load_opt(kwargs.get(OPTIMIZER))(self.model.parameters(),lr= self.lr,weight_decay=self.weight_decay)
+            self.optimizer =  load_opt(model_args.get(OPTIMIZER))(self.model.parameters(),lr= self.lr,weight_decay=self.weight_decay)
 
-        self.scheduler = kwargs.get(SCHEDULER)
+        self.scheduler = model_args.get(SCHEDULER)
         if self.scheduler is not None:
-            scheduler_state = kwargs.get(SCHEDULER_STATE)
+            scheduler_state = model_args.get(SCHEDULER_STATE)
             self.scheduler = load_scheduler(self.scheduler)(self.optimizer,**scheduler_state)
-
+        
+        # Purification
+        self.use_purification = use_purification
+        self.purification = None
+        if use_purification:
+            assert purification_config is not None, "In order to use purification, please define purification config"
+            self.purification = load_graph_purification(**purification_config)
+            data = self.purification(data = data, inplace= False)
         
         #Data
         self.number_nodes = data.num_nodes
@@ -172,6 +181,9 @@ class ModelSupervisor(IModelSupervisor):
     @torch.no_grad
     def get_model_output(self,data:Data):
         self.model.eval()
+        if self.use_purification:
+            assert self.purification is not None, "In order to use purification, please define purification config when initialize the supervisor"
+            data = self.purification(data = data, inplace= False)
         features_torch = data.x.to(self.device)
         edge_index_torch = data.edge_index.to(self.device)
         output = self.model( features_torch, edge_index_torch)
