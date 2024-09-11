@@ -239,7 +239,7 @@ if __name__ == "__main__":
        AGGREGATION: ["sum","average"]
    }
 
-   all_configs = ModelGridv2(config).init_grid()
+   all_configs = ModelGrid(config).init_grid()
    print(len(all_configs))
    for config in all_configs:
        print(config)
