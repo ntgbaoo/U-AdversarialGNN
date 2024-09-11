@@ -3,7 +3,7 @@ import os
 import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from evaluation.Grid import Grid
+from evaluation.ModelGrid import ModelGrid
 from evaluation.ModelSupervisor import ModelSupervisor
 from utility.util import set_random
 from utility.ConfigHandler import ConfigHandler
@@ -25,7 +25,7 @@ class ModelSelector:
         self.model_name = config_dict.get("model")
         self.all_aggrs = config_dict.get(AGGREGATION)
         self.config_dict = config_dict
-        self.grid_generator = Grid(self.config_dict)
+        self.grid_generator = ModelGrid(self.config_dict)
         self.all_configs = self.grid_generator.init_grid()
         self.idx_train = idx_train
         self.idx_val = idx_val

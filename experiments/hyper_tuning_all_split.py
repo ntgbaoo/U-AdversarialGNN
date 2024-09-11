@@ -17,11 +17,11 @@ from evaluation.ModelSelector import ModelSelector
 from data_loader.DataLoader import DataLoader
 from data_loader.Splitter import Splitter
 from utility.ConfigHandler import ConfigHandler
-from evaluation.Grid import Grid
+from evaluation.ModelGrid import ModelGrid
 
 if __name__ == "__main__":
     hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
-    grid_generator = Grid(hyper_grid_config)
+    grid_generator = ModelGrid(hyper_grid_config)
     all_configs = grid_generator.init_grid()
     data,_ = DataLoader.load(args.dataset)
     split_config = ConfigHandler.load_split_config(config_name="default")

@@ -155,11 +155,6 @@ class GarnetPurification(BaseTransform):
 
         
 
-
-
-        
-        
-
     def __repr__(self) -> str:
         desc = f"r={self.r}, " +\
             f"k={self.k}" +\

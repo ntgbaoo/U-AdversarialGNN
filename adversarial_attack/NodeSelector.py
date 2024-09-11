@@ -41,7 +41,7 @@ class NodeSelector:
 
         
 
-        return high + low +other
+        return high,low,other
     
     @staticmethod
     def select_nodes_margin_degree(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720):
