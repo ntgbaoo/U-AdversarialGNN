@@ -3,7 +3,7 @@ import os
 import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from evaluation.Grid import ModelGrid
+from evaluation.ModelGrid import ModelGrid
 from evaluation.ModelSupervisor import ModelSupervisor
 from utility.util import set_random
 from utility.ConfigHandler import ConfigHandler
