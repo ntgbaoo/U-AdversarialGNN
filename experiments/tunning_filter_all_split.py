@@ -13,39 +13,36 @@ from utility.config import args
 from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
 from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
 from evaluation.ModelSupervisor import ModelSupervisor
-from evaluation.ModelSelector import ModelSelector
+from evaluation.PurificationSelector import PurificationSelector
 from data_loader.DataLoader import DataLoader
 from data_loader.Splitter import Splitter
 from utility.ConfigHandler import ConfigHandler
 from evaluation.ModelGrid import ModelGrid
 
 if __name__ == "__main__":
-    hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
-    grid_generator = ModelGrid(hyper_grid_config)
-    all_configs = grid_generator.init_grid()
+    hyper_grid_config = ConfigHandler.load_hyper_puri_grid(purification_type=args.purification,grid_name="hyper_grid")
     data,_ = DataLoader.load(args.dataset)
-    split_config = ConfigHandler.load_split_config(config_name="default")
-
-    splitter = Splitter(**split_config)
-    folds = splitter.split(data.x.numpy(),data.y.numpy())
+    
     for split_idx in range(0,5):
-        fold = folds[split_idx]
-        idx_train,idx_val,idx_test =fold.idx_train,fold.idx_val,fold.idx_test
-        hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
-        modelSelector = ModelSelector(
+        split_model = ConfigHandler.load_model_config(args.model,"best_config",args.dataset,split_idx)
+        split = split_model['split']
+        model_config = split_model.get('model_config')
+        idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_train']
+        puriSelector = PurificationSelector(
             config_dict= hyper_grid_config,
             idx_train=idx_train,
             idx_val= idx_val,
             idx_test= idx_test,
             data=data,
-            device=args.device
+            device=args.device,
+            model_config=model_config
         )
         start = timeit.default_timer()
-        modelSelector.process_model_selection()
+        puriSelector.process_purification_selection()
         end = timeit.default_timer()
-        modelSelector.save_config(split_idx,args.dataset)
+        puriSelector.save_config(split_idx,args.dataset)
         print("Total time:{}".format(end -start))
-        print(modelSelector.get_best_config())
+        print(puriSelector.get_best_config())
     
      
 

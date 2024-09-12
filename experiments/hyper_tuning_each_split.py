@@ -17,7 +17,7 @@ from evaluation.ModelSelector import ModelSelector
 from data_loader.DataLoader import DataLoader
 from data_loader.Splitter import Splitter
 from utility.ConfigHandler import ConfigHandler
-from evaluation.Grid import ModelGrid
+from evaluation.ModelGrid import ModelGrid
 
 if __name__ == "__main__":
     hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
