@@ -1,0 +1,217 @@
+import os.path as osp
+
+import torch
+import torch_geometric.transforms as T
+import sys
+import os
+import statistics as stats
+import pandas as pd
+import timeit
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from utility.ConfigHandler import ConfigHandler
+from data_loader.DataLoader import DataLoader
+from greatx.attack.targeted import SGAttack,RandomAttack,DICEAttack,GFAttack,FGAttack,PGDAttack,IGAttack
+from adversarial_attack.Nettack import Nettack
+from greatx.datasets import GraphDataset
+from greatx.nn.models import GCN,SGC
+from greatx.training import Trainer
+from greatx.training.callbacks import ModelCheckpoint
+from evaluation.ModelSupervisor import ModelSupervisor
+from adversarial_attack.NodeSelector import NodeSelector
+from adversarial_attack.SurrogateLoader import SurrogateLoader
+from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
+from static import *
+from utility.config import args
+from adversarial_attack.PRBCDAttack import PRBCDAttack
+from adversarial_attack.ExplainerAttack import ExplainerAttack
+
+
+from greatx.utils import mark, split_nodes
+
+def load_attack(attack_method):
+    if attack_method == SGA_NAME:
+        return SGAttack
+    elif attack_method == NETTACK_NAME:
+        return Nettack
+    elif attack_method == FGA_NAME:
+        return FGAttack
+    elif attack_method == RND_NAME:
+        return RandomAttack
+    elif attack_method == DICE_NAME:
+        return DICEAttack
+    elif attack_method == GFATTACK_NAME:
+        return GFAttack
+    elif attack_method == PGDATTACK_NAME:
+        return PGDAttack
+    elif attack_method == IGATTACK_NAME:
+        return IGAttack
+    elif attack_method == PRBCD_NAME:
+        return PRBCDAttack
+    elif attack_method == "ExplainerAttack":
+        return ExplainerAttack
+
+    
+
+def get_surrogate_name(attack_method):
+    if attack_method == SGA_NAME:
+        return 'SGC'
+    elif attack_method in [NETTACK_NAME,FGA_NAME,PGDATTACK_NAME,IGATTACK_NAME]:
+        return 'GCN_surrogate'
+    else:
+        return None
+
+def get_stat(results_list):
+    return (stats.mean(results_list),stats.stdev(results_list))
+
+if __name__ == "__main__":
+    # args.dataset = 'cora'
+    # args.model = "GCN"
+    # args.seed = 720
+    # args.adversarial = SGA_NAME
+
+    data,split = DataLoader.load(args.dataset)
+    columns = ['budget','high_margin','low_margin','high_degree','low_degree','other','total','time','time_defense']
+    rowlist_evasion = []
+    rowlist_poision = []
+
+    for budget in range(1,6):
+        evasion_dict = {
+            'high_margin':[],
+            'low_margin':[],
+            'high_degree':[],
+            'low_degree':[],
+            'other':[],
+            'total':[]
+        }
+        poision_dict = {
+            'high_margin':[],
+            'low_margin':[],
+            'high_degree':[],
+            'low_degree':[],
+            'other':[],
+            'total':[]
+        }
+        time = []
+        time_defense = []
+        for split_idx in range(5):
+
+            split_model = ConfigHandler.load_model_config(args.model,"best_config",args.dataset,split_idx)
+            split = split_model['split']
+            configs = split_model.get('model_config')
+            idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_train']
+
+            for idx_run in range(args.num_run):
+                seed = args.seed + idx_run
+                node_selector = ModelSupervisor(data,args.device,**configs)
+                time_defense_start = timeit.default_timer()
+                node_selector.train_model(idx_train,idx_val,idx_test)
+                time_defense.append(timeit.default_timer() - time_defense_start)
+                bucket_target_nodes= NodeSelector.select_nodes_margin_degree(node_selector,data,idx_test,seed=seed)
+                # node_list = high +low + highest_degree + lowest_degree + other
+
+
+                # surrogate_supervisor = 
+                attacker = load_attack(args.adversarial)(data, device=args.device,seed=seed)
+                surrogate_name = get_surrogate_name(args.adversarial)
+
+                if args.adversarial is GFATTACK_NAME and args.dataset == "cora":
+                    attacker.T = data.num_nodes//2                    
+                
+                if args.adversarial == PRBCD_NAME or args.adversarial == "ExplainerAttack":
+                    if args.adversarial == PRBCD_NAME:
+                        attacker.update_config(10000,500)
+                    else:
+                        attacker.update_config(50)
+                    if args.model == "GCN":
+                        attacker.setup_surrogate(node_selector.model)
+                    else:
+                        split_model_surrogate = ConfigHandler.load_model_config("GCN","best_config",args.dataset,split_idx)
+                        configs_surrogate = split_model_surrogate.get('model_config')
+                        surrogate = ModelSupervisor(data,args.device,**configs_surrogate)
+                        surrogate.train_model(idx_train,idx_val,idx_test)
+                        attacker.setup_surrogate(surrogate.model)
+
+                if surrogate_name is not None:
+                    # split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"best_config",args.dataset,split_idx)
+                    # configs_surrogate = split_model.get('model_config')
+                    # # adversarial_surrogate = SurrogateLoader.load_surrogate(data,idx_train,idx_val,device=args.device,seed=seed,model=get_surrogate_name(args.adversarial),model_configs = configs_surrogate)
+                    # attacker.setup_surrogate(node_selector.model)
+
+                    split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"best_config",args.dataset,split_idx)
+                    configs_surrogate = split_model_surrogate.get('model_config')
+                    surrogate = ModelSupervisor(data,args.device,**configs_surrogate)
+                    surrogate.train_model(idx_train,idx_val,idx_test)
+                    attacker.setup_surrogate(surrogate.model)
+
+
+                adversarial_supervisor = AdversarialSupervisor(data,attacker,idx_train,idx_val,idx_test,args.device,**configs)
+                high_result,low_result, highest_degree_result,lowest_degree_result,other_result = adversarial_supervisor.target_attack(bucket_target_nodes,budget,evasion=True,poision=True, evasion_model=node_selector,seed = seed)
+                adversarial_supervisor.save_result(args.adversarial,seed,args.dataset,args.model,budget)
+                evasion_dict['high_margin'].append( high_result[EVASION]/10)
+                poision_dict['high_margin'].append( high_result[POSION]/10)
+
+                evasion_dict['low_margin'].append( low_result[EVASION]/10)
+                poision_dict['low_margin'].append( low_result[POSION]/10)
+
+                evasion_dict['high_degree'].append( highest_degree_result[EVASION]/10)
+                poision_dict['high_degree'].append( highest_degree_result[POSION]/10)
+
+                evasion_dict['low_degree'].append( lowest_degree_result[EVASION]/10)
+                poision_dict['low_degree'].append( lowest_degree_result[POSION]/10)
+
+                evasion_dict['other'].append( other_result[EVASION]/10)
+                poision_dict['other'].append( other_result[POSION]/10)
+                
+                evasion_count = high_result[EVASION] + high_result[EVASION] + low_result[EVASION] + highest_degree_result[EVASION] + lowest_degree_result[EVASION] + other_result[EVASION]
+                poision_count = high_result[POSION] + high_result[EVASION] + low_result[POSION] + highest_degree_result[POSION] + lowest_degree_result[POSION] + other_result[POSION]
+                evasion_dict['total'].append(evasion_count/50)
+                poision_dict['total'].append(poision_count/50)
+
+                time_total = high_result['time'] + high_result['time'] + low_result['time'] + highest_degree_result['time'] + lowest_degree_result['time'] + other_result['time']
+                time.append(time_total)
+
+        print(evasion_dict)
+        print(poision_dict)
+        print(time) 
+
+        row_evasion = [
+            budget,
+            get_stat(evasion_dict['high_margin']),
+            get_stat(evasion_dict['low_margin']),
+            get_stat(evasion_dict['high_degree']),
+            get_stat(evasion_dict['low_degree']),
+            get_stat(evasion_dict['other']),
+            get_stat(evasion_dict['total']),
+            get_stat(time),
+            get_stat(time_defense)
+        ]
+        rowlist_evasion.append(row_evasion)
+
+        row_poision = [
+            budget,
+            get_stat(poision_dict['high_margin']),
+            get_stat(poision_dict['low_margin']),
+            get_stat(poision_dict['high_degree']),
+            get_stat(poision_dict['low_degree']),
+            get_stat(poision_dict['other']),
+            get_stat(poision_dict['total']),
+            get_stat(time),
+            get_stat(time_defense)
+        ]
+        rowlist_poision.append(row_poision)
+        print(evasion_dict)
+        print(poision_dict)
+
+    df_poision = pd.DataFrame(rowlist_poision,columns=columns)
+    df_evasion = pd.DataFrame(rowlist_evasion,columns=columns)
+
+    if not os.path.exists("{}{}/{}/".format(PATH_RESULT,args.model,args.dataset)):
+        os.makedirs("{}{}/{}/".format(PATH_RESULT,args.model,args.dataset))
+    df_poision.to_csv("{}{}/{}/{}_poision.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
+    df_evasion.to_csv("{}{}/{}/{}_evasion.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
+
+
+
+
+  

@@ -61,6 +61,13 @@ pip install -U "ray[tune]"
 
 ```
 
+1. Install additional packages
+
+```
+pip install opt-einsum hnswlib
+
+```
+
 
 **If you are using window, you may encounter this problem**
 ```

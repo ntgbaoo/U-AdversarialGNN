@@ -15,42 +15,34 @@ if __name__ == '__main__':
     from evaluation.ModelSupervisor import ModelSupervisor
     from data_loader.DataLoader import DataLoader
     from utility.ConfigHandler import ConfigHandler
+    from adversarial_attack.ExplainerAttack import ExplainerAttack
+
     from static import *
 
     args.dataset = "cora"
     
     data,split = DataLoader.load(args.dataset)
+    print(data.edge_index.shape)
     config = ConfigHandler.load_model_config(model_type="GCN",config_name="best_config",dataset="cora",split=0)
     model_config = config['model_config']
     split_config = config['split']
     set_random(720)
     runner = ModelSupervisor(data,device=args.device,**model_config)
     idx_train,idx_val,idx_test = split_config['idx_train'],split_config['idx_val'],split_config['idx_test']
-    print(idx_test[0])
+    
     runner.train_model(idx_train=idx_train,idx_val=idx_val,idx_test= idx_test)
 
     test_acc = runner.get_prediction_accuracy(idx_test,data)
-    print(test_acc)
 
-    explainer = Explainer(
-        model=runner.model,
-        algorithm=GNNExplainer(epochs=10),
-        explanation_type='model',
-        node_mask_type='attributes',
-        edge_mask_type='object',
-        model_config=dict(
-            mode='multiclass_classification',
-            task_level='node',
-            return_type='log_probs',
-        ),
-    )
-    node_index = idx_test[0]
-    explanation = explainer(data.x.to(args.device), data.edge_index.to(args.device), index=node_index)
-    explanation.vis
-    
+    attack = ExplainerAttack(data,args.device,720)
+    attack.setup_surrogate(runner.model)
+    attack.update_config(50)
+    attack.reset()
+    attack.set_max_perturbations(5)
+    attack.attack(idx_test[0],5)
+    data_modified = attack.data()
+    print(data_modified.edge_index.shape)
 
-    for i in range(len(explanation.edge_mask)):
-        if explanation.edge_mask[i] != 0:
-            print(explanation.edge_mask[i])
-            print(data.edge_index[0][i],data.edge_index[1][i])
+
+
     
