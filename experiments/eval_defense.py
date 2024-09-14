@@ -24,7 +24,6 @@ from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
 from static import *
 from utility.config import args
 from adversarial_attack.PRBCDAttack import PRBCDAttack
-from adversarial_attack.ExplainerAttack import ExplainerAttack
 
 
 from greatx.utils import mark, split_nodes
@@ -48,8 +47,7 @@ def load_attack(attack_method):
         return IGAttack
     elif attack_method == PRBCD_NAME:
         return PRBCDAttack
-    elif attack_method == "ExplainerAttack":
-        return ExplainerAttack
+    
 
     
 
@@ -118,11 +116,10 @@ if __name__ == "__main__":
                 if args.adversarial is GFATTACK_NAME and args.dataset == "cora":
                     attacker.T = data.num_nodes//2                    
                 
-                if args.adversarial == PRBCD_NAME or args.adversarial == "ExplainerAttack":
-                    if args.adversarial == PRBCD_NAME:
-                        attacker.update_config(10000,500)
-                    else:
-                        attacker.update_config(50)
+                if args.adversarial == PRBCD_NAME:
+                    
+                    attacker.update_config(10000,500)
+                   
                     if args.model == "GCN":
                         attacker.setup_surrogate(node_selector.model)
                     else:
