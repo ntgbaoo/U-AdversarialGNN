@@ -130,8 +130,7 @@ def load_graph_purification(**kwargs):
     assert purification_name is not None
 
     if purification_name == "Jaccard":
-        threshold = kwargs.get(THRESHOLD)
-        purification = JaccardPurification(threshold=threshold)
+        purification = JaccardPurification()
     elif purification_name == "SVD":
         threshold = kwargs.get(THRESHOLD)
         top_k = kwargs.get(TOP_K)
@@ -140,8 +139,13 @@ def load_graph_purification(**kwargs):
     elif purification_name == "GARNET":
         r = kwargs.get(TOP_SINGULAR_R)
         k = kwargs.get(TOP_K)
-        gamma = GAMMA
-        purification = GarnetPurification(r,k,gamma)
+        use_feature = bool(kwargs.get("use_feature"))
+        weighted_knn = bool(kwargs.get("weighted_knn"))
+        adj_norm = bool(kwargs.get(adj_norm))
+
+        gamma = kwargs.get(GAMMA)
+        purification = GarnetPurification(r,k,gamma,use_feature=use_feature,
+                                          weighted_knn=weighted_knn,adj_norm=adj_norm)
     else:
         raise Exception('Unsupport or undefined model{}'.format(purification_name))
     

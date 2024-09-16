@@ -24,6 +24,8 @@ from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
 from static import *
 from utility.config import args
 from adversarial_attack.PRBCDAttack import PRBCDAttack
+from defense_model.improving_graph.GARNET.garnet import GarnetPurification
+from greatx.defense.purification import *
 
 
 from greatx.utils import mark, split_nodes
@@ -47,7 +49,6 @@ def load_attack(attack_method):
         return IGAttack
     elif attack_method == PRBCD_NAME:
         return PRBCDAttack
-    
 
     
 
