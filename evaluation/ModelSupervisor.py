@@ -74,6 +74,8 @@ class ModelSupervisor(IModelSupervisor):
             assert purification_config is not None, "In order to use purification, please define purification config"
             self.purification = load_graph_purification(**purification_config)
             data = self.purification(data = data, inplace= False)
+            if data.edge_index is None:
+                data.edge_index = data.adj_t.nonzero(as_tuple=False).t()
         
         #Data
         self.number_nodes = data.num_nodes
@@ -184,6 +186,8 @@ class ModelSupervisor(IModelSupervisor):
         if self.use_purification:
             assert self.purification is not None, "In order to use purification, please define purification config when initialize the supervisor"
             data = self.purification(data = data, inplace= False)
+            if data.edge_index is None:
+                data.edge_index = data.adj_t.nonzero(as_tuple=False).t()
         features_torch = data.x.to(self.device)
         edge_index_torch = data.edge_index.to(self.device)
         output = self.model( features_torch, edge_index_torch)

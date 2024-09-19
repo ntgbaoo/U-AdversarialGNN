@@ -114,14 +114,14 @@ if __name__ == "__main__":
                     else:
                         split_model_surrogate = ConfigHandler.load_model_config("GCN","best_config",args.dataset,split_idx)
                         configs_surrogate = split_model_surrogate.get('model_config')
-                        surrogate = ModelSupervisor(data,args.device,**configs_surrogate)
+                        surrogate = ModelSupervisor(data,args.device,seed=seed,**configs_surrogate)
                         surrogate.train_model(idx_train,idx_val,idx_test)
                         attacker.setup_surrogate(surrogate.model)
 
                 if surrogate_name is not None:
                     split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"best_config",args.dataset,split_idx)
                     configs_surrogate = split_model_surrogate.get('model_config')
-                    surrogate = ModelSupervisor(data,args.device,**configs_surrogate)
+                    surrogate = ModelSupervisor(data,args.device,seed=seed,**configs_surrogate)
                     surrogate.train_model(idx_train,idx_val,idx_test)
                     attacker.setup_surrogate(surrogate.model)
 

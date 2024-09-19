@@ -94,7 +94,12 @@ if __name__ == "__main__":
         time = []
         time_defense = []
         for split_idx in range(5):
-
+            purification_config = None
+            use_purification = False
+            if args.purification is not None:
+                use_purification = True
+                purification_config = ConfigHandler.load_purification_config(args.load_purification_config,args.model,"best_config",args.dataset)
+            
             split_model = ConfigHandler.load_model_config(args.model,"best_config",args.dataset,split_idx)
             split = split_model['split']
             configs = split_model.get('model_config')
@@ -102,7 +107,7 @@ if __name__ == "__main__":
 
             for idx_run in range(args.num_run):
                 seed = args.seed + idx_run
-                node_selector = ModelSupervisor(data,args.device,**configs)
+                node_selector = ModelSupervisor(data,args.device,seed,use_purification=use_purification,purification_config=purification_config**configs)
                 time_defense_start = timeit.default_timer()
                 node_selector.train_model(idx_train,idx_val,idx_test)
                 time_defense.append(timeit.default_timer() - time_defense_start)
@@ -126,24 +131,22 @@ if __name__ == "__main__":
                     else:
                         split_model_surrogate = ConfigHandler.load_model_config("GCN","best_config",args.dataset,split_idx)
                         configs_surrogate = split_model_surrogate.get('model_config')
-                        surrogate = ModelSupervisor(data,args.device,**configs_surrogate)
+                        surrogate = ModelSupervisor(data,args.device,seed,use_purification=use_purification,purification_config=purification_config**configs)
                         surrogate.train_model(idx_train,idx_val,idx_test)
                         attacker.setup_surrogate(surrogate.model)
 
                 if surrogate_name is not None:
-                    # split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"best_config",args.dataset,split_idx)
-                    # configs_surrogate = split_model.get('model_config')
-                    # # adversarial_surrogate = SurrogateLoader.load_surrogate(data,idx_train,idx_val,device=args.device,seed=seed,model=get_surrogate_name(args.adversarial),model_configs = configs_surrogate)
-                    # attacker.setup_surrogate(node_selector.model)
-
+            
                     split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"best_config",args.dataset,split_idx)
                     configs_surrogate = split_model_surrogate.get('model_config')
-                    surrogate = ModelSupervisor(data,args.device,**configs_surrogate)
+                    surrogate = ModelSupervisor(data,args.device,seed=seed,**configs_surrogate)
                     surrogate.train_model(idx_train,idx_val,idx_test)
                     attacker.setup_surrogate(surrogate.model)
 
 
-                adversarial_supervisor = AdversarialSupervisor(data,attacker,idx_train,idx_val,idx_test,args.device,**configs)
+                adversarial_supervisor = AdversarialSupervisor(data=data,attacker = attacker,idx_train=idx_train,idx_val=idx_val,idx_test=idx_test,device=args.device,
+                                                               use_purification=use_purification,purification_config=purification_config,
+                                                               **configs)
                 high_result,low_result, highest_degree_result,lowest_degree_result,other_result = adversarial_supervisor.target_attack(bucket_target_nodes,budget,evasion=True,poision=True, evasion_model=node_selector,seed = seed)
                 adversarial_supervisor.save_result(args.adversarial,seed,args.dataset,args.model,budget)
                 evasion_dict['high_margin'].append( high_result[EVASION]/10)

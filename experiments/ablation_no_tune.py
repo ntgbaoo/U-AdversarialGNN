@@ -23,6 +23,8 @@ from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
 from static import *
 from utility.config import args
 from adversarial_attack.PRBCDAttack import PRBCDAttack
+from data_loader.Splitter import Splitter
+
 
 
 from greatx.utils import mark, split_nodes
@@ -90,13 +92,15 @@ if __name__ == "__main__":
             'total':[]
         }
         time = []
+        split_config = ConfigHandler.load_split_config(config_name="default")
 
+        splitter = Splitter(**split_config)
+        folds = splitter.split(data.x.numpy(),data.y.numpy())
         for split_idx in range(5):
-
-            split_model = ConfigHandler.load_model_config(args.model,"default",args.dataset,split_idx)
-            split = split_model['split']
-            configs = split_model.get('model_config')
-            idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_test']
+            
+            configs = ConfigHandler.load_model_config(args.model,"default",args.dataset,split_idx)
+            fold = folds[split_idx]
+            idx_train,idx_val,idx_test =fold.idx_train,fold.idx_val,fold.idx_test
 
             for idx_run in range(args.num_run):
                 seed = args.seed + idx_run

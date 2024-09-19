@@ -22,9 +22,12 @@ class AdversarialSupervisor:
                  idx_val,
                  idx_test,
                  device = "cpu",
+                 use_purification = False,
+                 purification_config = None,
                  **victim_configs
                  ) -> None:
-        
+        self.use_purification = use_purification
+        self.purification_config = purification_config
         self.data = data
         self.adversarial = adversarial
         self.device = device
@@ -72,7 +75,7 @@ class AdversarialSupervisor:
                         result[EVASION] += 1
                 
                 if poision:
-                    victim_model = ModelSupervisor(self.adversarial.data(), device= self.device,seed = seed,**self.victim_configs)
+                    victim_model = ModelSupervisor(self.adversarial.data(), device= self.device,seed = seed,use_purification=self.use_purification,purification_config=self.purification_config,**self.victim_configs)
 
                     victim_model.train_model(self.idx_train,self.idx_val,self.idx_test)
                     pred_poision = victim_model.get_model_prediction(self.adversarial.data())[node].item()

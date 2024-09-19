@@ -53,7 +53,7 @@ class PurificationSelector:
     
     def _run_model_on_config(self,model_config,purification_config,seed):
         set_random(seed)
-        runner = ModelSupervisor(self.data,device=self.device,purification_config=purification_config,seed=seed,**model_config)
+        runner = ModelSupervisor(data = self.data,device=self.device,purification_config=purification_config,use_purification=True,seed=seed,**model_config)
         runner.train_model(idx_train=self.idx_train,idx_val=self.idx_val,idx_test= self.idx_test)
         val_acc = runner.get_prediction_accuracy(self.idx_val,self.data)
         return val_acc
