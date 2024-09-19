@@ -27,7 +27,7 @@ if __name__ == "__main__":
         split_model = ConfigHandler.load_model_config(args.model,"best_config",args.dataset,split_idx)
         split = split_model['split']
         model_config = split_model.get('model_config')
-        idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_train']
+        idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_test']
         puriSelector = PurificationSelector(
             config_dict= hyper_grid_config,
             idx_train=idx_train,

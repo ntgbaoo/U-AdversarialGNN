@@ -96,7 +96,7 @@ if __name__ == "__main__":
             split_model = ConfigHandler.load_model_config(args.model,"best_config",args.dataset,split_idx)
             split = split_model['split']
             configs = split_model.get('model_config')
-            idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_train']
+            idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_test']
 
             for idx_run in range(args.num_run):
                 seed = args.seed + idx_run
@@ -160,7 +160,7 @@ if __name__ == "__main__":
                 evasion_dict['total'].append(evasion_count/50)
                 poision_dict['total'].append(poision_count/50)
 
-                time_total = high_result['time'] + high_result['time'] + low_result['time'] + highest_degree_result['time'] + lowest_degree_result['time'] + other_result['time']
+                time_total = high_result['time']  + low_result['time'] + highest_degree_result['time'] + lowest_degree_result['time'] + other_result['time']
                 time.append(time_total)
 
         print(evasion_dict)

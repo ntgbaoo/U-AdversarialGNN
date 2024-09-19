@@ -7,7 +7,7 @@ from static import *
 class ConfigHandler:
     @staticmethod
     def load_model_config(model_type="GCN",config_name = "default",dataset = None,split = None):
-        if dataset is None:
+        if dataset is None or config_name == "default":
             file_path = '{}{}/{}.yaml'.format(PATH_CONFIG_MODEL,model_type,config_name)
         else:
             file_path = '{}{}/{}/split_{}/{}.yaml'.format(PATH_CONFIG_MODEL,model_type,dataset,split,config_name)

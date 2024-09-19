@@ -130,7 +130,8 @@ def load_graph_purification(**kwargs):
     assert purification_name is not None
 
     if purification_name == "Jaccard":
-        purification = JaccardPurification()
+        threshold = kwargs.get(THRESHOLD)
+        purification = JaccardPurification(threshold)
     elif purification_name == "SVD":
         threshold = kwargs.get(THRESHOLD)
         top_k = kwargs.get(TOP_K)

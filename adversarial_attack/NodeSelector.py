@@ -14,7 +14,7 @@ from torch_geometric.data import Data
 
 class NodeSelector:
     @staticmethod
-    def select_nodes_margin(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720):
+    def select_nodes_margin(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720,num_rand= 20):
         '''
         selecting nodes as reported in nettack paper:
         (i) the 10 nodes with highest margin of classification, i.e. they are clearly correctly classified,
@@ -37,11 +37,11 @@ class NodeSelector:
         high = [x for x, y in sorted_margins[: 10]]
         low = [x for x, y in sorted_margins[-10: ]]
         other = [x for x, y in sorted_margins[10: -10]]
-        other = np.random.choice(other, 20, replace=False).tolist()
+        other = np.random.choice(other, num_rand, replace=False).tolist()
 
         
 
-        return high,low,other
+        return high + low + other
     
     @staticmethod
     def select_nodes_margin_degree(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720):
