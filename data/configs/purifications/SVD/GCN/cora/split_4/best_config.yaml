@@ -1,9 +1,9 @@
 model: GCN
 model_config:
-  k: 5
+  k: 50
   purification: SVD
   threshold: 0.01
-performance: 0.8433734939759037
+performance: 0.7389558232931727
 split:
   idx_test:
   - 1987

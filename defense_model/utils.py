@@ -142,7 +142,7 @@ def load_graph_purification(**kwargs):
         k = kwargs.get(TOP_K)
         use_feature = bool(kwargs.get("use_feature"))
         weighted_knn = bool(kwargs.get("weighted_knn"))
-        adj_norm = bool(kwargs.get(adj_norm))
+        adj_norm = bool(kwargs.get('adj_norm'))
 
         gamma = kwargs.get(GAMMA)
         purification = GarnetPurification(r,k,gamma,use_feature=use_feature,

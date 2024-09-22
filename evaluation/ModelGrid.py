@@ -11,7 +11,7 @@ class ModelGrid(Grid):
     def __init__(self,config_dict:dict) -> None:
         super().__init__(config_dict)
 
-    def _get_single__grid_identifier(self):
+    def _get_single_grid_identifier(self):
         return MODEL
 
     def _assert_config_dict(self):

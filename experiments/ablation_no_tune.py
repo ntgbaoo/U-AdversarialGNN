@@ -118,7 +118,7 @@ if __name__ == "__main__":
                     attacker.T = data.num_nodes//2                    
                 
                 if args.adversarial == PRBCD_NAME:
-                    attacker.update_config(10000,500)
+                    attacker.update_config(10000,200)
                     if args.model == "GCN":
                         attacker.setup_surrogate(node_selector.model)
                     else:
@@ -129,11 +129,6 @@ if __name__ == "__main__":
                         attacker.setup_surrogate(surrogate.model)
 
                 if surrogate_name is not None:
-                    # split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"best_config",args.dataset,split_idx)
-                    # configs_surrogate = split_model.get('model_config')
-                    # # adversarial_surrogate = SurrogateLoader.load_surrogate(data,idx_train,idx_val,device=args.device,seed=seed,model=get_surrogate_name(args.adversarial),model_configs = configs_surrogate)
-                    # attacker.setup_surrogate(node_selector.model)
-
                     split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"default",args.dataset,split_idx)
                     configs_surrogate = split_model_surrogate.get('model_config')
                     surrogate = ModelSupervisor(data,args.device,**configs_surrogate)
@@ -159,8 +154,8 @@ if __name__ == "__main__":
                 evasion_dict['other'].append( other_result[EVASION]/10)
                 poision_dict['other'].append( other_result[POSION]/10)
                 
-                evasion_count = high_result[EVASION] + high_result[EVASION] + low_result[EVASION] + highest_degree_result[EVASION] + lowest_degree_result[EVASION] + other_result[EVASION]
-                poision_count = high_result[POSION] + high_result[EVASION] + low_result[POSION] + highest_degree_result[POSION] + lowest_degree_result[POSION] + other_result[POSION]
+                evasion_count = high_result[EVASION] + low_result[EVASION] + highest_degree_result[EVASION] + lowest_degree_result[EVASION] + other_result[EVASION]
+                poision_count = high_result[POSION] + low_result[POSION] + highest_degree_result[POSION] + lowest_degree_result[POSION] + other_result[POSION]
                 evasion_dict['total'].append(evasion_count/50)
                 poision_dict['total'].append(poision_count/50)
 

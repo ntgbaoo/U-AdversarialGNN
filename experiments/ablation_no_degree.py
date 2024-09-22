@@ -96,7 +96,7 @@ if __name__ == "__main__":
 
             for idx_run in range(args.num_run):
                 seed = args.seed + idx_run
-                node_selector = ModelSupervisor(data,args.device,**configs)
+                node_selector = ModelSupervisor(data,args.device,seed=seed,**configs)
                 node_selector.train_model(idx_train,idx_val,idx_test)
                 bucket_target_nodes= NodeSelector.select_nodes_margin(node_selector,data,idx_test,seed=seed,num_rand=30)
 
@@ -108,7 +108,7 @@ if __name__ == "__main__":
                     attacker.T = data.num_nodes//2                    
                 
                 if args.adversarial == PRBCD_NAME:
-                    attacker.update_config(10000,500)
+                    attacker.update_config(10000,200)
                     if args.model == "GCN":
                         attacker.setup_surrogate(node_selector.model)
                     else:
@@ -127,7 +127,7 @@ if __name__ == "__main__":
 
 
                 adversarial_supervisor = AdversarialSupervisor(data,attacker,idx_train,idx_val,idx_test,args.device,**configs)
-                high_result,low_result, highest_degree_result,lowest_degree_result,other_result = adversarial_supervisor.target_attack(bucket_target_nodes,budget,evasion=True,poision=True, evasion_model=node_selector,seed = seed)
+                high_result,low_result,other_result = adversarial_supervisor.target_attack(bucket_target_nodes,budget,evasion=True,poision=True, evasion_model=node_selector,seed = seed)
                 adversarial_supervisor.save_result(args.adversarial,seed,args.dataset,args.model,budget)
                 evasion_dict['high_margin'].append( high_result[EVASION]/10)
                 poision_dict['high_margin'].append( high_result[POSION]/10)
@@ -135,11 +135,11 @@ if __name__ == "__main__":
                 evasion_dict['low_margin'].append( low_result[EVASION]/10)
                 poision_dict['low_margin'].append( low_result[POSION]/10)
 
-                evasion_dict['other'].append( other_result[EVASION]/10)
-                poision_dict['other'].append( other_result[POSION]/10)
+                evasion_dict['other'].append( other_result[EVASION]/30)
+                poision_dict['other'].append( other_result[POSION]/30)
                 
-                evasion_count = high_result[EVASION] + high_result[EVASION] + low_result[EVASION] + highest_degree_result[EVASION] + lowest_degree_result[EVASION] + other_result[EVASION]
-                poision_count = high_result[POSION] + high_result[EVASION] + low_result[POSION] + highest_degree_result[POSION] + lowest_degree_result[POSION] + other_result[POSION]
+                evasion_count = high_result[EVASION]  + low_result[EVASION] + other_result[EVASION]
+                poision_count = high_result[POSION]+ low_result[POSION]  + other_result[POSION]
                 evasion_dict['total'].append(evasion_count/50)
                 poision_dict['total'].append(poision_count/50)
 

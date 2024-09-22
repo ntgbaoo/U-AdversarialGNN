@@ -98,7 +98,7 @@ if __name__ == "__main__":
             use_purification = False
             if args.purification is not None:
                 use_purification = True
-                purification_config = ConfigHandler.load_purification_config(args.load_purification_config,args.model,"best_config",args.dataset)
+                purification_config = ConfigHandler.load_purification_config(args.purification,args.model,"best_config",args.dataset,split_idx=split_idx)
             
             split_model = ConfigHandler.load_model_config(args.model,"best_config",args.dataset,split_idx)
             split = split_model['split']
@@ -107,7 +107,7 @@ if __name__ == "__main__":
 
             for idx_run in range(args.num_run):
                 seed = args.seed + idx_run
-                node_selector = ModelSupervisor(data,args.device,seed,use_purification=use_purification,purification_config=purification_config**configs)
+                node_selector = ModelSupervisor(data,args.device,seed,use_purification=use_purification,purification_config=purification_config,seed=seed,**configs)
                 time_defense_start = timeit.default_timer()
                 node_selector.train_model(idx_train,idx_val,idx_test)
                 time_defense.append(timeit.default_timer() - time_defense_start)
@@ -124,14 +124,14 @@ if __name__ == "__main__":
                 
                 if args.adversarial == PRBCD_NAME:
                     
-                    attacker.update_config(10000,500)
+                    attacker.update_config(10000,200)
                    
                     if args.model == "GCN":
                         attacker.setup_surrogate(node_selector.model)
                     else:
                         split_model_surrogate = ConfigHandler.load_model_config("GCN","best_config",args.dataset,split_idx)
                         configs_surrogate = split_model_surrogate.get('model_config')
-                        surrogate = ModelSupervisor(data,args.device,seed,use_purification=use_purification,purification_config=purification_config**configs)
+                        surrogate = ModelSupervisor(data,args.device,seed,use_purification=False,purification_config=None,seed=seed,**configs)
                         surrogate.train_model(idx_train,idx_val,idx_test)
                         attacker.setup_surrogate(surrogate.model)
 
@@ -164,8 +164,8 @@ if __name__ == "__main__":
                 evasion_dict['other'].append( other_result[EVASION]/10)
                 poision_dict['other'].append( other_result[POSION]/10)
                 
-                evasion_count = high_result[EVASION] + high_result[EVASION] + low_result[EVASION] + highest_degree_result[EVASION] + lowest_degree_result[EVASION] + other_result[EVASION]
-                poision_count = high_result[POSION] + high_result[EVASION] + low_result[POSION] + highest_degree_result[POSION] + lowest_degree_result[POSION] + other_result[POSION]
+                evasion_count = high_result[EVASION] + low_result[EVASION] + highest_degree_result[EVASION] + lowest_degree_result[EVASION] + other_result[EVASION]
+                poision_count = high_result[POSION]  + low_result[POSION] + highest_degree_result[POSION] + lowest_degree_result[POSION] + other_result[POSION]
                 evasion_dict['total'].append(evasion_count/50)
                 poision_dict['total'].append(poision_count/50)
 

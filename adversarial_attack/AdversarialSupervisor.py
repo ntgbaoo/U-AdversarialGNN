@@ -86,6 +86,7 @@ class AdversarialSupervisor:
                 
                 counter += 1
                 print(f'\rINFO : finished {counter}/{len(target_nodes)}', end='')
+                
 
             result['time'] = total
 

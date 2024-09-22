@@ -41,10 +41,10 @@ class NodeSelector:
 
         
 
-        return high + low + other
+        return high, low,other
     
     @staticmethod
-    def select_nodes_margin_degree(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720):
+    def select_nodes_margin_degree(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720,num_rand= 10):
         '''
         selecting nodes as reported in nettack paper:
         (i) the 10 nodes with highest margin of classification, i.e. they are clearly correctly classified,
@@ -73,7 +73,7 @@ class NodeSelector:
         highest_degree,lowest_degree = NodeSelector._select_node_value_margin(degree_values)
         remaining = list((set(other) - set(highest_degree)) - set(lowest_degree))
        
-        other = np.random.choice(remaining, 10, replace=False).tolist()
+        other = np.random.choice(remaining, num_rand, replace=False).tolist()
         return high,low, highest_degree,lowest_degree,other
     
     @staticmethod

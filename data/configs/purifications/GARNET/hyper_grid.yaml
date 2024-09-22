@@ -20,7 +20,5 @@ adj_norm:
   - True
   - False
 
-
-
 gamma:
   - 0.0003
