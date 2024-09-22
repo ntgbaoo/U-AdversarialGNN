@@ -2,6 +2,7 @@ import sys
 import os
 import statistics as stats
 import pandas as pd
+import timeit
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -92,7 +93,7 @@ class AdversarialAssessment:
 
             splitter = Splitter(**split_config)
         for split_idx in range(self.num_splits):
-            config = ConfigHandler.load_model_config(self.model,self.config_name,self.data)
+            config = ConfigHandler.load_model_config(self.model,self.config_name,self.dataset_name)
             if not self.use_tune_model:
                 config['split'] ={
                     IDX_TRAIN: folds[split_idx].idx_train,
@@ -107,24 +108,73 @@ class AdversarialAssessment:
             return 'SGC'
         elif attack_method in [NETTACK_NAME,FGA_NAME,PGDATTACK_NAME,IGATTACK_NAME]:
             return 'GCN_surrogate'
-        else:
-            return None
+        elif attack_method is PRBCD_NAME:
+            return 'GCN'
+        return None
 
 
+    def _get_gcn_surrogate(self,dataset,split_idx,seed,data,idx_train,idx_val,idx_test):
+        split_model_surrogate = ConfigHandler.load_model_config("GCN","best_config",dataset,split_idx)
+        configs_surrogate = split_model_surrogate.get('model_config')
+        surrogate = ModelSupervisor(data,self.device,seed=seed,**configs_surrogate)
+        surrogate.train_model(idx_train,idx_val,idx_test)
+        return surrogate.model
+
+    def _update_particular_config(self,attacker,data):
+        if self.adversarial_name is GFATTACK_NAME and self.dataname == "cora":
+            attacker.T = data.num_nodes//2                    
+                
+        if self.adversarial_name == PRBCD_NAME:
+            attacker.update_config(10000,200)
+
+    def _target_node_dict_to_tuple(self,target_node_dict):
+        target_node_tuple = tuple()
+        for category in self.node_category:
+            target_node_tuple = target_node_tuple + (category,)
         
+        return target_node_tuple
+    
+    def _update_dict_results(self,result_tuple,num_rand,evasion_dict = None, poison_dict = None):
+        time_total = 0
+        evasion_total = 0
+        poison_total = 0
+        for idx,category in enumerate(self.node_category):
+            result = result_tuple[idx]
+            if evasion_dict is not None:
+                if category == "other":
+                    evasion_dict[category].append(result[EVASION]/num_rand)
+                else:
+                    evasion_dict[category].append(result[EVASION]/10)
+                evasion_total += result[EVASION]
+            if poison_dict is not None:
+                if category == "other":
+                    poison_dict[category].append(result[POSION]/num_rand)
+                else:
+                    poison_dict[category].append(result[POSION]/10)
+
+                poison_total += result[POSION]
+
+            time_total += result_tuple['time']
+        if evasion_dict is not None:
+            evasion_dict['total'].append(evasion_total/50)
+        return time_total,evasion_dict,poison_dict
+        
+
+
    
     def evaluate(self,evasion = True, poision = True, budgets_list = [1,2,3,4,5]):
         assert evasion or poision, "At least on of evasion and poision setting"
         num_rand = 10 if self.use_degree_node_selection else 30
-        data,_ = DataLoader.load(self.data)
         rowlist_evasion = [] if evasion else None
         rowlist_poision = [] if poision else None
-        all_split_configs = self._load_config_split(data)
+        all_split_configs = self._load_config_split(self.data)
+        
 
         for budget in budgets_list:
             evasion_dict = self._prepare_dict() if evasion else None
             poision_dict = self._prepare_dict() if poision else None
-            time = []
+            time_list = []
+            time_defense_list = []
 
             for split_idx in range(self.num_splits):
                 split_model = all_split_configs[split_idx]
@@ -134,9 +184,58 @@ class AdversarialAssessment:
                 
                 for idx_run in range(self.num_runs):
                     seed = self.base_seed + idx_run
-                    node_selector = ModelSupervisor(data,self.device,seed=seed,**configs)
+                    node_selector = ModelSupervisor(self.data,self.device,seed=seed,**configs)
+                    start_defense = timeit.default_timer()
                     node_selector.train_model(idx_train,idx_val,idx_test)
-                    bucket_target_nodes= self.node_selector(node_selector,data,idx_test,seed=seed,num_rand=num_rand)
-        
-                    attacker = self._load_attack(args.adversarial)(data, device=self.device,seed=seed)
+                    time_defense_list.append(timeit.default_timer() - start_defense)
+                    target_node_dict= self.node_selector(node_selector,self.data,idx_test,seed=seed,num_rand=num_rand)
+                    target_node_tuple = self._target_node_dict_to_tuple(target_node_dict)
+                    attacker = self._load_attack(self.adversarial_name)(self.data, device=self.device,seed=seed)
+                    self._update_particular_config(attacker)
                     surrogate_name = self._get_surrogate_name(self.adversarial)
+
+                    if surrogate_name == "GCN" and self.model == "GCN":
+                        attacker.setup_surrogate(node_selector.model)
+
+                    if surrogate_name is not None:
+                        split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"best_config",self.data,split_idx)
+                        configs_surrogate = split_model_surrogate.get('model_config')
+                        surrogate = ModelSupervisor(self.data,self.device,seed=seed,**configs_surrogate)
+                        surrogate.train_model(idx_train,idx_val,idx_test)
+                        attacker.setup_surrogate(surrogate.model)
+
+                    adversarial_supervisor = AdversarialSupervisor(self.data,attacker,idx_train,idx_val,idx_test,self.device,**configs)
+                    result_bucket = adversarial_supervisor.target_attack(target_node_tuple,budget,evasion=True,poision=True, evasion_model=node_selector,seed = seed)
+                    adversarial_supervisor.save_result(self.adversarial,seed,self.dataset_name,self.model,budget)
+                    time,evasion_dict,poision_dict = self._update_dict_results(result_bucket,num_rand,evasion_dict,poision_dict)
+                    time_list.append(time)
+            
+            
+            if evasion:
+                row_evasion = [budget]
+                for key in evasion_dict:
+                    row_evasion.append(self._get_stat(evasion_dict[key]))
+                row_evasion.append(self._get_stat(time_list))
+                row_evasion.append(self._get_stat(time_defense_list))
+            
+                rowlist_evasion.append(row_evasion)
+            if poision:
+                row_poison = [budget]
+                for key in evasion_dict:
+                    row_poison.append(self._get_stat(poision_dict[key]))
+                row_poison.append(self._get_stat(time_list))
+                row_evasion.append(self._get_stat(time_defense_list))
+                
+                rowlist_poision.append(row_poison)
+        
+        if not os.path.exists("{}{}/{}/".format(PATH_RESULT,self.model,self.dataset_name)):
+            os.makedirs("{}{}/{}/".format(PATH_RESULT,self.model,self.dataset_name))
+
+        columns = ['budget'] + self.node_category + ['time_attack'] + ['time_defense']
+
+        df_poision = pd.DataFrame(rowlist_poision,columns=columns) if evasion else None
+        df_evasion = pd.DataFrame(rowlist_evasion,columns=columns) if poision else None
+
+        return df_evasion,df_poision
+
+

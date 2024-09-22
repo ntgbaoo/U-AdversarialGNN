@@ -40,8 +40,11 @@ class NodeSelector:
         other = np.random.choice(other, num_rand, replace=False).tolist()
 
         
-
-        return high, low,other
+        return {
+            "high_margin":high,
+            "low_margin":low,
+            "other":other
+        }
     
     @staticmethod
     def select_nodes_margin_degree(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720,num_rand= 10):
@@ -74,7 +77,13 @@ class NodeSelector:
         remaining = list((set(other) - set(highest_degree)) - set(lowest_degree))
        
         other = np.random.choice(remaining, num_rand, replace=False).tolist()
-        return high,low, highest_degree,lowest_degree,other
+        return {
+            "high_margin":high,
+            "low_margin":low,
+            "highest_degree":highest_degree,
+            "lowest_degree":lowest_degree,
+            "other":other
+        }
     
     @staticmethod
     def select_node_margin_centrality(target_runner:IModelSupervisor):
