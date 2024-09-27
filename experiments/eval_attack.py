@@ -22,7 +22,7 @@ from adversarial_attack.SurrogateLoader import SurrogateLoader
 from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
 from static import *
 from utility.config import args
-from adversarial_attack.PRBCDAttack import PRBCDAttack
+from adversarial_attack.PRBCDAttack import PRBCDAttack,GRBCDAttack
 
 
 from greatx.utils import mark, split_nodes
@@ -46,6 +46,8 @@ def load_attack(attack_method):
         return IGAttack
     elif attack_method == PRBCD_NAME:
         return PRBCDAttack
+    elif attack_method == GRBCD_NAME:
+        return GRBCDAttack
     
 
     
@@ -111,9 +113,11 @@ if __name__ == "__main__":
                 surrogate_name = get_surrogate_name(args.adversarial)
 
                 if args.adversarial is GFATTACK_NAME and args.dataset == "cora":
-                    attacker.T = data.num_nodes//2                    
+                    attacker.T = data.num_nodes//2   
+
                 
-                if args.adversarial == PRBCD_NAME:
+                if args.adversarial == PRBCD_NAME or args.adversarial == GRBCD_NAME:
+
                     attacker.update_config(10000,200)
                     if args.model == "GCN":
                         attacker.setup_surrogate(node_selector.model)
@@ -123,6 +127,8 @@ if __name__ == "__main__":
                         surrogate = ModelSupervisor(data,args.device,seed=seed,**configs_surrogate)
                         surrogate.train_model(idx_train,idx_val,idx_test)
                         attacker.setup_surrogate(surrogate.model)
+                if  args.adversarial == GRBCD_NAME:
+                        attacker.update_config(10000,125)
 
                 if surrogate_name is not None:
                    

@@ -48,7 +48,6 @@ class PurificationSelector:
         print("\n")
 
     def get_best_config(self):
-        print(self.all_configs[np.argmax(self.results)])
         return self.all_configs[np.argmax(self.results)],max(self.results)
     
     def _run_model_on_config(self,model_config,purification_config,seed):

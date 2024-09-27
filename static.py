@@ -3,6 +3,9 @@ PURIFICATION = "purification"
 THRESHOLD = "threshold"
 TOP_K ="k"
 TOP_SINGULAR_R ="r"
+GARNET = "GARNET"
+JACCARD = "Jaccard"
+SVD = "SVD"
 
 
 #Model set-up
@@ -74,7 +77,7 @@ PRBCD_NAME = "prbcdattack"
 EVASION = "evasion"
 POSION = "poision"
 GOTTACK ="GOttack"
-
+GRBCD_NAME = "GRBCD"
 
 
 
