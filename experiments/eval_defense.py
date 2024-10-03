@@ -107,11 +107,17 @@ if __name__ == "__main__":
 
             for idx_run in range(args.num_run):
                 seed = args.seed + idx_run
-                node_selector = ModelSupervisor(data,args.device,seed,use_purification=use_purification,purification_config=purification_config,seed=seed,**configs)
+                node_selector = ModelSupervisor(data,args.device,use_purification=use_purification,purification_config=purification_config,seed=seed,**configs)
                 time_defense_start = timeit.default_timer()
                 node_selector.train_model(idx_train,idx_val,idx_test)
                 time_defense.append(timeit.default_timer() - time_defense_start)
-                bucket_target_nodes= NodeSelector.select_nodes_margin_degree(node_selector,data,idx_test,seed=seed)
+                target_node_dict= NodeSelector.select_nodes_margin_degree(node_selector,data,idx_test,seed=seed)
+                category_list = ['high_margin','low_margin','highest_degree','lowest_degree','other']
+                bucket_target_nodes = []
+                for cate in category_list:
+                    bucket_target_nodes.append(target_node_dict[cate])
+
+                
                 # node_list = high +low + highest_degree + lowest_degree + other
 
 
@@ -129,10 +135,12 @@ if __name__ == "__main__":
                     if args.model == "GCN":
                         attacker.setup_surrogate(node_selector.model)
                     else:
+                        print("Here")
                         split_model_surrogate = ConfigHandler.load_model_config("GCN","best_config",args.dataset,split_idx)
                         configs_surrogate = split_model_surrogate.get('model_config')
-                        surrogate = ModelSupervisor(data,args.device,seed,use_purification=False,purification_config=None,seed=seed,**configs)
+                        surrogate = ModelSupervisor(data,args.device,use_purification=False,purification_config=None,seed=seed,**configs)
                         surrogate.train_model(idx_train,idx_val,idx_test)
+                        surrogate.model.eval()
                         attacker.setup_surrogate(surrogate.model)
 
                 if surrogate_name is not None:
@@ -141,10 +149,11 @@ if __name__ == "__main__":
                     configs_surrogate = split_model_surrogate.get('model_config')
                     surrogate = ModelSupervisor(data,args.device,seed=seed,**configs_surrogate)
                     surrogate.train_model(idx_train,idx_val,idx_test)
+                    surrogate.model.eval()
                     attacker.setup_surrogate(surrogate.model)
 
 
-                adversarial_supervisor = AdversarialSupervisor(data=data,attacker = attacker,idx_train=idx_train,idx_val=idx_val,idx_test=idx_test,device=args.device,
+                adversarial_supervisor = AdversarialSupervisor(data=data,adversarial = attacker,idx_train=idx_train,idx_val=idx_val,idx_test=idx_test,device=args.device,
                                                                use_purification=use_purification,purification_config=purification_config,
                                                                **configs)
                 high_result,low_result, highest_degree_result,lowest_degree_result,other_result = adversarial_supervisor.target_attack(bucket_target_nodes,budget,evasion=True,poision=True, evasion_model=node_selector,seed = seed)

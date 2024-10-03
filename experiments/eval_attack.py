@@ -104,8 +104,11 @@ if __name__ == "__main__":
                 seed = args.seed + idx_run
                 node_selector = ModelSupervisor(data,args.device,seed=seed,**configs)
                 node_selector.train_model(idx_train,idx_val,idx_test)
-                bucket_target_nodes= NodeSelector.select_nodes_margin_degree(node_selector,data,idx_test,seed=seed)
-                # node_list = high +low + highest_degree + lowest_degree + other
+                target_node_dict= NodeSelector.select_nodes_margin_degree(node_selector,data,idx_test,seed=seed)
+                category_list = ['high_margin','low_margin','highest_degree','lowest_degree','other']
+                bucket_target_nodes = []
+                for cate in category_list:
+                    bucket_target_nodes.append(target_node_dict[cate])
 
 
                 # surrogate_supervisor = 

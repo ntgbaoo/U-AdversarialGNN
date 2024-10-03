@@ -30,7 +30,7 @@ class ConfigHandler:
         if dataset is None:
             file_path = '{}{}/{}.yaml'.format(PATH_CONFIG_PURIFICATION,purification_type,config_name)
         else:
-            file_path = '{}{}/{}/{}/split_{}/'.format(PATH_CONFIG_PURIFICATION,purification_type,model_type,data,split)
+            file_path = '{}{}/{}/{}/split_{}/{}.yaml'.format(PATH_CONFIG_PURIFICATION,purification_type,model_type,dataset,split,config_name)
         with open(file_path,'r') as file:
             data = yaml.safe_load(file)
         return data
