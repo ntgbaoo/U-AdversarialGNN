@@ -344,8 +344,8 @@ class FeatAgent:
         model.eval()
         model.data = data.to(self.device)
 
-        import ipdb
-        ipdb.set_trace()
+        # import ipdb
+        # ipdb.set_trace()
 
         output = model.predict()
         labels = labels.to(device)

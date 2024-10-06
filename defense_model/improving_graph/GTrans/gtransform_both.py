@@ -17,6 +17,21 @@ from torch_geometric.utils import to_scipy_sparse_matrix, from_scipy_sparse_matr
 class GraphAgent(EdgeAgent):
 
     def __init__(self, data, args, model=None):
+        """
+        args: 
+        noise_feature: bool (false)
+        noise_structure: bool (false)
+        epochs :int
+        lr_adj
+        lr_feat
+        loss
+        seed
+        ratio
+        loop_adj
+        loop_feat
+        existing_space
+        debug
+        """
         self.device = 'cuda'
         self.args = args
 
