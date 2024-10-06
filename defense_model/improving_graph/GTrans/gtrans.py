@@ -77,7 +77,7 @@ class GraphAgent(EdgeAgent,BaseTransform):
     def update_idx_val (self,idx_val):
         self.val_idx = idx_val
 
-    def __call__(self, data: Data, inplace: bool = True) -> Data:
+    def __call__(self, data: Data, inplace: bool = False) -> Data:
         if not inplace:
             data = copy(data)
         
