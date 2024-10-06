@@ -31,7 +31,7 @@ class GraphAgent(EdgeAgent,BaseTransform):
                  loop_adj : int = 1,
                  loop_feat : int = 4,
                  existing_space : int = 1,
-                 debug : float = 0,
+                 idx_val: list = None,
                  device : torch.device = "cpu",
                  model=None):
         """
@@ -46,8 +46,9 @@ class GraphAgent(EdgeAgent,BaseTransform):
         loop_adj
         loop_feat
         existing_space
-        debug
         """
+        assert idx_val is not None
+        self.val_idx = idx_val
         self.device = device
         self.seed = seed
         self.lr_feat = lr_feat
@@ -60,7 +61,6 @@ class GraphAgent(EdgeAgent,BaseTransform):
         self.loop_adj = loop_adj
         self.loop_feat = loop_feat
         self.existing_space = existing_space
-        self.debug = debug
     
         if model is None:
             self.model = self.pretrain_model()
@@ -74,7 +74,8 @@ class GraphAgent(EdgeAgent,BaseTransform):
         for param in self.model.parameters():
             param.requires_grad = False
 
-      
+    def update_idx_val (self,idx_val):
+        self.val_idx = idx_val
 
     def __call__(self, data: Data, inplace: bool = True) -> Data:
         if not inplace:
@@ -134,13 +135,13 @@ class GraphAgent(EdgeAgent,BaseTransform):
             edge_index = edge_index_
         self.edge_index = edge_index
 
-        if self.loss == 'attack':
-            with torch.no_grad():
-                output = model.forward(feat, self.edge_index)
-                pred = output.argmax(1)
-            gt_labels = labels
-            labels = labels.clone() # to avoid shallow copy
-            labels[~data.train_mask] = pred[~data.train_mask]
+        # if self.loss == 'attack':
+        #     with torch.no_grad():
+        #         output = model.forward(feat, self.edge_index)
+        #         pred = output.argmax(1)
+        #     gt_labels = labels
+        #     labels = labels.clone() # to avoid shallow copy
+        #     labels[~data.train_mask] = pred[~data.train_mask]
 
         if edge_index is not None:
             self.edge_index = edge_index
@@ -167,19 +168,11 @@ class GraphAgent(EdgeAgent,BaseTransform):
 
                 self.optimizer_feat.step()
 
-                if self.debug == 2:
-                    with torch.no_grad():
-                        new_feat = feat+delta_feat
-                        output = model.forward(new_feat, edge_index, edge_weight) #
-                    print("After noise, test set results:", self.get_perf(output, labels, data.test_mask, verbose=0)[1])
-                    print('Validation:', self.get_perf(output, labels, data.val_mask, verbose=0)[1])
-                    print('Abnomral test nodes:', self.get_perf(output, labels, self.noisy_nodes, verbose=0)[1])
-                    print('Normal test nodes:', self.get_perf(output, labels, data.test_mask & (~self.noisy_nodes), verbose=0)[1])
-
+                
                 with torch.no_grad():
                     new_feat = (feat+delta_feat).detach()
                     output = model.forward(new_feat, edge_index, edge_weight)
-                val_mask = self.data.val_mask
+                val_mask = self.val_idx
                 acc_val = utils.accuracy(output[val_mask], labels[val_mask])
                 if best_acc_val < acc_val:
                     best_acc_val = acc_val
@@ -219,7 +212,7 @@ class GraphAgent(EdgeAgent,BaseTransform):
                     with torch.no_grad():
                         edge_index, edge_weight = self.get_modified_adj()
                         output = model.forward(new_feat, edge_index, edge_weight)
-                    val_mask = self.data.val_mask
+                    val_mask = self.val_idx
                     acc_val = utils.accuracy(output[val_mask], labels[val_mask])
                     if best_acc_val < acc_val:
                         best_acc_val = acc_val
