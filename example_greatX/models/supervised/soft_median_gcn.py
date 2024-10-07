@@ -2,7 +2,10 @@ import os.path as osp
 
 import torch
 import torch_geometric.transforms as T
+import sys
+import os
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 from greatx.datasets import GraphDataset
 from greatx.nn.models import SoftMedianGCN
 from greatx.training import Trainer
