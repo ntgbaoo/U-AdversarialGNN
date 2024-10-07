@@ -23,9 +23,7 @@ from adversarial_attack.SurrogateLoader import SurrogateLoader
 from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
 from static import *
 from utility.config import args
-from adversarial_attack.PRBCDAttack import PRBCDAttack
-from defense_model.improving_graph.GARNET.garnet import GarnetPurification
-from greatx.defense.purification import *
+from adversarial_attack.PRBCDAttack import PRBCDAttack,GRBCDAttack
 
 
 from greatx.utils import mark, split_nodes
@@ -49,6 +47,9 @@ def load_attack(attack_method):
         return IGAttack
     elif attack_method == PRBCD_NAME:
         return PRBCDAttack
+    elif attack_method == GRBCD_NAME:
+        return GRBCDAttack
+    
 
     
 
@@ -93,21 +94,26 @@ if __name__ == "__main__":
         }
         time = []
         time_defense = []
+        purification_config = None
+        use_purification = False
+
+        
+
         for split_idx in range(5):
-            purification_config = None
-            use_purification = False
             if args.purification is not None:
                 use_purification = True
-                purification_config = ConfigHandler.load_purification_config(args.purification,args.model,"best_config",args.dataset,split_idx=split_idx)
-            
-            split_model = ConfigHandler.load_model_config(args.model,"best_config",args.dataset,split_idx)
+                purification_config = ConfigHandler.load_purification_config(args.purification,args.model,"best_config",args.dataset,split=split_idx)['model_config']
+                print(purification_config)
+
+            split_model = ConfigHandler.load_model_config(args.model,args.config_setting,args.dataset,split_idx)
             split = split_model['split']
             configs = split_model.get('model_config')
+            print(configs)
             idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_test']
 
             for idx_run in range(args.num_run):
                 seed = args.seed + idx_run
-                node_selector = ModelSupervisor(data,args.device,use_purification=use_purification,purification_config=purification_config,seed=seed,**configs)
+                node_selector = ModelSupervisor(data,args.device,seed=seed,use_purification=use_purification,purification_config=purification_config,**configs)
                 time_defense_start = timeit.default_timer()
                 node_selector.train_model(idx_train,idx_val,idx_test)
                 time_defense.append(timeit.default_timer() - time_defense_start)
@@ -117,45 +123,37 @@ if __name__ == "__main__":
                 for cate in category_list:
                     bucket_target_nodes.append(target_node_dict[cate])
 
-                
-                # node_list = high +low + highest_degree + lowest_degree + other
-
 
                 # surrogate_supervisor = 
                 attacker = load_attack(args.adversarial)(data, device=args.device,seed=seed)
                 surrogate_name = get_surrogate_name(args.adversarial)
 
                 if args.adversarial is GFATTACK_NAME and args.dataset == "cora":
-                    attacker.T = data.num_nodes//2                    
+                    attacker.T = data.num_nodes//2   
+
                 
-                if args.adversarial == PRBCD_NAME:
-                    
+                if args.adversarial == PRBCD_NAME or args.adversarial == GRBCD_NAME:
+
                     attacker.update_config(10000,200)
-                   
-                    if args.model == "GCN":
-                        attacker.setup_surrogate(node_selector.model)
-                    else:
-                        print("Here")
-                        split_model_surrogate = ConfigHandler.load_model_config("GCN","best_config",args.dataset,split_idx)
-                        configs_surrogate = split_model_surrogate.get('model_config')
-                        surrogate = ModelSupervisor(data,args.device,use_purification=False,purification_config=None,seed=seed,**configs)
-                        surrogate.train_model(idx_train,idx_val,idx_test)
-                        surrogate.model.eval()
-                        attacker.setup_surrogate(surrogate.model)
+                    split_model_surrogate = ConfigHandler.load_model_config("GCN","best_config",args.dataset,split_idx)
+                    configs_surrogate = split_model_surrogate.get('model_config')
+                    surrogate = ModelSupervisor(data,args.device,seed=seed,**configs_surrogate)
+                    surrogate.train_model(idx_train,idx_val,idx_test)
+                    attacker.setup_surrogate(surrogate.model)
+                    
+                if  args.adversarial == GRBCD_NAME:
+                        attacker.update_config(10000,125)
 
                 if surrogate_name is not None:
-            
+                   
                     split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"best_config",args.dataset,split_idx)
                     configs_surrogate = split_model_surrogate.get('model_config')
                     surrogate = ModelSupervisor(data,args.device,seed=seed,**configs_surrogate)
                     surrogate.train_model(idx_train,idx_val,idx_test)
-                    surrogate.model.eval()
                     attacker.setup_surrogate(surrogate.model)
 
 
-                adversarial_supervisor = AdversarialSupervisor(data=data,adversarial = attacker,idx_train=idx_train,idx_val=idx_val,idx_test=idx_test,device=args.device,
-                                                               use_purification=use_purification,purification_config=purification_config,
-                                                               **configs)
+                adversarial_supervisor = AdversarialSupervisor(data,attacker,idx_train,idx_val,idx_test,args.device,use_purification=use_purification,purification_config=purification_config,**configs)
                 high_result,low_result, highest_degree_result,lowest_degree_result,other_result = adversarial_supervisor.target_attack(bucket_target_nodes,budget,evasion=True,poision=True, evasion_model=node_selector,seed = seed)
                 adversarial_supervisor.save_result(args.adversarial,seed,args.dataset,args.model,budget)
                 evasion_dict['high_margin'].append( high_result[EVASION]/10)
@@ -173,12 +171,12 @@ if __name__ == "__main__":
                 evasion_dict['other'].append( other_result[EVASION]/10)
                 poision_dict['other'].append( other_result[POSION]/10)
                 
-                evasion_count = high_result[EVASION] + low_result[EVASION] + highest_degree_result[EVASION] + lowest_degree_result[EVASION] + other_result[EVASION]
-                poision_count = high_result[POSION]  + low_result[POSION] + highest_degree_result[POSION] + lowest_degree_result[POSION] + other_result[POSION]
+                evasion_count = high_result[EVASION]  + low_result[EVASION] + highest_degree_result[EVASION] + lowest_degree_result[EVASION] + other_result[EVASION]
+                poision_count = high_result[POSION] + low_result[POSION] + highest_degree_result[POSION] + lowest_degree_result[POSION] + other_result[POSION]
                 evasion_dict['total'].append(evasion_count/50)
                 poision_dict['total'].append(poision_count/50)
 
-                time_total = high_result['time'] + low_result['time'] + highest_degree_result['time'] + lowest_degree_result['time'] + other_result['time']
+                time_total = high_result['time']  + low_result['time'] + highest_degree_result['time'] + lowest_degree_result['time'] + other_result['time']
                 time.append(time_total)
 
         print(evasion_dict)
