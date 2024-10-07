@@ -1,9 +1,7 @@
 import argparse
 import numpy as np
-from gtransform_adj_small import EdgeAgent
+# from defense_model.improving_graph.GTrans.gtransform_both import GraphAgent
 from gtransform_both import GraphAgent
-from gtransform_adj import EdgeAgent as AttackAgent
-from gtransform_feat import FeatAgent
 from utils import *
 import torch
 import random

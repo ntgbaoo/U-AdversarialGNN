@@ -1,13 +1,11 @@
 from torch_geometric.transforms import BaseTransform
-from gtransform_both import GraphAgent
 import numpy as np
 import torch.nn.functional as F
 import torch
 import deeprobust.graph.utils as utils
 from torch.nn.parameter import Parameter
 from tqdm import tqdm
-from gtransform_feat import add_feature_noise, add_feature_noise_test, mask2indices, l21norm
-from gtransform_adj_small import EdgeAgent
+
 import torch_sparse
 from torch_sparse import coalesce
 import math
@@ -15,6 +13,12 @@ from copy import copy
 from torch_geometric.utils import to_scipy_sparse_matrix
 from torch_geometric.utils import to_scipy_sparse_matrix, from_scipy_sparse_matrix, dropout_adj
 from torch_geometric.data import Data
+
+import os 
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from defense_model.improving_graph.GTrans.gtransform_feat import add_feature_noise, add_feature_noise_test, mask2indices, l21norm
+from defense_model.improving_graph.GTrans.gtransform_adj_small import EdgeAgent
 
 
 class GraphAgent(EdgeAgent,BaseTransform):
@@ -32,6 +36,7 @@ class GraphAgent(EdgeAgent,BaseTransform):
                  loop_feat : int = 4,
                  existing_space : int = 1,
                  idx_val: list = None,
+                 idx_train :list = None,
                  device : torch.device = "cpu",
                  model=None):
         """
@@ -47,8 +52,9 @@ class GraphAgent(EdgeAgent,BaseTransform):
         loop_feat
         existing_space
         """
-        assert idx_val is not None
+        
         self.val_idx = idx_val
+        self.train_idx = idx_train
         self.device = device
         self.seed = seed
         self.lr_feat = lr_feat
@@ -61,27 +67,27 @@ class GraphAgent(EdgeAgent,BaseTransform):
         self.loop_adj = loop_adj
         self.loop_feat = loop_feat
         self.existing_space = existing_space
+        self.model = model
     
-        if model is None:
-            self.model = self.pretrain_model()
-        else:
-            self.model =  model
+        
 
+    def update_idx (self,idx_train,idx_val):
+        self.train_idx = idx_train
+        self.val_idx = idx_val
+
+    def __call__(self, data: Data, inplace: bool = False) -> Data:
+        # if self.model is None:
+        #     self.model = self.pretrain_model()
         
         # labels = data.y.to(self.device)
 
       
         for param in self.model.parameters():
             param.requires_grad = False
-
-    def update_idx_val (self,idx_val):
-        self.val_idx = idx_val
-
-    def __call__(self, data: Data, inplace: bool = False) -> Data:
         if not inplace:
             data = copy(data)
         
-        self.data = data
+        self.data = data.to(self.device)
 
         if self.noise_feature:
             self.clean_feat = data.x.clone()
@@ -106,7 +112,7 @@ class GraphAgent(EdgeAgent,BaseTransform):
         else:
             self.n_possible_edges = self.n ** 2
 
-        self.lr_factor = self.lr_factor * max(math.log2(self.n_possible_edges / self.search_space_size), 1.)
+        self.lr_factor = self.lr_adj * max(math.log2(self.n_possible_edges / self.search_space_size), 1.)
         self.epochs_resampling = self.epochs
         self.with_early_stopping = True
         self.do_synchronize = True
@@ -120,17 +126,17 @@ class GraphAgent(EdgeAgent,BaseTransform):
         
         data.edge_index = new_edge_index
         data.x = new_feat
+        return data
 
 
          
     def learn_graph(self, edge_index_=None, edge_weight=None):
         data = self.data
-        args = self.args
         model = self.model
         model.eval() # should set to eval
         delta_feat = self.delta_feat
 
-        edge_index, feat, labels = data.edge_index, data.x, data.y
+        edge_index, feat, labels = data.edge_index.to(self.device), data.x.to(self.device), data.y.to(self.device)
         if edge_index_ is not None:
             edge_index = edge_index_
         self.edge_index = edge_index
@@ -163,8 +169,8 @@ class GraphAgent(EdgeAgent,BaseTransform):
                 loss = self.test_time_loss(model, new_feat, edge_index, edge_weight)
 
                 loss.backward()
-                if it % 100 == 0:
-                    print(f'Epoch {it}: {loss}')
+                # if it % 100 == 0:
+                #     print(f'Epoch {it}: {loss}')
 
                 self.optimizer_feat.step()
 
@@ -195,8 +201,8 @@ class GraphAgent(EdgeAgent,BaseTransform):
                 if torch.cuda.is_available() and self.do_synchronize:
                     torch.cuda.empty_cache()
                     torch.cuda.synchronize()
-                if it % 10 == 0:
-                    print(f'Epoch {it}: {loss}')
+                # if it % 10 == 0:
+                #     print(f'Epoch {it}: {loss}')
 
                 with torch.no_grad():
                     self.update_edge_weights(n_perturbations, it, gradient)
@@ -253,29 +259,29 @@ class GraphAgent(EdgeAgent,BaseTransform):
         if strategy == 'shuffle':
             idx = np.random.permutation(feat.shape[0])
             shuf_fts = feat[idx, :]
-            output = model.get_embed(shuf_fts, edge_index, edge_weight)
+            output = model(shuf_fts, edge_index, edge_weight)
         if strategy == "dropedge":
             edge_index, edge_weight = dropout_adj(edge_index, edge_weight, p=p)
-            output = model.get_embed(feat, edge_index, edge_weight)
+            output = model(feat, edge_index, edge_weight)
         if strategy == "dropnode":
             feat = self.data.x + self.delta_feat
             mask = torch.cuda.FloatTensor(len(feat)).uniform_() > p
             feat = feat * mask.view(-1, 1)
-            output = model.get_embed(feat, edge_index, edge_weight)
+            output = model(feat, edge_index, edge_weight)
         if strategy == "dropmix":
             feat = self.data.x + self.delta_feat
             mask = torch.cuda.FloatTensor(len(feat)).uniform_() > p
             feat = feat * mask.view(-1, 1)
             edge_index, edge_weight = dropout_adj(edge_index, edge_weight, p=p)
-            output = model.get_embed(feat, edge_index, edge_weight)
+            output = model(feat, edge_index, edge_weight)
         if strategy == "dropfeat":
             feat = F.dropout(self.data.x, p=p) + self.delta_feat
-            output = model.get_embed(feat, edge_index, edge_weight)
+            output = model(feat, edge_index, edge_weight)
         if strategy == "featnoise":
             mean, std = 0, p
             noise = torch.randn(feat.size()) * std + mean
             feat = feat + noise.to(feat.device)
-            output = model.get_embed(feat, edge_index)
+            output = model(feat, edge_index)
         return output
 
 def grad_with_checkpoint(outputs, inputs):

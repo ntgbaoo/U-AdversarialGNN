@@ -22,10 +22,17 @@ if __name__ == '__main__':
     args.dataset = "cora"
     
     data,split = DataLoader.load(args.dataset)
-    idx_train,idx_val,idx_test = split['idx_train'],split['idx_val'],split['idx_test']
+    config = ConfigHandler.load_model_config(model_type="GCN",config_name="max_best_config",dataset="cora",split=0)
+    model_config = config['model_config']
+    split_config = config['split']
+    set_random(720)
+    runner = ModelSupervisor(data,device=args.device,**model_config)
+    idx_train,idx_val,idx_test = split_config['idx_train'],split_config['idx_val'],split_config['idx_test']
+    runner.train_model(idx_train=idx_train,idx_val=idx_val,idx_test= idx_test)
 
-    purification = GraphAgent(device=args.device)
-    purification.update_idx_val(idx_val)
-    new_feat, new_edge_index, new_edge_weight = purification(data.edge_idx)
+
+    purification = GraphAgent(device=args.device,model=runner.model)
+    purification.update_idx(idx_train,idx_val)
+    new_data= purification(data)
 
     

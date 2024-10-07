@@ -36,6 +36,8 @@ class GraphAgent(EdgeAgent):
         self.args = args
 
         self.data = data
+        self.train_idx = data.train_mask
+        self.val_idx = data.val_mask
         if model is None:
             self.model = self.pretrain_model()
         else:
@@ -67,6 +69,7 @@ class GraphAgent(EdgeAgent):
         self.max_final_samples = 20
         self.search_space_size = 10_000_000
         self.eps = 1e-7
+        self.loss = args.loss
 
         self.modified_edge_index: torch.Tensor = None
         self.perturbed_edge_weight: torch.Tensor = None

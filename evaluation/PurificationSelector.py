@@ -31,6 +31,8 @@ class PurificationSelector:
         self.idx_train = idx_train
         self.idx_val = idx_val
         self.idx_test = idx_test
+        self.purification_name['idx_train'] = idx_train
+        self.purification_name['idx_val'] = idx_val
         self.data = data
         self.results = [0]*len(self.all_configs)
         self.model_config = model_config
