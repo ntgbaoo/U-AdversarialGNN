@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore")
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from defense_model.improving_training.GRAND.grand import GRAND
 from defense_model.improving_graph.GARNET.garnet import GarnetPurification
-from defense_model.improving_graph.GTrans.gtrans import GraphAgent
+from defense_model.improving_graph import GTransPurification
 from utility.util import logger
 from static import *
 
@@ -152,7 +152,7 @@ def load_graph_purification(**kwargs):
     elif purification_name == "GTrans":
         args = kwargs
         args.pop('purification')
-        purification = GraphAgent(**args)
+        purification = GTransPurification(**args)
     else:
         raise Exception('Unsupport or undefined model{}'.format(purification_name))
     

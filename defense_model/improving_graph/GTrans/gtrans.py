@@ -21,7 +21,7 @@ from defense_model.improving_graph.GTrans.gtransform_feat import add_feature_noi
 from defense_model.improving_graph.GTrans.gtransform_adj_small import EdgeAgent
 
 
-class GraphAgent(EdgeAgent,BaseTransform):
+class GTransPurification(EdgeAgent,BaseTransform):
 
     def __init__(self, 
                  noise_feature : bool = False,
