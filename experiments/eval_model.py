@@ -22,6 +22,8 @@ def save_results(dataset, model, purification, mean,std,time,time_std):
     else:
         result_df = pd.read_csv(result_path)
 
+    if purification is None:
+        purification = "None"
     result_df = result_df.append({"dataset":dataset,
                                   "model":model,
                                   "purification":purification, 
@@ -44,7 +46,7 @@ if __name__ == "__main__":
         purification_config = None
         if args.purification is not None:
             use_purification = True
-            purification_config = ConfigHandler.load_purification_config(args.purification,args.model,"best_config",args.dataset,split_idx=split_idx)
+            purification_config = ConfigHandler.load_purification_config(args.purification,args.model,"best_config",args.dataset,split=split_idx)['model_config']
             split_model = ConfigHandler.load_model_config("GCN","best_config",args.dataset,split_idx)
            
         else:

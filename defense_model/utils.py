@@ -150,7 +150,9 @@ def load_graph_purification(**kwargs):
                                           weighted_knn=weighted_knn,adj_norm=adj_norm)
         
     elif purification_name == "GTrans":
-        purification = GraphAgent(**kwargs)
+        args = kwargs
+        args.pop('purification')
+        purification = GraphAgent(**args)
     else:
         raise Exception('Unsupport or undefined model{}'.format(purification_name))
     
