@@ -13,7 +13,7 @@ from torch_geometric.data import Data
     
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from evaluation.IModelSupervisor import IModelSupervisor
+from evaluation import IModelSupervisor
 from defense_model.utils import load_model,load_graph_purification
 from utility.config import args
 from evaluation.utils import load_opt, sparse_adjacency_to_edge_list,load_scheduler
@@ -25,9 +25,9 @@ from static import *
 
 
 
-class ModelSupervisor(IModelSupervisor):
+class ModelSupervisor:
     def __init__(self,data:Data,device = "cpu",seed = 720,train_early_stopping = True,use_purification = False,purification_config = None,**model_args) -> None:
-        super().__init__()
+        # super().__init__()
         set_random(seed)
 
         

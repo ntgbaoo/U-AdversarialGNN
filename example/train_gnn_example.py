@@ -13,9 +13,9 @@ if __name__ == '__main__':
 
     from utility.config import args
     from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-    from evaluation.ModelSupervisor import ModelSupervisor
-    from data_loader.DataLoader import DataLoader
-    from utility.ConfigHandler import ConfigHandler
+    from evaluation import ModelSupervisor
+    from data_loader import DataLoader
+    from utility import ConfigHandler
     from static import *
 
     args.dataset = "cora"

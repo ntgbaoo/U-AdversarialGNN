@@ -4,9 +4,9 @@ if __name__ == '__main__':
     
     # Edit path to import from different module
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    from data_loader.DataLoader import DataLoader
+    from data_loader import DataLoader
     from utility.config import args
-    from defense_model.improving_graph.GARNET.garnet import GarnetPurification
+    from defense_model.improving_graph import GarnetPurification
 
 
     args.dataset = "cora"

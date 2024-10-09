@@ -6,14 +6,14 @@ import torch
 import torch_geometric.transforms as T
 
 from greatx.attack.targeted import SGAttack,FGAttack,Nettack
-from adversarial_attack.Nettack import Nettack
-from evaluation.ModelSupervisor import ModelSupervisor
-from data_loader.DataLoader import DataLoader
-from utility.ConfigHandler import ConfigHandler
+from adversarial_attack import Nettack
+from evaluation import ModelSupervisor
+from data_loader import DataLoader
+from utility import ConfigHandler
 from static import *
-from adversarial_attack.SurrogateLoader import SurrogateLoader
-from adversarial_attack.NodeSelector import NodeSelector
-from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
+from adversarial_attack import SurrogateLoader
+from adversarial_attack import NodeSelector
+from adversarial_attack import AdversarialSupervisor
 
 
 if __name__=="__main__":

@@ -3,10 +3,10 @@ import os
 import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from evaluation.PurificationGrid import PurificationGrid
-from evaluation.ModelSupervisor import ModelSupervisor
+from evaluation import PurificationGrid
+from evaluation import ModelSupervisor
 from utility.util import set_random
-from utility.ConfigHandler import ConfigHandler
+from utility import ConfigHandler
 from static import *
 from torch_geometric.data import Data
 
