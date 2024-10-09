@@ -175,10 +175,10 @@ if __name__ == "__main__":
     df_poision = pd.DataFrame(rowlist_poision,columns=columns)
     df_evasion = pd.DataFrame(rowlist_evasion,columns=columns)
 
-    if not os.path.exists("{}{}/{}/".format(PATH_RESULT,args.model,args.dataset)):
-        os.makedirs("{}{}/{}/".format(PATH_RESULT,args.model,args.dataset))
-    df_poision.to_csv("{}{}/{}/{}_poision.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
-    df_evasion.to_csv("{}{}/{}/{}_evasion.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
+    if not os.path.exists("{}/ablation/no_degree/{}/{}/".format(PATH_RESULT,args.model,args.dataset)):
+        os.makedirs("{}/ablation/no_degree/{}/{}/".format(PATH_RESULT,args.model,args.dataset))
+    df_poision.to_csv("{}/ablation/no_degree/{}/{}/{}_poision.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
+    df_evasion.to_csv("{}/ablation/no_degree/{}/{}/{}_evasion.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
 
 
 

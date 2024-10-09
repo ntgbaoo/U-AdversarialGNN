@@ -216,8 +216,13 @@ if __name__ == "__main__":
 
     if not os.path.exists("{}{}/{}/".format(PATH_RESULT,args.model,args.dataset)):
         os.makedirs("{}{}/{}/".format(PATH_RESULT,args.model,args.dataset))
-    df_poision.to_csv("{}{}/{}/{}_poision.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
-    df_evasion.to_csv("{}{}/{}/{}_evasion.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
+
+    if args.purification is not None:
+        df_poision.to_csv("{}{}_{}/{}/{}_poision.csv".format(PATH_RESULT,args.model,args.purification ,args.dataset,args.adversarial))
+        df_evasion.to_csv("{}{}_{}/{}/{}_evasion.csv".format(PATH_RESULT,args.model,args.purification,args.dataset,args.adversarial))
+    else:
+        df_poision.to_csv("{}{}/{}/{}_poision.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
+        df_evasion.to_csv("{}{}/{}/{}_evasion.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
 
 
 
