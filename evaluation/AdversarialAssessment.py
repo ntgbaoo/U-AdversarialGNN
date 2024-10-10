@@ -6,18 +6,18 @@ import timeit
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from data_loader.DataLoader import DataLoader
-from data_loader.Splitter import Splitter
+from data_loader import DataLoader
+from data_loader import Splitter
 from greatx.attack.targeted import SGAttack,RandomAttack,DICEAttack,GFAttack,FGAttack,PGDAttack,IGAttack
-from adversarial_attack.Nettack import Nettack
+from adversarial_attack import Nettack
 from adversarial_attack.GOttack import OrbitAttack
-from adversarial_attack.PRBCDAttack import PRBCDAttack
-from adversarial_attack.SurrogateLoader import SurrogateLoader
+from adversarial_attack import PRBCDAttack
+from adversarial_attack import SurrogateLoader
 from static import *
-from utility.ConfigHandler import ConfigHandler
-from evaluation.ModelSupervisor import ModelSupervisor
-from adversarial_attack.NodeSelector import NodeSelector
-from adversarial_attack.AdversarialSupervisor import AdversarialSupervisor
+from utility import ConfigHandler
+from evaluation import ModelSupervisor
+from adversarial_attack import NodeSelector
+from adversarial_attack import AdversarialSupervisor
 
 
 

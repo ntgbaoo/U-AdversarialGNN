@@ -5,10 +5,10 @@ import pandas as pd
 import timeit
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from utility.ConfigHandler import ConfigHandler
-from data_loader.DataLoader import DataLoader
+from utility import ConfigHandler
+from data_loader import DataLoader
 from utility.config import args
-from evaluation.ModelSupervisor import ModelSupervisor
+from evaluation import ModelSupervisor
 
 
 def save_results(dataset, model, purification, mean,std,time,time_std):
