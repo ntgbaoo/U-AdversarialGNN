@@ -35,38 +35,45 @@ def save_results(dataset, model, purification, mean,std,time,time_std):
     result_df.to_csv(result_path, index=False)
 
 if __name__ == "__main__":
+    models = ["GCN","GIN","GSAGE","PNA","ElasticGNN","GRAND","GNNGuard","RobustGCN"]
     
     data,split = DataLoader.load(args.dataset)
-    performance_list = []
-    time_list = []
+   
     total = 5*3
-    count = 0
-    for split_idx in range(5):
-        use_purification = False
-        purification_config = None
-        if args.purification is not None:
-            use_purification = True
-            purification_config = ConfigHandler.load_purification_config(args.purification,args.model,"best_config",args.dataset,split=split_idx)['model_config']
-            split_model = ConfigHandler.load_model_config("GCN","best_config",args.dataset,split_idx)
-           
-        else:
-            split_model = ConfigHandler.load_model_config(args.model,"best_config",args.dataset,split_idx)
+    for model in models:
+        performance_list = []
+        time_list = []
+        count = 0
 
-        split = split_model['split']
-        configs = split_model.get('model_config')
-        idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_test']
+        print("\n" +model +"\n")
+        args.model = model
+        args.seed=720
+        for split_idx in range(5):
+            use_purification = False
+            purification_config = None
+            if args.purification is not None:
+                use_purification = True
+                purification_config = ConfigHandler.load_purification_config(args.purification,args.model,"best_config",args.dataset,split=split_idx)['model_config']
+                split_model = ConfigHandler.load_model_config("GCN","best_config",args.dataset,split_idx)
+            
+            else:
+                split_model = ConfigHandler.load_model_config(args.model,"best_config",args.dataset,split_idx)
 
-        for idx_run in range(args.num_run):
-            seed = args.seed + idx_run
-            start_time = timeit.default_timer()
-            classifier = ModelSupervisor(data,args.device,seed=seed,use_purification= use_purification,purification_config=purification_config,**configs)
-            classifier.train_model(idx_train,idx_val,idx_test)
-            time_list.append(timeit.default_timer() - start_time)
-            test_acc = classifier.get_prediction_accuracy(idx_test,data)
-            performance_list.append(test_acc)
-            count += 1
-            print(f'\rINFO : finished {count}/{total}', end='')
-    
-    save_results(args.dataset,args.model,args.purification,
-                 stats.mean(performance_list),stats.stdev(performance_list),
-                 stats.mean(time_list),stats.stdev(time_list))
+            split = split_model['split']
+            configs = split_model.get('model_config')
+            idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_test']
+
+            for idx_run in range(args.num_run):
+                seed = args.seed + idx_run
+                start_time = timeit.default_timer()
+                classifier = ModelSupervisor(data,args.device,seed=seed,use_purification= use_purification,purification_config=purification_config,**configs)
+                classifier.train_model(idx_train,idx_val,idx_test)
+                time_list.append(timeit.default_timer() - start_time)
+                test_acc = classifier.get_prediction_accuracy(idx_test,data)
+                performance_list.append(test_acc)
+                count += 1
+                print(f'\rINFO : finished {count}/{total}', end='')
+        
+        save_results(args.dataset,args.model,args.purification,
+                    stats.mean(performance_list),stats.stdev(performance_list),
+                    stats.mean(time_list),stats.stdev(time_list))
