@@ -109,7 +109,8 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
         prop_step_k = kwargs.get(PROPA_STEP_K)
         lambda1 = kwargs.get(LAMBDA1)
         lambda2 = kwargs.get(LAMBDA2)
-        model = ElasticGNN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out,K=prop_step_k,lambda1= lambda1,lambda2=lambda2)
+        model = ElasticGNN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],
+                           dropout = drop_out,K=prop_step_k,lambda1= lambda1,lambda2=lambda2)
 
     elif model_name == "GRAND":
         drop_node_rate = kwargs.get(DROP_NODE_RATE)

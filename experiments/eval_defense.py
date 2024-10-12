@@ -152,6 +152,8 @@ if __name__ == "__main__":
                     surrogate.train_model(idx_train,idx_val,idx_test)
                     attacker.setup_surrogate(surrogate.model)
 
+                
+
 
                 adversarial_supervisor = AdversarialSupervisor(data,attacker,idx_train,idx_val,idx_test,args.device,use_purification=use_purification,purification_config=purification_config,**configs)
                 high_result,low_result, highest_degree_result,lowest_degree_result,other_result = adversarial_supervisor.target_attack(bucket_target_nodes,budget,evasion=True,poision=True, evasion_model=node_selector,seed = seed)
@@ -179,9 +181,9 @@ if __name__ == "__main__":
                 time_total = high_result['time']  + low_result['time'] + highest_degree_result['time'] + lowest_degree_result['time'] + other_result['time']
                 time.append(time_total)
 
-        print(evasion_dict)
-        print(poision_dict)
-        print(time) 
+            print(evasion_dict)
+            print(poision_dict)
+            print(time) 
 
         row_evasion = [
             budget,
