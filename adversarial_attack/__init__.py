@@ -3,6 +3,7 @@ from .GRBCDAttack import GRBCDAttack
 from .SurrogateLoader import SurrogateLoader
 from .AdversarialSupervisor import AdversarialSupervisor
 from .NodeSelector import NodeSelector
+from .Nettack import Nettack
 
 classes = __all__ = [
     "PRBCDAttack",
@@ -10,5 +11,6 @@ classes = __all__ = [
     "SurrogateLoader",
     "AdversarialSupervisor",
     "NodeSelector"
+    "Nettack"
 
 ]
