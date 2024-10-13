@@ -30,6 +30,7 @@ class AdversarialAssessment:
                  num_runs = 3,
                  num_split= 5,
                  base_seed = 720,
+                 purification : str = None,
                  use_tune_model = True,
                  use_degree_node_selection =True,
                  device = "cpu") -> None:
@@ -45,6 +46,8 @@ class AdversarialAssessment:
         self.base_seed = base_seed
         self.use_tune_model = use_tune_model
         self.use_degree_node_selection = use_degree_node_selection
+        self.purification_name = purification
+        self.use_purification = False if purification is None else True
         self.node_selector = NodeSelector.select_nodes_margin_degree if use_degree_node_selection else NodeSelector.select_nodes_margin
         self.node_category = ['high_margin','low_margin','high_degree','low_degree','other'] if use_degree_node_selection else ['high_margin','low_margin','other']
         self.config_name = "best_config" if use_tune_model else "default"
@@ -88,10 +91,9 @@ class AdversarialAssessment:
         all_split_config = []
         if not self.use_tune_model:
             split_config = ConfigHandler.load_split_config(config_name="default")
-            folds = splitter.split(data.x.numpy(),data.y.numpy())
-
-
             splitter = Splitter(**split_config)
+            folds = splitter.split(data.x.numpy(),data.y.numpy())
+        
         for split_idx in range(self.num_splits):
             config = ConfigHandler.load_model_config(self.model,self.config_name,self.dataset_name)
             if not self.use_tune_model:
@@ -100,6 +102,11 @@ class AdversarialAssessment:
                     IDX_VAL:folds[split_idx].idx_val,
                     IDX_TEST:folds[split_idx].idx_test
                 }
+
+            if self.use_purification:
+                purification_config = ConfigHandler.load_purification_config(self.purification_name,self.model,"best_config",self.dataset_name,split=split_idx)['model_config']
+                config['purification'] = purification_config
+
             all_split_config.append(config)
         return all_split_config
     
@@ -128,8 +135,11 @@ class AdversarialAssessment:
             attacker.update_config(10000,200)
 
     def _target_node_dict_to_tuple(self,target_node_dict):
+        r"""
+        conver dict of target nodes return from target nodes selector to tuple of target nodes
+        """
         target_node_tuple = tuple()
-        for category in self.node_category:
+        for category in target_node_dict:
             target_node_tuple = target_node_tuple + (category,)
         
         return target_node_tuple
@@ -155,11 +165,14 @@ class AdversarialAssessment:
                 poison_total += result[POSION]
 
             time_total += result_tuple['time']
+
         if evasion_dict is not None:
             evasion_dict['total'].append(evasion_total/50)
-        return time_total,evasion_dict,poison_dict
-        
 
+        if poison_dict is not None:
+            evasion_dict['total'].append(poison_total/50)
+        return time_total,evasion_dict,poison_dict
+    
 
    
     def evaluate(self,evasion = True, poision = True, budgets_list = [1,2,3,4,5]):
@@ -180,22 +193,25 @@ class AdversarialAssessment:
                 split_model = all_split_configs[split_idx]
                 split = split_model['split']
                 configs = split_model.get('model_config')
+                purification_config = split_model.get('purification',None)
                 idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_test']
                 
                 for idx_run in range(self.num_runs):
                     seed = self.base_seed + idx_run
-                    node_selector = ModelSupervisor(self.data,self.device,seed=seed,**configs)
+
+                    # Select target nodes
+                    node_selector = ModelSupervisor(self.data,self.device,seed=seed,seed= seed,use_purification=self.use_purification,
+                                                    purification_config=purification_config,**configs)
                     start_defense = timeit.default_timer()
                     node_selector.train_model(idx_train,idx_val,idx_test)
                     time_defense_list.append(timeit.default_timer() - start_defense)
                     target_node_dict= self.node_selector(node_selector,self.data,idx_test,seed=seed,num_rand=num_rand)
                     target_node_tuple = self._target_node_dict_to_tuple(target_node_dict)
+                    
+                    # Load & set up adversarial attack
                     attacker = self._load_attack(self.adversarial_name)(self.data, device=self.device,seed=seed)
                     self._update_particular_config(attacker)
                     surrogate_name = self._get_surrogate_name(self.adversarial)
-
-                    if surrogate_name == "GCN" and self.model == "GCN":
-                        attacker.setup_surrogate(node_selector.model)
 
                     if surrogate_name is not None:
                         split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"best_config",self.data,split_idx)
@@ -203,14 +219,17 @@ class AdversarialAssessment:
                         surrogate = ModelSupervisor(self.data,self.device,seed=seed,**configs_surrogate)
                         surrogate.train_model(idx_train,idx_val,idx_test)
                         attacker.setup_surrogate(surrogate.model)
-
-                    adversarial_supervisor = AdversarialSupervisor(self.data,attacker,idx_train,idx_val,idx_test,self.device,**configs)
+                        
+                    # Perform adversarial attack
+                    adversarial_supervisor = AdversarialSupervisor(self.data,attacker,idx_train,idx_val,idx_test,self.device,
+                                                                   use_purification=self.use_purification, purification_config= purification_config,**configs)
                     result_bucket = adversarial_supervisor.target_attack(target_node_tuple,budget,evasion=True,poision=True, evasion_model=node_selector,seed = seed)
-                    adversarial_supervisor.save_result(self.adversarial,seed,self.dataset_name,self.model,budget)
+                    adversarial_supervisor.save_result(self.adversarial,seed,self.dataset_name,self.model,budget,self.purification_name)
                     time,evasion_dict,poision_dict = self._update_dict_results(result_bucket,num_rand,evasion_dict,poision_dict)
                     time_list.append(time)
             
             
+            # Update results for each budget
             if evasion:
                 row_evasion = [budget]
                 for key in evasion_dict:

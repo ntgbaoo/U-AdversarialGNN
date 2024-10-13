@@ -99,8 +99,12 @@ class AdversarialSupervisor:
             return_tuple += (result,)
         return return_tuple
 
-    def save_result(self,adversarial_name, seed, dataset_name,model_name,budget ):
-        saved_path = "{}{}/{}/budget{}/".format(PATH_CACHED_PRED,model_name,dataset_name,budget)
+    def save_result(self,adversarial_name, seed, dataset_name,model_name,budget,purification_name = None ):
+        if purification_name is None:
+            saved_path = "{}{}/{}/budget{}/".format(PATH_CACHED_PRED,model_name,dataset_name,budget)
+        else:
+            saved_path = "{}{}_{}/{}/budget{}/".format(PATH_CACHED_PRED,model_name,purification_name,dataset_name,budget)
+
         if not os.path.exists(saved_path):
             os.makedirs(saved_path)
         
