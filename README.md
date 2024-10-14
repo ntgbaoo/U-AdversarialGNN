@@ -35,16 +35,11 @@ pip install wandb
 pip install ogb
 ```
 
-6. Test CUDA support
-
-```
-python test_GPU.py
-```
 
 
 *Expected result:* **True** *if you have GPU(s) available*
 
-7. Install dependencies for Gradient-free Graph Advantage Actor Critic (G2A2C)
+6. Install dependencies for Gradient-free Graph Advantage Actor Critic (G2A2C)
 
 The paper can be found [here.](https://arxiv.org/pdf/2211.10782)
 
@@ -53,7 +48,7 @@ pip install  dgl -f https://data.dgl.ai/wheels/cu121/repo.html
 pip install pyro-ppl==1.8.1 pydantic
 ```
 
-8. Install packages for performing hyper-parameters tuning in parallel
+7. Install packages for performing hyper-parameters tuning in parallel
 
 ```
 pip install tensorboard ray==2.10.0 
@@ -61,7 +56,7 @@ pip install -U "ray[tune]"
 
 ```
 
-1. Install additional packages
+8. Install additional packages
 
 ```
 pip install opt-einsum hnswlib

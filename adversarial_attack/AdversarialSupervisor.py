@@ -9,7 +9,7 @@ import json
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from evaluation import ModelSupervisor
+from evaluation.ModelSupervisor import ModelSupervisor
 from utility.util import set_random
 from torch_geometric.data import Data
 from greatx.attack.attacker import Attacker

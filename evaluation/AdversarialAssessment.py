@@ -15,7 +15,7 @@ from adversarial_attack import PRBCDAttack
 from adversarial_attack import SurrogateLoader
 from static import *
 from utility import ConfigHandler
-from evaluation import ModelSupervisor
+from evaluation.ModelSupervisor import ModelSupervisor
 from adversarial_attack import NodeSelector
 from adversarial_attack import AdversarialSupervisor
 
@@ -26,7 +26,6 @@ class AdversarialAssessment:
                  model:str,
                  dataset : str,
                  adversarial : str,
-                 budgets: list,
                  num_runs = 3,
                  num_split= 5,
                  base_seed = 720,
@@ -40,7 +39,6 @@ class AdversarialAssessment:
         self.dataset_name = dataset
         self.data,_ =  DataLoader.load(dataset)
         self.adversarial_name = adversarial
-        self.budgets = budgets
         self.num_runs = num_runs
         self.num_splits = num_split
         self.base_seed = base_seed
@@ -55,7 +53,7 @@ class AdversarialAssessment:
     def _get_stat(results_list: list):
         return (stats.mean(results_list),stats.stdev(results_list))
     
-    def _load_attack(adversarial_name:str):
+    def _load_attack(self,adversarial_name:str):
         if adversarial_name == SGA_NAME:
             return SGAttack
         elif adversarial_name == NETTACK_NAME:
@@ -95,7 +93,7 @@ class AdversarialAssessment:
             folds = splitter.split(data.x.numpy(),data.y.numpy())
         
         for split_idx in range(self.num_splits):
-            config = ConfigHandler.load_model_config(self.model,self.config_name,self.dataset_name)
+            config = ConfigHandler.load_model_config(self.model,self.config_name,self.dataset_name,split=split_idx)
             if not self.use_tune_model:
                 config['split'] ={
                     IDX_TRAIN: folds[split_idx].idx_train,
@@ -110,7 +108,7 @@ class AdversarialAssessment:
             all_split_config.append(config)
         return all_split_config
     
-    def _get_surrogate_name(attack_method):
+    def _get_surrogate_name(self,attack_method):
         if attack_method == SGA_NAME:
             return 'SGC'
         elif attack_method in [NETTACK_NAME,FGA_NAME,PGDATTACK_NAME,IGATTACK_NAME]:
@@ -140,7 +138,7 @@ class AdversarialAssessment:
         """
         target_node_tuple = tuple()
         for category in target_node_dict:
-            target_node_tuple = target_node_tuple + (category,)
+            target_node_tuple = target_node_tuple + (target_node_dict[category],)
         
         return target_node_tuple
     
@@ -200,7 +198,7 @@ class AdversarialAssessment:
                     seed = self.base_seed + idx_run
 
                     # Select target nodes
-                    node_selector = ModelSupervisor(self.data,self.device,seed=seed,seed= seed,use_purification=self.use_purification,
+                    node_selector = ModelSupervisor(self.data,self.device,seed=seed,use_purification=self.use_purification,
                                                     purification_config=purification_config,**configs)
                     start_defense = timeit.default_timer()
                     node_selector.train_model(idx_train,idx_val,idx_test)
@@ -210,11 +208,11 @@ class AdversarialAssessment:
                     
                     # Load & set up adversarial attack
                     attacker = self._load_attack(self.adversarial_name)(self.data, device=self.device,seed=seed)
-                    self._update_particular_config(attacker)
-                    surrogate_name = self._get_surrogate_name(self.adversarial)
+                    self._update_particular_config(attacker,self.data)
+                    surrogate_name = self._get_surrogate_name(self.adversarial_name)
 
                     if surrogate_name is not None:
-                        split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"best_config",self.data,split_idx)
+                        split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"best_config",self.dataset_name,split_idx)
                         configs_surrogate = split_model_surrogate.get('model_config')
                         surrogate = ModelSupervisor(self.data,self.device,seed=seed,**configs_surrogate)
                         surrogate.train_model(idx_train,idx_val,idx_test)
