@@ -15,4 +15,6 @@ if __name__ == "__main__":
     assesment = AdversarialAssessment(model = args.model,dataset = args.dataset,adversarial= args.adversarial,
                           device=args.device)
     
-    assesment.evaluate(budgets_list=[1])
+    df_evasion,df_poision = assesment.evaluate(budgets_list=[1])
+    print(df_evasion)
+    print(df_poision)
