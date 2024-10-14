@@ -48,6 +48,9 @@ def load_attack(attack_method):
         return PRBCDAttack
     elif attack_method == GRBCD_NAME:
         return GRBCDAttack
+    elif attack_method == "PRBCD_greatx":
+        from greatx.attack.targeted import PRBCDAttack
+        return PRBCDAttack
     
 
     
@@ -55,7 +58,7 @@ def load_attack(attack_method):
 def get_surrogate_name(attack_method):
     if attack_method == SGA_NAME:
         return 'SGC'
-    elif attack_method in [NETTACK_NAME,FGA_NAME,PGDATTACK_NAME,IGATTACK_NAME]:
+    elif attack_method in [NETTACK_NAME,FGA_NAME,PGDATTACK_NAME,IGATTACK_NAME,"PRBCD_greatx"]:
         return 'GCN_surrogate'
     else:
         return None
