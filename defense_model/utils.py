@@ -13,6 +13,7 @@ warnings.filterwarnings("ignore")
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from defense_model.improving_training.GRAND.grand import GRAND
 from defense_model.improving_graph.GARNET.garnet import GarnetPurification
+from defense_model.improving_graph import GTransPurification
 from utility.util import logger
 from static import *
 
@@ -108,7 +109,8 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
         prop_step_k = kwargs.get(PROPA_STEP_K)
         lambda1 = kwargs.get(LAMBDA1)
         lambda2 = kwargs.get(LAMBDA2)
-        model = ElasticGNN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out,K=prop_step_k,lambda1= lambda1,lambda2=lambda2)
+        model = ElasticGNN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],
+                           dropout = drop_out,K=prop_step_k,lambda1= lambda1,lambda2=lambda2)
 
     elif model_name == "GRAND":
         drop_node_rate = kwargs.get(DROP_NODE_RATE)
@@ -131,7 +133,7 @@ def load_graph_purification(**kwargs):
 
     if purification_name == "Jaccard":
         threshold = kwargs.get(THRESHOLD)
-        purification = JaccardPurification(threshold=threshold)
+        purification = JaccardPurification(threshold)
     elif purification_name == "SVD":
         threshold = kwargs.get(THRESHOLD)
         top_k = kwargs.get(TOP_K)
@@ -140,8 +142,18 @@ def load_graph_purification(**kwargs):
     elif purification_name == "GARNET":
         r = kwargs.get(TOP_SINGULAR_R)
         k = kwargs.get(TOP_K)
-        gamma = GAMMA
-        purification = GarnetPurification(r,k,gamma)
+        use_feature = bool(kwargs.get("use_feature"))
+        weighted_knn = bool(kwargs.get("weighted_knn"))
+        adj_norm = bool(kwargs.get('adj_norm'))
+
+        gamma = kwargs.get(GAMMA)
+        purification = GarnetPurification(r,k,gamma,use_feature=use_feature,
+                                          weighted_knn=weighted_knn,adj_norm=adj_norm)
+        
+    elif purification_name == "GTrans":
+        args = kwargs
+        args.pop('purification')
+        purification = GTransPurification(**args)
     else:
         raise Exception('Unsupport or undefined model{}'.format(purification_name))
     

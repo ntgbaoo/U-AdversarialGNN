@@ -13,7 +13,7 @@ from torch_geometric.data import Data
     
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from evaluation.IModelSupervisor import IModelSupervisor
+from evaluation import IModelSupervisor
 from defense_model.utils import load_model,load_graph_purification
 from utility.config import args
 from evaluation.utils import load_opt, sparse_adjacency_to_edge_list,load_scheduler
@@ -25,9 +25,9 @@ from static import *
 
 
 
-class ModelSupervisor(IModelSupervisor):
+class ModelSupervisor:
     def __init__(self,data:Data,device = "cpu",seed = 720,train_early_stopping = True,use_purification = False,purification_config = None,**model_args) -> None:
-        super().__init__()
+        # super().__init__()
         set_random(seed)
 
         
@@ -74,6 +74,8 @@ class ModelSupervisor(IModelSupervisor):
             assert purification_config is not None, "In order to use purification, please define purification config"
             self.purification = load_graph_purification(**purification_config)
             data = self.purification(data = data, inplace= False)
+            if data.edge_index is None:
+                data.edge_index = data.adj_t.nonzero(as_tuple=False).t()
         
         #Data
         self.number_nodes = data.num_nodes
@@ -184,6 +186,8 @@ class ModelSupervisor(IModelSupervisor):
         if self.use_purification:
             assert self.purification is not None, "In order to use purification, please define purification config when initialize the supervisor"
             data = self.purification(data = data, inplace= False)
+            if data.edge_index is None:
+                data.edge_index = data.adj_t.nonzero(as_tuple=False).t()
         features_torch = data.x.to(self.device)
         edge_index_torch = data.edge_index.to(self.device)
         output = self.model( features_torch, edge_index_torch)

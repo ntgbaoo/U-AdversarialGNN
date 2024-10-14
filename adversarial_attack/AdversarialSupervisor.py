@@ -22,9 +22,12 @@ class AdversarialSupervisor:
                  idx_val,
                  idx_test,
                  device = "cpu",
+                 use_purification = False,
+                 purification_config = None,
                  **victim_configs
                  ) -> None:
-        
+        self.use_purification = use_purification
+        self.purification_config = purification_config
         self.data = data
         self.adversarial = adversarial
         self.device = device
@@ -61,7 +64,13 @@ class AdversarialSupervisor:
                 self.adversarial.reset()
                 self.adversarial.set_max_perturbations(budget)
                 start_attack = timeit.default_timer()
-                self.adversarial.attack(node,num_budgets = budget,structure_attack = structure_attack, feature_attack = feature_attack)
+                try:
+                    self.adversarial.attack(node,num_budgets = budget,structure_attack = structure_attack, feature_attack = feature_attack)
+                except Exception as e:
+                    duration = timeit.default_timer() - start_attack
+                    total += duration
+                    counter += 1
+                    continue
                 duration = timeit.default_timer() - start_attack
                 total += duration
 
@@ -72,7 +81,7 @@ class AdversarialSupervisor:
                         result[EVASION] += 1
                 
                 if poision:
-                    victim_model = ModelSupervisor(self.adversarial.data(), device= self.device,seed = seed,**self.victim_configs)
+                    victim_model = ModelSupervisor(self.adversarial.data(), device= self.device,seed = seed,use_purification=self.use_purification,purification_config=self.purification_config,**self.victim_configs)
 
                     victim_model.train_model(self.idx_train,self.idx_val,self.idx_test)
                     pred_poision = victim_model.get_model_prediction(self.adversarial.data())[node].item()
@@ -83,14 +92,19 @@ class AdversarialSupervisor:
                 
                 counter += 1
                 print(f'\rINFO : finished {counter}/{len(target_nodes)}', end='')
+                
 
             result['time'] = total
 
             return_tuple += (result,)
         return return_tuple
 
-    def save_result(self,adversarial_name, seed, dataset_name,model_name,budget ):
-        saved_path = "{}{}/{}/budget{}/".format(PATH_CACHED_PRED,model_name,dataset_name,budget)
+    def save_result(self,adversarial_name, seed, dataset_name,model_name,budget,purification_name = None ):
+        if purification_name is None:
+            saved_path = "{}{}/{}/budget{}/".format(PATH_CACHED_PRED,model_name,dataset_name,budget)
+        else:
+            saved_path = "{}{}_{}/{}/budget{}/".format(PATH_CACHED_PRED,model_name,purification_name,dataset_name,budget)
+
         if not os.path.exists(saved_path):
             os.makedirs(saved_path)
         

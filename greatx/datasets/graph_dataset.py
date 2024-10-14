@@ -13,6 +13,9 @@ def load_npz(file_name: str) -> Data:
         loader = dict(loader)
         adj_matrix = loader['adj_matrix'].item()
         adj_matrix = adj_matrix.maximum(adj_matrix.T)
+        if not 'node_attr' in loader:
+            loader['node_attr'] = np.eye(adj_matrix.shape[0])
+
         attr_matrix = loader['node_attr']
 
         if attr_matrix.dtype.kind == 'O':

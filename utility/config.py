@@ -24,6 +24,9 @@ parser.add_argument("--verbose", default=False, help="Log training and attack pr
 parser.add_argument('--split_state', type=int, default=1024, help='initial state for split')
 parser.add_argument('--num_split', type=int, default=5, help='Number of split')
 parser.add_argument('--split_idx', type=int, default=0, help='Split idx')
+parser.add_argument('--purification', type=str, default=None, help='name of purification')
+parser.add_argument('--config_setting', type=str, default="best_config", help='name of purification')
+
 
 
 

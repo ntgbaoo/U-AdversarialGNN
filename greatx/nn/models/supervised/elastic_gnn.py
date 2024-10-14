@@ -98,4 +98,7 @@ class ElasticGNN(nn.Module):
     def forward(self, x, edge_index, edge_weight=None):
         """"""
         x = self.lin(x)
+       
+        # Added this to avoid prop reuse adj used in training
+        self.prop._cached = None
         return self.prop(x, edge_index, edge_weight)

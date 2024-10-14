@@ -13,7 +13,6 @@ import torch_geometric.transforms as T
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from greatx.datasets import GraphDataset
 from data_loader.utils import sparse_adjacency_to_edge_list,edge_list_to_sparse_adjacency,edge_list_to_sysmetric_sparse_adjacency
-from data_loader.IDataLoader import IDataLoader
 from data_loader.Splitter import Splitter
 from static import *
 from greatx.utils import split_nodes
@@ -41,7 +40,7 @@ DATASETS_greatX = {
 }
 
 
-class DataLoader(IDataLoader):
+class DataLoader:
     @abstractmethod
     def load(dataset:str) :
         if dataset in DATASETS_greatX:

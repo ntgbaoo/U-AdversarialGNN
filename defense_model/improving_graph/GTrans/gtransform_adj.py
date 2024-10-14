@@ -5,17 +5,12 @@ import torch
 import deeprobust.graph.utils as utils
 from torch.nn.parameter import Parameter
 from tqdm import tqdm
+from gtransform_feat import FeatAgent, add_feature_noise, add_structure_noise
 import torch_sparse
 from torch_sparse import coalesce
 import math
 from torch_geometric.utils import to_scipy_sparse_matrix
 from torch_geometric.utils import to_scipy_sparse_matrix, from_scipy_sparse_matrix
-
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from defense_model.improving_graph.GTrans.gtransform_feat import FeatAgent, add_feature_noise, add_structure_noise
 
 
 class EdgeAgent(FeatAgent):

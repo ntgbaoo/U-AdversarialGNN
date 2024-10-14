@@ -14,7 +14,7 @@ from torch_geometric.data import Data
 
 class NodeSelector:
     @staticmethod
-    def select_nodes_margin(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720):
+    def select_nodes_margin(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720,num_rand= 20):
         '''
         selecting nodes as reported in nettack paper:
         (i) the 10 nodes with highest margin of classification, i.e. they are clearly correctly classified,
@@ -37,14 +37,17 @@ class NodeSelector:
         high = [x for x, y in sorted_margins[: 10]]
         low = [x for x, y in sorted_margins[-10: ]]
         other = [x for x, y in sorted_margins[10: -10]]
-        other = np.random.choice(other, 20, replace=False).tolist()
+        other = np.random.choice(other, num_rand, replace=False).tolist()
 
         
-
-        return high,low,other
+        return {
+            "high_margin":high,
+            "low_margin":low,
+            "other":other
+        }
     
     @staticmethod
-    def select_nodes_margin_degree(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720):
+    def select_nodes_margin_degree(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720,num_rand= 10):
         '''
         selecting nodes as reported in nettack paper:
         (i) the 10 nodes with highest margin of classification, i.e. they are clearly correctly classified,
@@ -73,8 +76,14 @@ class NodeSelector:
         highest_degree,lowest_degree = NodeSelector._select_node_value_margin(degree_values)
         remaining = list((set(other) - set(highest_degree)) - set(lowest_degree))
        
-        other = np.random.choice(remaining, 10, replace=False).tolist()
-        return high,low, highest_degree,lowest_degree,other
+        other = np.random.choice(remaining, num_rand, replace=False).tolist()
+        return {
+            "high_margin":high,
+            "low_margin":low,
+            "highest_degree":highest_degree,
+            "lowest_degree":lowest_degree,
+            "other":other
+        }
     
     @staticmethod
     def select_node_margin_centrality(target_runner:IModelSupervisor):

@@ -8,7 +8,13 @@ import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from data_loader.Fold import Fold
+
+
+class Fold:
+    def __init__(self,idx_train,idx_val,idx_test) -> None:
+        self.idx_train = idx_train
+        self.idx_val = idx_val
+        self.idx_test = idx_test
 
 class ISplitter:
     def split(self,X,y):

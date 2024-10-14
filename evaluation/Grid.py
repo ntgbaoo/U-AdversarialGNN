@@ -14,7 +14,7 @@ class Grid:
 
     def init_grid(self):
         for key,values in self.config_dict.items():
-            if key == self._get_single__grid_identifier():
+            if key == self._get_single_grid_identifier():
                 values = [values]
             assert len(values) > 0, "Need to define at least one value for hyper-parameter:{}".format(key)
             self.all_configs = self._update_config(self.all_configs,values,key)
@@ -39,7 +39,7 @@ class Grid:
 
         return new_configs_list
         
-    def _get_single__grid_identifier(self):
+    def _get_single_grid_identifier(self):
         pass
 
     def _assert_config_dict(self):

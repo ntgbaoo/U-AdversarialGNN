@@ -5,18 +5,13 @@ import torch
 import deeprobust.graph.utils as utils
 from torch.nn.parameter import Parameter
 from tqdm import tqdm
+from defense_model.improving_graph.GTrans.gtransform_feat import FeatAgent, add_feature_noise, add_structure_noise
+# from gtransform_feat import FeatAgent, add_feature_noise, add_structure_noise
 import torch_sparse
 from torch_sparse import coalesce
 import math
 from torch_geometric.utils import to_scipy_sparse_matrix
 from torch_geometric.utils import to_scipy_sparse_matrix, from_scipy_sparse_matrix, dropout_adj, is_undirected, to_undirected
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from defense_model.improving_graph.GTrans.gtransform_feat import FeatAgent, add_feature_noise, add_structure_noise
-
-
 
 
 class EdgeAgent(FeatAgent):
@@ -126,7 +121,7 @@ class EdgeAgent(FeatAgent):
                     best_loss_val = loss_val
                     best_edge_index = self.modified_edge_index.clone().cpu()
                     best_edge_weight_diff = self.perturbed_edge_weight.detach().clone().cpu()
-                    print('best_loss_val: %s' % best_loss_val)
+                    # print('best_loss_val: %s' % best_loss_val)
 
                 acc_train = utils.accuracy(output[data.train_mask], labels[data.train_mask])
                 acc_test = utils.accuracy(output[data.test_mask], labels[data.test_mask])
@@ -181,7 +176,7 @@ class EdgeAgent(FeatAgent):
         return output
 
     def sample_random_block(self, n_perturbations):
-        if self.args.loss != 'attack':
+        if self.loss != 'attack':
             edge_index = self.edge_index.clone()
             edge_index = edge_index[:, edge_index[0] < edge_index[1]]
             row, col = edge_index[0], edge_index[1]
@@ -216,7 +211,7 @@ class EdgeAgent(FeatAgent):
 
     @torch.no_grad()
     def sample_final_edges(self, n_perturbations):
-        descent = False if self.args.loss == 'attack' else True
+        descent = False if self.loss == 'attack' else True
         best_loss = float('Inf') if descent else -float('Inf')
         perturbed_edge_weight = self.perturbed_edge_weight.detach()
         # TODO: potentially convert to assert
@@ -229,7 +224,7 @@ class EdgeAgent(FeatAgent):
 
         for i in range(self.max_final_samples):
             sampled_edges = torch.bernoulli(perturbed_edge_weight).float()
-            if self.args.loss == 'attack':
+            if self.loss == 'attack':
                 if sampled_edges.sum() > n_perturbations:
                     n_samples = sampled_edges.sum()
                     print(f'{i}-th sampling: too many samples {n_samples}')
@@ -238,17 +233,17 @@ class EdgeAgent(FeatAgent):
 
             edge_index, edge_weight = self.get_modified_adj()
             with torch.no_grad():
-                output = self.model.forward(feat, edge_index, edge_weight)
-                loss = -utils.accuracy(output[self.data.val_mask], labels[self.data.val_mask]).item()
+                output = self.model(feat, edge_index, edge_weight)
+                loss = -utils.accuracy(output[self.val_idx], labels[self.val_idx]).item()
             if descent:
                 if best_loss > loss:
                     best_loss = loss
-                    print('best_loss:', best_loss)
+                    # print('best_loss:', best_loss)
                     best_edges = self.perturbed_edge_weight.clone().cpu()
             else:
                 if best_loss < loss:
                     best_loss = loss
-                    print('best_loss:', best_loss)
+                    # print('best_loss:', best_loss)
                     best_edges = self.perturbed_edge_weight.clone().cpu()
 
         # Recover best sample
@@ -260,7 +255,7 @@ class EdgeAgent(FeatAgent):
         allowed_perturbations = 2 * n_perturbations if self.make_undirected else n_perturbations
         edges_after_attack = edge_mask.sum()
         clean_edges = self.edge_index.shape[1]
-        if self.args.loss == 'attack':
+        if self.loss == 'attack':
             assert (edges_after_attack >= clean_edges - allowed_perturbations
                     and edges_after_attack <= clean_edges + allowed_perturbations), \
                 f'{edges_after_attack} out of range with {clean_edges} clean edges and {n_perturbations} pertutbations'
@@ -365,7 +360,7 @@ class EdgeAgent(FeatAgent):
 
     def update_edge_weights(self, n_perturbations, epoch, gradient):
         self.optimizer_adj.zero_grad()
-        if self.args.loss == "attack":
+        if self.loss == "attack":
             self.perturbed_edge_weight.grad = -gradient
         else:
             self.perturbed_edge_weight.grad = gradient

@@ -244,32 +244,31 @@ class FeatAgent:
         return output
 
     def test_time_loss(self, model, feat, edge_index, edge_weight=None):
-        args = self.args
 
         loss = 0
-        if 'LC' in args.loss: # label constitency
+        if 'LC' in self.loss: # label constitency
             output1 = self.augment(strategy='dropedge', p=0.5, edge_index=edge_index, edge_weight=edge_weight)
             output2 = self.augment(strategy='dropedge', p=0.0, edge_index=edge_index, edge_weight=edge_weight)
             output3 = self.augment(strategy='shuffle', edge_index=edge_index, edge_weight=edge_weight)
-            lc_string = [v for v in args.loss.split('+') if 'LC' in v][0]
+            lc_string = [v for v in self.loss.split('+') if 'LC' in v][0]
             beta = float(lc_string[:-2])
             loss += beta*(inner(output1, output2) - inner(output2, output3))
 
-        if 'recon' in args.loss: # data reconstruction
+        if 'recon' in self.loss: # data reconstruction
             model = self.model
             output2 = self.augment(strategy='dropedge', p=0.2, edge_index=edge_index, edge_weight=edge_weight)
             loss += inner(output2[edge_index[0]], output2[edge_index[1]])
 
-        if "train" in args.loss:
-            train_mask = self.data.train_mask
+        if "train" in self.loss:
+            train_mask = self.train_idx
             labels = self.data.y
             output = model.forward(feat, edge_index, edge_weight)
             loss += F.nll_loss(output[train_mask], labels[train_mask])
 
-        if args.loss == "attack":
+        if self.loss == "attack":
             loss = F.nll_loss(output, labels)
 
-        if  "entropy" in args.loss:
+        if  "entropy" in self.loss:
             test_mask = self.data.test_mask
             batch_size = 10000
             sampled = np.random.permutation(np.arange(len(test_mask))[: batch_size])
@@ -344,8 +343,8 @@ class FeatAgent:
         model.eval()
         model.data = data.to(self.device)
 
-        import ipdb
-        ipdb.set_trace()
+        # import ipdb
+        # ipdb.set_trace()
 
         output = model.predict()
         labels = labels.to(device)

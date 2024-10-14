@@ -12,12 +12,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utility.config import args
 from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
 from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
-from evaluation.ModelSupervisor import ModelSupervisor
-from evaluation.ModelSelector import ModelSelector
-from data_loader.DataLoader import DataLoader
-from data_loader.Splitter import Splitter
-from utility.ConfigHandler import ConfigHandler
-from evaluation.Grid import ModelGrid
+from evaluation import ModelSupervisor
+from evaluation import ModelSelector
+from data_loader import DataLoader
+from data_loader import Splitter
+from utility import ConfigHandler
+from evaluation import ModelGrid
 
 if __name__ == "__main__":
     hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")

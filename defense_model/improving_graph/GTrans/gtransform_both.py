@@ -5,28 +5,39 @@ import torch
 import deeprobust.graph.utils as utils
 from torch.nn.parameter import Parameter
 from tqdm import tqdm
+from gtransform_feat import add_feature_noise, add_feature_noise_test, mask2indices, l21norm
+from gtransform_adj_small import EdgeAgent
 import torch_sparse
 from torch_sparse import coalesce
 import math
 from torch_geometric.utils import to_scipy_sparse_matrix
 from torch_geometric.utils import to_scipy_sparse_matrix, from_scipy_sparse_matrix, dropout_adj
 
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from defense_model.improving_graph.GTrans.gtransform_feat import add_feature_noise, add_feature_noise_test, mask2indices, l21norm,add_structure_noise
-from defense_model.improving_graph.GTrans.gtransform_adj_small import EdgeAgent
-
-
 
 class GraphAgent(EdgeAgent):
 
     def __init__(self, data, args, model=None):
+        """
+        args: 
+        noise_feature: bool (false)
+        noise_structure: bool (false)
+        epochs :int
+        lr_adj
+        lr_feat
+        loss
+        seed
+        ratio
+        loop_adj
+        loop_feat
+        existing_space
+        debug
+        """
         self.device = 'cuda'
         self.args = args
 
         self.data = data
+        self.train_idx = data.train_mask
+        self.val_idx = data.val_mask
         if model is None:
             self.model = self.pretrain_model()
         else:
@@ -58,6 +69,7 @@ class GraphAgent(EdgeAgent):
         self.max_final_samples = 20
         self.search_space_size = 10_000_000
         self.eps = 1e-7
+        self.loss = args.loss
 
         self.modified_edge_index: torch.Tensor = None
         self.perturbed_edge_weight: torch.Tensor = None
