@@ -47,20 +47,57 @@ def draw_adversarial_average_diagram(adversarials_list,datasets_list,models_list
     plt.legend()
 
     if save_fig:
-        plt.savefig(f"{FIGURE_SAVE_PATH}/adverial_perf_average_{setting}.pdf")
+        plt.savefig(f"{FIGURE_SAVE_PATH}/adverial_perf_average_{setting}.png")
+
+    if show:
+        plt.show()
+
+def draw_adversarial_defense_diagram(adversarials_list,datasets_list,models_list,setting = "evasion",
+                                     budgets_list = [1,2,3,4,5],save_fig = True, show = True):
+    result_dir_path = "data/results"
+    plt.figure(figsize=(8, 6))
+    for idx,model in enumerate(models_list):
+        adversarial_results = {key : [] for key in budgets_list}
+        for adversarial in adversarials_list:
+            for dataset in datasets_list:
+                results_file_path = f"{result_dir_path}/{model}/{dataset}/{adversarial}_{setting}.csv"
+                results_df = pd.read_csv(results_file_path)
+                for budget in budgets_list:
+                    row_results = results_df[results_df['budget'] == budget]
+                    success_rate = row_results['total'].values[0]
+                    mean, _ = extract_saved_result(success_rate)
+                    adversarial_results[budget].append(mean)
+        
+        diagram_y = [stat.mean(adversarial_results[budget]) for budget in budgets_list]
+        plt.plot(budgets_list,diagram_y,label=model,color=PLOT_AVAILABLE_COLORS[idx], marker = "o")
+
+    plt.title(f'Average attack success rate on defense models in {setting} setting')
+    plt.xlabel('Budget')
+    plt.ylim(0, 1)
+    plt.xticks(budgets_list)
+    plt.ylabel('Attack success rate (%)')
+    plt.legend()
+
+    if save_fig:
+        plt.savefig(f"{FIGURE_SAVE_PATH}/defense_perf_average_{setting}_small.png")
 
     if show:
         plt.show()
 
 
 
-
 if __name__ == "__main__":
     adversarials_list = ["nettack","fga","sga","rnd","pgdattack","prbcdattack","gfattack"]
-    datasets_list = ["cora","citeseer"]
+    # adversarials_list = ["nettack","fga","sga","rnd","prbcdattack","gfattack"]
+    datasets_list = ["cora","citeseer","pubmed"]
     models_list = ["GCN","GIN","GSAGE","PNA"]
+
+    #cora
+    # defense_list = ["RobustGCN","GNNGuard","GRAND","ElasticGNN"]
+    # adversarials_list = ["nettack","fga","prbcdattack"]
+
     prepare_figure_dir()
 
-    draw_adversarial_average_diagram(adversarials_list,datasets_list,models_list,setting="evasion")
+    draw_adversarial_average_diagram(adversarials_list,datasets_list, models_list,setting="poision")
     
     

@@ -126,6 +126,7 @@ class GTransPurification(EdgeAgent,BaseTransform):
         
         data.edge_index = new_edge_index
         data.x = new_feat
+        print(data)
         return data
 
 
