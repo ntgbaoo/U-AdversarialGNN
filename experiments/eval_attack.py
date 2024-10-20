@@ -22,7 +22,6 @@ from adversarial_attack import SurrogateLoader
 from adversarial_attack import AdversarialSupervisor
 from static import *
 from utility.config import args
-from adversarial_attack import PRBCDAttack,GRBCDAttack
 
 
 from greatx.utils import mark, split_nodes
@@ -45,6 +44,7 @@ def load_attack(attack_method):
     elif attack_method == IGATTACK_NAME:
         return IGAttack
     elif attack_method == PRBCD_NAME:
+        from adversarial_attack import PRBCDAttack,GRBCDAttack
         return PRBCDAttack
     elif attack_method == GRBCD_NAME:
         return GRBCDAttack
