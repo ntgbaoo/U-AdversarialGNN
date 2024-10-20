@@ -4,7 +4,8 @@ import os
 import warnings
 from torch_geometric.nn import aggr as torch_aggr
 from greatx.nn.models import SGC,RobustGCN,GNNGUARD,ElasticGNN
-from greatx.defense.purification import JaccardPurification,SVDPurification
+from greatx.defense.purification import SVDPurification
+
 
 # Hide all warnings
 warnings.filterwarnings("ignore")
@@ -14,6 +15,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from defense_model.improving_training.GRAND.grand import GRAND
 from defense_model.improving_graph.GARNET.garnet import GarnetPurification
 from defense_model.improving_graph import GTransPurification
+from defense_model.improving_graph import JaccardPurification
 from utility.util import logger
 from static import *
 

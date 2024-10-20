@@ -12,11 +12,14 @@ import torch
 
 
 class JaccardPurification(BaseTransform):
+    r"""
+    Jaccard version from DeepRobust
+    """
     def __init__(self,binary_feature=False,threshold=0.01):
         self.binary_feature= binary_feature
         self.threshold = threshold
 
-    def __call__(self, data: Data, inplace: bool = True) -> Data:
+    def __call__(self, data: Data, inplace: bool = False) -> Data:
         if not inplace:
             data = copy(data)
 
