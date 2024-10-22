@@ -202,3 +202,12 @@ class ModelSupervisor:
         if prediction is None:
             prediction = self.get_model_prediction(data)
         return int((prediction[mask] == self.labels_torch[mask]).sum()) / len(mask)
+    
+    def load_model_state(self,model_cached_address: str):
+        if not os.path.exists(model_cached_address):
+            raise FileNotFoundError(f"File ({model_cached_address}) not found")
+        self.model.load_state_dict(model_cached_address)
+
+    def save_model_state(self,model_cached_address: str):
+        torch.save(self.model.state_dict(),model_cached_address)
+        
