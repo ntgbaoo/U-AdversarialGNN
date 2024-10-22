@@ -50,7 +50,7 @@ class AdversarialAssessment:
         self.node_category = ['high_margin','low_margin','high_degree','low_degree','other'] if use_degree_node_selection else ['high_margin','low_margin','other']
         self.config_name = "best_config" if use_tune_model else "default"
         
-    def _get_stat(results_list: list):
+    def _get_stat(self,results_list: list):
         return (stats.mean(results_list),stats.stdev(results_list))
     
     def _load_attack(self,adversarial_name:str):
@@ -162,13 +162,13 @@ class AdversarialAssessment:
 
                 poison_total += result[POSION]
 
-            time_total += result_tuple['time']
+            time_total += result['time']
 
         if evasion_dict is not None:
             evasion_dict['total'].append(evasion_total/50)
 
         if poison_dict is not None:
-            evasion_dict['total'].append(poison_total/50)
+            poison_dict['total'].append(poison_total/50)
         return time_total,evasion_dict,poison_dict
     
 
@@ -222,7 +222,7 @@ class AdversarialAssessment:
                     adversarial_supervisor = AdversarialSupervisor(self.data,attacker,idx_train,idx_val,idx_test,self.device,
                                                                    use_purification=self.use_purification, purification_config= purification_config,**configs)
                     result_bucket = adversarial_supervisor.target_attack(target_node_tuple,budget,evasion=True,poision=True, evasion_model=node_selector,seed = seed)
-                    adversarial_supervisor.save_result(self.adversarial,seed,self.dataset_name,self.model,budget,self.purification_name)
+                    adversarial_supervisor.save_result(self.adversarial_name,seed,self.dataset_name,self.model,budget,self.purification_name)
                     time,evasion_dict,poision_dict = self._update_dict_results(result_bucket,num_rand,evasion_dict,poision_dict)
                     time_list.append(time)
             
@@ -241,14 +241,14 @@ class AdversarialAssessment:
                 for key in evasion_dict:
                     row_poison.append(self._get_stat(poision_dict[key]))
                 row_poison.append(self._get_stat(time_list))
-                row_evasion.append(self._get_stat(time_defense_list))
+                row_poison.append(self._get_stat(time_defense_list))
                 
                 rowlist_poision.append(row_poison)
         
         if not os.path.exists("{}{}/{}/".format(PATH_RESULT,self.model,self.dataset_name)):
             os.makedirs("{}{}/{}/".format(PATH_RESULT,self.model,self.dataset_name))
 
-        columns = ['budget'] + self.node_category + ['time_attack'] + ['time_defense']
+        columns = ['budget'] + self.node_category +['total'] + ['time_attack'] + ['time_defense']
 
         df_poision = pd.DataFrame(rowlist_poision,columns=columns) if evasion else None
         df_evasion = pd.DataFrame(rowlist_evasion,columns=columns) if poision else None

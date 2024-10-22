@@ -7,6 +7,8 @@ from .pgd_attack import PGDAttack
 from .random_attack import RandomAttack
 from .sg_attack import SGAttack
 from .targeted_attacker import TargetedAttacker
+from .rbcd_attack import PRBCDAttack, GRBCDAttack
+
 
 classes = __all__ = [
     'TargetedAttacker',
@@ -18,4 +20,6 @@ classes = __all__ = [
     'Nettack',
     'GFAttack',
     'PGDAttack',
+    'PRBCDAttack',
+    'GRBCDAttack'
 ]

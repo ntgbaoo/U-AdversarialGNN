@@ -122,7 +122,7 @@ class GarnetPurification(BaseTransform):
 
             if self.full_distortion:
                 ori_dist = LA.norm((row_embed-col_embed), axis=1)
-                S_b, U_b = eigs(adj2laplacian(adj_mtx), r, which='SM')
+                S_b, U_b = eigs(adj2laplacian(adj_mtx), self.r, which='SM')
                 S_b, U_b = S_b[1:].real, U_b[:, 1:].real
                 base_spec_embed = U_b/np.sqrt(S_b.reshape(1,-1))
                 base_spec_embed = embedding_normalize(base_spec_embed, self.embedding_norm)
