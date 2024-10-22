@@ -13,7 +13,6 @@ from torch_geometric.data import Data
     
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from evaluation import IModelSupervisor
 from defense_model.utils import load_model,load_graph_purification
 from utility.config import args
 from evaluation.utils import load_opt, sparse_adjacency_to_edge_list,load_scheduler
@@ -180,6 +179,7 @@ class ModelSupervisor:
         logger.info('>> Total time : %6.2f' % (total_time))
         logger.info("Best val:{:.3f}, Best test: {:.3f}".format(best_val_acc,best_test_acc))
 
+    
     @torch.no_grad
     def get_model_output(self,data:Data):
         self.model.eval()
@@ -203,9 +203,7 @@ class ModelSupervisor:
             prediction = self.get_model_prediction(data)
         return int((prediction[mask] == self.labels_torch[mask]).sum()) / len(mask)
     
-    def load_model_state(self,model_cached_address: str):
-        if not os.path.exists(model_cached_address):
-            raise FileNotFoundError(f"File ({model_cached_address}) not found")
+    def load_model_state(self,model_cached_address):
         self.model.load_state_dict(model_cached_address)
 
     def save_model_state(self,model_cached_address: str):

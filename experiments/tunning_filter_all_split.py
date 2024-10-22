@@ -24,6 +24,9 @@ if __name__ == "__main__":
     data,_ = DataLoader.load(args.dataset)
     
     for split_idx in range(0,5):
+        if args.purification == "GTrans":
+            hyper_grid_config['dataset'] = [args.dataset]
+            hyper_grid_config['split_indx'] = [split_idx]
         split_model = ConfigHandler.load_model_config(args.model,"best_config",args.dataset,split_idx)
         split = split_model['split']
         model_config = split_model.get('model_config')

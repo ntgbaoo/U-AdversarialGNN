@@ -50,6 +50,7 @@ SGD ="SGD"
 ADAM = "ADAM"
 STEP_LR = "StepLR"
 GAMMA = "gamma"
+SPLIT_IDX = "split_idx"
 
 #PATH
 BEST_CONFIG = "best_config_split_"

@@ -22,6 +22,7 @@ if __name__ == '__main__':
     args.dataset = "cora"
     
     data,split = DataLoader.load(args.dataset)
+    print(data.name)
     config = ConfigHandler.load_model_config(model_type="GCN",config_name="max_best_config",dataset="cora",split=0)
     model_config = config['model_config']
     split_config = config['split']
@@ -31,8 +32,7 @@ if __name__ == '__main__':
     runner.train_model(idx_train=idx_train,idx_val=idx_val,idx_test= idx_test)
 
 
-    purification = GraphAgent(device=args.device,model=runner.model)
-    purification.update_idx(idx_train,idx_val)
+    purification = GTransPurification(model_name="GCN",dataset="cora",split_indx=0,device=args.device)
     new_data= purification(data)
 
     
