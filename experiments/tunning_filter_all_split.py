@@ -21,6 +21,7 @@ from evaluation import ModelGrid
 
 if __name__ == "__main__":
     hyper_grid_config = ConfigHandler.load_hyper_puri_grid(purification_type=args.purification,grid_name="hyper_grid")
+    
     data,_ = DataLoader.load(args.dataset)
     
     for split_idx in range(0,5):

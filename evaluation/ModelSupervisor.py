@@ -69,6 +69,7 @@ class ModelSupervisor:
         # Purification
         self.use_purification = use_purification
         self.purification = None
+        self.purification_config = purification_config
         if use_purification:
             assert purification_config is not None, "In order to use purification, please define purification config"
             self.purification = load_graph_purification(**purification_config)
@@ -180,12 +181,13 @@ class ModelSupervisor:
         logger.info("Best val:{:.3f}, Best test: {:.3f}".format(best_val_acc,best_test_acc))
 
     
-    @torch.no_grad
+    # @torch.no_grad
     def get_model_output(self,data:Data):
         self.model.eval()
         if self.use_purification:
             assert self.purification is not None, "In order to use purification, please define purification config when initialize the supervisor"
-            data = self.purification(data = data, inplace= False)
+            purification = load_graph_purification(**self.purification_config)
+            data = purification(data = data, inplace= False)
             if data.edge_index is None:
                 data.edge_index = data.adj_t.nonzero(as_tuple=False).t()
         features_torch = data.x.to(self.device)

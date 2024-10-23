@@ -91,7 +91,6 @@ class GTransPurification(EdgeAgent,BaseTransform):
         model_trainer = ModelSupervisor(data,**configs)
 
         if os.path.exists(model_file):
-            print(model_file)
             model_trainer.load_model_state(torch.load(model_file))
         else:
             if not os.path.exists(model_path):
@@ -158,7 +157,6 @@ class GTransPurification(EdgeAgent,BaseTransform):
         
         data.edge_index = new_edge_index
         data.x = new_feat
-        print(data)
         return data
 
 
@@ -195,12 +193,11 @@ class GTransPurification(EdgeAgent,BaseTransform):
         best_loss_val = 100
         best_acc_val = 0
         # alternating optimizing structure and feature
-        for it in tqdm(range(self.epochs//(self.loop_adj+self.loop_feat))):
+        for it in (range(self.epochs//(self.loop_adj+self.loop_feat))):
             for j in range(self.loop_feat):
                 self.optimizer_feat.zero_grad()
                 new_feat = feat+delta_feat
                 loss = self.test_time_loss(model, new_feat, edge_index, edge_weight)
-
                 loss.backward()
                 # if it % 100 == 0:
                 #     print(f'Epoch {it}: {loss}')
@@ -273,13 +270,11 @@ class GTransPurification(EdgeAgent,BaseTransform):
         new_feat = best_feat
 
         # edge_index, edge_weight = self.sample_final_edges(n_perturbations)[0], None
-
         if self.loop_adj !=0 :
             edge_index, edge_weight = self.sample_final_edges(n_perturbations)
 
         output = model.forward(new_feat, edge_index, edge_weight)
         loss = self.test_time_loss(model, delta_feat+feat, edge_index, edge_weight)
-        
         return new_feat, edge_index, edge_weight
 
     def augment(self, strategy='dropedge', p=0.5, edge_index=None, edge_weight=None):
