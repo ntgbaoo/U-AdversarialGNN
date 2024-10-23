@@ -133,7 +133,7 @@ class ModelSupervisor:
             loss = self._train(idx_train)
 
             #Validation and test
-            epoch_output = self.get_model_output(self.data)
+            epoch_output = self.get_model_output(self.data,force_no_use_purification=True) #force: to avoid keep using purification
             epoch_prediction = epoch_output.argmax(dim=-1)
             val_loss = F.cross_entropy(epoch_output[idx_val],self.labels_torch[idx_val])
             train_acc = self.get_prediction_accuracy(idx_train,self.data,epoch_prediction)
@@ -181,10 +181,9 @@ class ModelSupervisor:
         logger.info("Best val:{:.3f}, Best test: {:.3f}".format(best_val_acc,best_test_acc))
 
     
-    # @torch.no_grad
-    def get_model_output(self,data:Data):
+    def get_model_output(self,data:Data,force_no_use_purification = False):
         self.model.eval()
-        if self.use_purification:
+        if self.use_purification and not force_no_use_purification:
             assert self.purification is not None, "In order to use purification, please define purification config when initialize the supervisor"
             purification = load_graph_purification(device=self.device,**self.purification_config)
             data = purification(data = data, inplace= False)
@@ -192,14 +191,13 @@ class ModelSupervisor:
                 data.edge_index = data.adj_t.nonzero(as_tuple=False).t()
         features_torch = data.x.to(self.device)
         edge_index_torch = data.edge_index.to(self.device)
-        output = self.model( features_torch, edge_index_torch)
+        with torch.set_grad_enabled(False):
+            output = self.model( features_torch, edge_index_torch)
         return output
 
-    @torch.no_grad
     def get_model_prediction(self,data:Data):
         return self.get_model_output(data).argmax(dim=-1)
 
-    @torch.no_grad
     def get_prediction_accuracy(self,mask,data:Data,prediction = None):
         if prediction is None:
             prediction = self.get_model_prediction(data)
