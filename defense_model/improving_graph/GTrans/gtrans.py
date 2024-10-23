@@ -19,11 +19,14 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from defense_model.improving_graph.GTrans.gtransform_feat import add_feature_noise, add_feature_noise_test, mask2indices, l21norm
 from defense_model.improving_graph.GTrans.gtransform_adj_small import EdgeAgent
-
+from utility import ConfigHandler
 
 class GTransPurification(EdgeAgent,BaseTransform):
 
     def __init__(self, 
+                 model_name:str,
+                 dataset:str,
+                 split_indx:int,
                  noise_feature : bool = False,
                  noise_structure : bool = False,
                  epochs : int = 200,
@@ -35,10 +38,9 @@ class GTransPurification(EdgeAgent,BaseTransform):
                  loop_adj : int = 1,
                  loop_feat : int = 4,
                  existing_space : int = 1,
-                 idx_val: list = None,
-                 idx_train :list = None,
+                 
                  device : torch.device = "cpu",
-                 model=None):
+                 ):
         """
         noise_feature: bool (false)
         noise_structure: bool (false)
@@ -53,8 +55,7 @@ class GTransPurification(EdgeAgent,BaseTransform):
         existing_space
         """
         
-        self.val_idx = idx_val
-        self.train_idx = idx_train
+       
         self.device = device
         self.seed = seed
         self.lr_feat = lr_feat
@@ -67,7 +68,37 @@ class GTransPurification(EdgeAgent,BaseTransform):
         self.loop_adj = loop_adj
         self.loop_feat = loop_feat
         self.existing_space = existing_space
-        self.model = model
+        self.model_name = model_name
+        self.dataset = dataset
+        self.split_indx = split_indx
+    
+
+    def _load_model(self,model_name:str,dataset:str,split_indx:int,data:Data):
+        #This to avoid circular import
+        from evaluation.ModelSupervisor import ModelSupervisor
+
+
+        model_path = f"data/cached_models/{model_name}/{dataset}/{split_indx}"
+        model_file = f"{model_path}/best_model.pth"
+
+        split_model = ConfigHandler.load_model_config(model_name,"best_config",dataset,split_indx)
+        split = split_model['split']
+        configs = split_model.get('model_config')
+        idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_test']
+
+        self.val_idx = idx_val
+        self.train_idx = idx_train
+        model_trainer = ModelSupervisor(data,self.device,**configs)
+
+        if os.path.exists(model_file):
+            model_trainer.load_model_state(torch.load(model_file))
+        else:
+            if not os.path.exists(model_path):
+                os.makedirs(model_path)
+            model_trainer.train_model(self.train_idx,self.val_idx,idx_test)
+            model_trainer.save_model_state(model_file)
+        
+        return model_trainer.model
     
         
 
@@ -80,8 +111,8 @@ class GTransPurification(EdgeAgent,BaseTransform):
         #     self.model = self.pretrain_model()
         
         # labels = data.y.to(self.device)
-
-      
+        data = data.to(self.device)
+        self.model = self._load_model(self.model_name,self.dataset,self.split_indx,data)
         for param in self.model.parameters():
             param.requires_grad = False
         if not inplace:
@@ -126,7 +157,6 @@ class GTransPurification(EdgeAgent,BaseTransform):
         
         data.edge_index = new_edge_index
         data.x = new_feat
-        print(data)
         return data
 
 
@@ -163,12 +193,11 @@ class GTransPurification(EdgeAgent,BaseTransform):
         best_loss_val = 100
         best_acc_val = 0
         # alternating optimizing structure and feature
-        for it in tqdm(range(self.epochs//(self.loop_adj+self.loop_feat))):
+        for it in (range(self.epochs//(self.loop_adj+self.loop_feat))):
             for j in range(self.loop_feat):
                 self.optimizer_feat.zero_grad()
                 new_feat = feat+delta_feat
                 loss = self.test_time_loss(model, new_feat, edge_index, edge_weight)
-
                 loss.backward()
                 # if it % 100 == 0:
                 #     print(f'Epoch {it}: {loss}')
@@ -241,13 +270,11 @@ class GTransPurification(EdgeAgent,BaseTransform):
         new_feat = best_feat
 
         # edge_index, edge_weight = self.sample_final_edges(n_perturbations)[0], None
-
         if self.loop_adj !=0 :
             edge_index, edge_weight = self.sample_final_edges(n_perturbations)
 
         output = model.forward(new_feat, edge_index, edge_weight)
         loss = self.test_time_loss(model, delta_feat+feat, edge_index, edge_weight)
-        
         return new_feat, edge_index, edge_weight
 
     def augment(self, strategy='dropedge', p=0.5, edge_index=None, edge_weight=None):

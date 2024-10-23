@@ -58,8 +58,6 @@ class PurificationSelector:
         runner = ModelSupervisor(data = self.data,device=self.device,purification_config=purification_config,use_purification=True,seed=seed,**model_config)
         runner.train_model(idx_train=self.idx_train,idx_val=self.idx_val,idx_test= self.idx_test)
         val_acc = runner.get_prediction_accuracy(self.idx_val,self.data)
-        # except Exception as e:
-        #     return 0
         return val_acc
     
     def save_config(self,split_index,dataset_name):

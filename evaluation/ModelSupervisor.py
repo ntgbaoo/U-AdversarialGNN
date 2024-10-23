@@ -13,7 +13,6 @@ from torch_geometric.data import Data
     
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from evaluation import IModelSupervisor
 from defense_model.utils import load_model,load_graph_purification
 from utility.config import args
 from evaluation.utils import load_opt, sparse_adjacency_to_edge_list,load_scheduler
@@ -70,9 +69,10 @@ class ModelSupervisor:
         # Purification
         self.use_purification = use_purification
         self.purification = None
+        self.purification_config = purification_config
         if use_purification:
             assert purification_config is not None, "In order to use purification, please define purification config"
-            self.purification = load_graph_purification(**purification_config)
+            self.purification = load_graph_purification(device=self.device,**purification_config)
             data = self.purification(data = data, inplace= False)
             if data.edge_index is None:
                 data.edge_index = data.adj_t.nonzero(as_tuple=False).t()
@@ -180,12 +180,14 @@ class ModelSupervisor:
         logger.info('>> Total time : %6.2f' % (total_time))
         logger.info("Best val:{:.3f}, Best test: {:.3f}".format(best_val_acc,best_test_acc))
 
-    @torch.no_grad
+    
+    # @torch.no_grad
     def get_model_output(self,data:Data):
         self.model.eval()
         if self.use_purification:
             assert self.purification is not None, "In order to use purification, please define purification config when initialize the supervisor"
-            data = self.purification(data = data, inplace= False)
+            purification = load_graph_purification(device=self.device,**self.purification_config)
+            data = purification(data = data, inplace= False)
             if data.edge_index is None:
                 data.edge_index = data.adj_t.nonzero(as_tuple=False).t()
         features_torch = data.x.to(self.device)
@@ -202,3 +204,10 @@ class ModelSupervisor:
         if prediction is None:
             prediction = self.get_model_prediction(data)
         return int((prediction[mask] == self.labels_torch[mask]).sum()) / len(mask)
+    
+    def load_model_state(self,model_cached_address):
+        self.model.load_state_dict(model_cached_address)
+
+    def save_model_state(self,model_cached_address: str):
+        torch.save(self.model.state_dict(),model_cached_address)
+        

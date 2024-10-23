@@ -63,7 +63,7 @@ class ModelSelector:
         set_random(seed)
         runner = ModelSupervisor(self.data,device=self.device,**config)
         try:
-            # To avoid bad configuration prevent model to convert
+            # To avoid bad configuration prevent model from converging
             runner.train_model(idx_train=self.idx_train,idx_val=self.idx_val,idx_test= self.idx_test)
             val_acc = runner.get_prediction_accuracy(self.idx_val,self.data)
         except Exception as e:

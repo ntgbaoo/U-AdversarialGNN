@@ -1,4 +1,7 @@
 purification: GTrans
+model_name:
+  - GCN
+
 noise_feature: 
   - False
 
@@ -15,17 +18,17 @@ lr_adj:
   - 0.1
 
 lr_feat:
-  - 1e-3
-  - 5e-3
-  - 1e-4
-  - 1e-5
-  - 1e-6
+  - 0.001
+  - 0.005
+  - 0.0001
+  - 0.00001
+  - 0.000001
 
 loss :
   - "train+1LC"
 
 ratio : 
-  - 5e-3
+  - 0.005
   - 0.01
   - 0.05
 

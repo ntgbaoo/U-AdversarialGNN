@@ -31,8 +31,9 @@ if __name__ == '__main__':
     runner.train_model(idx_train=idx_train,idx_val=idx_val,idx_test= idx_test)
 
 
-    purification = GraphAgent(device=args.device,model=runner.model)
-    purification.update_idx(idx_train,idx_val)
+    purification = GTransPurification(model_name="GCN",dataset="cora",split_indx=0,device=args.device,epochs=5)
+    new_data= purification(data)
+    purification = GTransPurification(model_name="GCN",dataset="cora",split_indx=0,device=args.device,epochs=5)
     new_data= purification(data)
 
     
