@@ -129,7 +129,7 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
     logger.info('Using models {} '.format(model_name))
     return model
 
-def load_graph_purification(**kwargs):
+def load_graph_purification(device = None,**kwargs):
     purification_name = kwargs.get(PURIFICATION)
     assert purification_name is not None
 
@@ -155,7 +155,7 @@ def load_graph_purification(**kwargs):
     elif purification_name == "GTrans":
         args = kwargs
         args.pop('purification')
-        purification = GTransPurification(**args)
+        purification = GTransPurification(device=device,**args)
     else:
         raise Exception('Unsupport or undefined model{}'.format(purification_name))
     

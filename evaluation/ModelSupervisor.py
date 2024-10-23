@@ -13,7 +13,6 @@ from torch_geometric.data import Data
     
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from evaluation import IModelSupervisor
 from defense_model.utils import load_model,load_graph_purification
 from utility.config import args
 from evaluation.utils import load_opt, sparse_adjacency_to_edge_list,load_scheduler
@@ -70,9 +69,10 @@ class ModelSupervisor:
         # Purification
         self.use_purification = use_purification
         self.purification = None
+        self.purification_config = purification_config
         if use_purification:
             assert purification_config is not None, "In order to use purification, please define purification config"
-            self.purification = load_graph_purification(**purification_config)
+            self.purification = load_graph_purification(device=self.device,**purification_config)
             data = self.purification(data = data, inplace= False)
             if data.edge_index is None:
                 data.edge_index = data.adj_t.nonzero(as_tuple=False).t()
@@ -133,7 +133,7 @@ class ModelSupervisor:
             loss = self._train(idx_train)
 
             #Validation and test
-            epoch_output = self.get_model_output(self.data)
+            epoch_output = self.get_model_output(self.data,force_no_use_purification=True) #force: to avoid keep using purification
             epoch_prediction = epoch_output.argmax(dim=-1)
             val_loss = F.cross_entropy(epoch_output[idx_val],self.labels_torch[idx_val])
             train_acc = self.get_prediction_accuracy(idx_train,self.data,epoch_prediction)
@@ -180,32 +180,30 @@ class ModelSupervisor:
         logger.info('>> Total time : %6.2f' % (total_time))
         logger.info("Best val:{:.3f}, Best test: {:.3f}".format(best_val_acc,best_test_acc))
 
-    @torch.no_grad
-    def get_model_output(self,data:Data):
+    
+    def get_model_output(self,data:Data,force_no_use_purification = False):
         self.model.eval()
-        if self.use_purification:
+        if self.use_purification and not force_no_use_purification:
             assert self.purification is not None, "In order to use purification, please define purification config when initialize the supervisor"
-            data = self.purification(data = data, inplace= False)
+            purification = load_graph_purification(device=self.device,**self.purification_config)
+            data = purification(data = data, inplace= False)
             if data.edge_index is None:
                 data.edge_index = data.adj_t.nonzero(as_tuple=False).t()
         features_torch = data.x.to(self.device)
         edge_index_torch = data.edge_index.to(self.device)
-        output = self.model( features_torch, edge_index_torch)
+        with torch.set_grad_enabled(False):
+            output = self.model( features_torch, edge_index_torch)
         return output
 
-    @torch.no_grad
     def get_model_prediction(self,data:Data):
         return self.get_model_output(data).argmax(dim=-1)
 
-    @torch.no_grad
     def get_prediction_accuracy(self,mask,data:Data,prediction = None):
         if prediction is None:
             prediction = self.get_model_prediction(data)
         return int((prediction[mask] == self.labels_torch[mask]).sum()) / len(mask)
     
-    def load_model_state(self,model_cached_address: str):
-        if not os.path.exists(model_cached_address):
-            raise FileNotFoundError(f"File ({model_cached_address}) not found")
+    def load_model_state(self,model_cached_address):
         self.model.load_state_dict(model_cached_address)
 
     def save_model_state(self,model_cached_address: str):

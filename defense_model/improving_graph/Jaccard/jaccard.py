@@ -56,7 +56,6 @@ class JaccardPurification(BaseTransform):
                 removed_cnt = dropedge_jaccard(adj_triu.data, adj_triu.indptr, adj_triu.indices, features, threshold=self.threshold)
             else:
                 removed_cnt = dropedge_cosine(adj_triu.data, adj_triu.indptr, adj_triu.indices, features, threshold=self.threshold)
-        print('removed %s edges in the original graph' % removed_cnt)
         modified_adj = adj_triu + adj_triu.transpose()
         return modified_adj
     

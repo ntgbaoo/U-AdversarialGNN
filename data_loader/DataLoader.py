@@ -43,6 +43,7 @@ DATASETS_greatX = {
 class DataLoader:
     @abstractmethod
     def load(dataset:str) :
+        name = dataset
         if dataset in DATASETS_greatX:
             if not os.path.exists(PATH_DATASET):
                 os.makedirs(PATH_DATASET)
@@ -59,6 +60,8 @@ class DataLoader:
             data.y = data.y.squeeze()
         else:
             raise Exception("Unsupport datasets")
+        
+        data.name = name
         return data,default_split
     
 
