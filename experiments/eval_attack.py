@@ -72,6 +72,7 @@ if __name__ == "__main__":
     # args.seed = 720
     # args.adversarial = SGA_NAME
 
+    classifier_config_version = "best_config"
     data,split = DataLoader.load(args.dataset)
     columns = ['budget','high_margin','low_margin','high_degree','low_degree','other','total','time']
     rowlist_evasion = []
@@ -98,7 +99,7 @@ if __name__ == "__main__":
 
         for split_idx in range(5):
 
-            split_model = ConfigHandler.load_model_config(args.model,"best_config",args.dataset,split_idx)
+            split_model = ConfigHandler.load_model_config(args.model,classifier_config_version,args.dataset,split_idx)
             split = split_model['split']
             configs = split_model.get('model_config')
             idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_test']
@@ -128,7 +129,7 @@ if __name__ == "__main__":
                     if args.model == "GCN":
                         attacker.setup_surrogate(node_selector.model)
                     else:
-                        split_model_surrogate = ConfigHandler.load_model_config("GCN","best_config",args.dataset,split_idx)
+                        split_model_surrogate = ConfigHandler.load_model_config("GCN",classifier_config_version,args.dataset,split_idx)
                         configs_surrogate = split_model_surrogate.get('model_config')
                         surrogate = ModelSupervisor(data,args.device,seed=seed,**configs_surrogate)
                         surrogate.train_model(idx_train,idx_val,idx_test)
@@ -138,7 +139,7 @@ if __name__ == "__main__":
 
                 if surrogate_name is not None:
                    
-                    split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"best_config",args.dataset,split_idx)
+                    split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,classifier_config_version,args.dataset,split_idx)
                     configs_surrogate = split_model_surrogate.get('model_config')
                     surrogate = ModelSupervisor(data,args.device,seed=seed,**configs_surrogate)
                     surrogate.train_model(idx_train,idx_val,idx_test)
@@ -206,8 +207,8 @@ if __name__ == "__main__":
 
     if not os.path.exists("{}{}/{}/".format(PATH_RESULT,args.model,args.dataset)):
         os.makedirs("{}{}/{}/".format(PATH_RESULT,args.model,args.dataset))
-    df_poision.to_csv("{}{}/{}/{}_poision.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
-    df_evasion.to_csv("{}{}/{}/{}_evasion.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
+    df_poision.to_csv("{}{}/{}/{}_poision_default.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
+    df_evasion.to_csv("{}{}/{}/{}_evasion_default.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
 
 
 
