@@ -46,6 +46,7 @@ def load_attack(attack_method):
     elif attack_method == IGATTACK_NAME:
         return IGAttack
     elif attack_method == PRBCD_NAME:
+        from adversarial_attack import PRBCDAttack,GRBCDAttack
         return PRBCDAttack
     elif attack_method == GRBCD_NAME:
         return GRBCDAttack
@@ -221,6 +222,9 @@ if __name__ == "__main__":
 
     if not os.path.exists("{}{}/{}/".format(PATH_RESULT,args.model,args.dataset)):
         os.makedirs("{}{}/{}/".format(PATH_RESULT,args.model,args.dataset))
+
+    if not os.path.exists("{}{}_{}/{}".format(PATH_RESULT,args.model,args.purification ,args.dataset)):
+        os.makedirs("{}{}_{}/{}".format(PATH_RESULT,args.model,args.purification ,args.dataset))
 
     if args.purification is not None:
         df_poision.to_csv("{}{}_{}/{}/{}_poision.csv".format(PATH_RESULT,args.model,args.purification ,args.dataset,args.adversarial))
