@@ -51,6 +51,7 @@ ADAM = "ADAM"
 STEP_LR = "StepLR"
 GAMMA = "gamma"
 SPLIT_IDX = "split_idx"
+AVAILABLE_AGGRE = ['mean','sum','max','median','softmedian']
 
 #PATH
 BEST_CONFIG = "best_config_split_"

@@ -16,8 +16,11 @@ from defense_model.improving_training.GRAND.grand import GRAND
 from defense_model.improving_graph.GARNET.garnet import GarnetPurification
 from defense_model.improving_graph import GTransPurification
 from defense_model.improving_graph import JaccardPurification
+from defense_model.improving_architecture.aggregation.soft_median import SoftMedianAggregation
+
 from utility.util import logger
 from static import *
+
 
 def load_model(in_channel,out_channel,degree_dist,**kwargs):
 
@@ -29,6 +32,8 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
 
     if aggr == "median":
         aggr = torch_aggr.MedianAggregation()
+    if aggr == "softmedian":
+        aggr = SoftMedianAggregation()
     
     assert model_name is not None, "Please define model"
     assert in_channel is not None, "Please defne in_channel"
@@ -98,7 +103,6 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
     elif model_name == "SoftMedianGCN":
         # model = SoftMedianGCN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
         from torch_geometric.nn.models.basic_gnn import GCN
-        from defense_model.improving_architecture.aggregation.soft_median import SoftMedianAggregation
         model = GCN(in_channel,
                     nhid,
                     nlayers,
