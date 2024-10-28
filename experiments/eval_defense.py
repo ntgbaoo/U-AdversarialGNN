@@ -115,7 +115,7 @@ if __name__ == "__main__":
         for split_idx in range(5):
             if args.purification is not None:
                 use_purification = True
-                purification_config = ConfigHandler.load_purification_config(args.purification,args.model,"best_config",args.dataset,split=split_idx)['model_config']
+                purification_config = ConfigHandler.load_purification_config(args.purification,args.model,classifier_config_version,args.dataset,split=split_idx)['model_config']
                 print(purification_config)
 
             split_model = ConfigHandler.load_model_config(args.model,classifier_config_version,args.dataset,split_idx)
