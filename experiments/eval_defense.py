@@ -74,6 +74,7 @@ if __name__ == "__main__":
     # args.seed = 720
     # args.adversarial = SGA_NAME
 
+    classifier_config_version = args.config_setting
     data,split = DataLoader.load(args.dataset)
     columns = ['budget','high_margin','low_margin','high_degree','low_degree','other','total','time','time_defense']
     rowlist_evasion = []
