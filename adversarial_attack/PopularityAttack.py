@@ -67,8 +67,15 @@ class PopularityAttack:
         self.n_perturbations = budget
 
     def data(self):
-        modified_data = copy.deepcopy(self.ori_data)
-        modified_data.edge_index = self.modified_edgelist
+        modified_data = self.modified_adj.tocoo()
+        # Extract row and column indices (edges)
+        row = torch.tensor(modified_data.row, dtype=torch.long, device=self.device)
+        col = torch.tensor(modified_data.col, dtype=torch.long, device=self.device)
+
+        # Stack the indices to create the edge list
+        ##########################################
+        edge_list = torch.stack([row, col], dim=0)
+
         return modified_data
 
     def reset(self):
@@ -116,42 +123,35 @@ class PopularityAttack:
         
 
         res.sort(key=lambda x: x[1])
-        final_potential_connections = res[:self.budget]
-        modified_data = self.data()
+        final_potential_connections = res[:self.budget] # Array of nodes that need to be connected
 
-        target = torch.tensor([self.target_node])
+        md = self.data()
+
+        coo_matrix = self.modified_adj.tocoo()
+        # Extract row and column indices (edges)
+        row = torch.tensor(coo_matrix.row, dtype=torch.long, device=self.device)
+        col = torch.tensor(coo_matrix.col, dtype=torch.long, device=self.device)
+
+        # Stack the indices to create the edge list
+        edge_list = torch.stack([row, col], dim=0)
+        data.edge_index = edge_list
+
+        new_edges_u = [1] * len(final_potential_connections)
+        new_edges_v = []
+        target_tensor = torch.tensor([self.target_node], device=self.device)
         for node, _ in final_potential_connections:
-            new_edge = torch.tensor([node])
-            new_edge = new_edge
+            new_edges_v.append(node)
 
-            new_connection = torch.cat((target, new_edge), dim=0)
+        new_edges_u_dp = copy.deepcopy(new_edges_u)
+        new_edges_u = new_edges_u + new_edges_v
+        new_edges_v = new_edges_v + new_edges_u_dp
 
-            modified_data.edge_index = new_connection
-        
-        self.modified_edgelist = modified_data.edge_index
+        new_edges_u = torch.tensor(new_edges_u, device=self.device).unsqueeze(dim=0)
+        new_edges_v = torch.tensor(new_edges_v, device=self.device).unsqueeze(dim=0)
 
-        # for node, _ in final_potential_connections:
-        #     print(f"Connecting target node {self.target_node} to candidate node {node}")
+        new_connections = torch.cat((new_edges_u, new_edges_v), dim=0)
 
-        #     # Create the new edge tensor
-        #     new_edge = torch.tensor([[self.target_node], [node]], dtype=torch.long).to(self.device)
-
-        #     # Check the shapes before concatenation
-        #     if modified_data.edge_index is None:
-        #         modified_data.edge_index = new_edge
-        #     else:
-        #         # Ensure the existing edge index and new edge have compatible sizes
-        #         print("Current edge_index shape:", modified_data.edge_index.shape)
-        #         print("New edge shape:", new_edge.shape)
-
-        #         # Concatenate only if dimensions are compatible
-        #         if modified_data.edge_index.shape[0] == new_edge.shape[0]:  # Must match
-        #             modified_data.edge_index = torch.cat([modified_data.edge_index, new_edge], dim=1)
-        #         else:
-        #             raise ValueError("Edge dimensions do not match for concatenation.")
-
-        # self.modified_edgelist = modified_data.edge_index
-        # print("Modified Edge Index:", self.modified_edgelist)
+        md.edge_index = torch.cat((data.edge_index, new_connections), dim=1)
 
 
 if __name__ == "__main__":
