@@ -153,6 +153,8 @@ class PopularityAttack:
 
         md.edge_index = torch.cat((data.edge_index, new_connections), dim=1)
 
+        return md
+
 
 if __name__ == "__main__":
     target_node = 1
