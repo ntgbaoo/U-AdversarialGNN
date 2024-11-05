@@ -14,7 +14,7 @@ model_config:
   purification: GTrans
   ratio: 0.01
   split_indx: 2
-performance: 0.8808316430020284
+performance: 0.8803245436105477
 split:
   idx_test:
   - 88

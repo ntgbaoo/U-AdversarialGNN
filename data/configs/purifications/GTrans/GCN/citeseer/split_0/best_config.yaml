@@ -6,15 +6,15 @@ model_config:
   loop_adj: 1
   loop_feat: 4
   loss: train+1LC
-  lr_adj: 0.1
+  lr_adj: 0.5
   lr_feat: 0.001
   model_name: GCN
   noise_feature: false
   noise_structure: false
   purification: GTrans
-  ratio: 0.05
+  ratio: 0.005
   split_indx: 0
-performance: 0.7914691943127962
+performance: 0.7962085308056872
 split:
   idx_test:
   - 1837

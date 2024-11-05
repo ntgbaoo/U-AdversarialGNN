@@ -1,20 +1,20 @@
 model: GCN
 model_config:
   dataset: citeseer
-  epochs: 10
+  epochs: 5
   existing_space: 1
   loop_adj: 1
   loop_feat: 4
   loss: train+1LC
-  lr_adj: 0.5
-  lr_feat: 0.001
+  lr_adj: 0.1
+  lr_feat: 1.0e-05
   model_name: GCN
   noise_feature: false
   noise_structure: false
   purification: GTrans
-  ratio: 0.05
+  ratio: 0.005
   split_indx: 4
-performance: 0.7677725118483413
+performance: 0.7725118483412322
 split:
   idx_test:
   - 1412
