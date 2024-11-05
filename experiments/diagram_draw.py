@@ -87,7 +87,7 @@ def draw_adversarial_defense_diagram(adversarials_list,datasets_list,models_list
         plt.show()
 
 def draw_adversarial_aggre_diagram(adversarials_list,datasets_list,model,setting = "evasion",aggr_list = ["max","median","sum"],
-                                     budgets_list = [1,2,3,4,5],save_fig = True, show = True):
+                                     budgets_list = [1,2,3,4,5],save_fig = True, show = True,column = "total"):
     plt.figure(figsize=(8, 6))
     for idx,aggr in enumerate(aggr_list):
         result_dir_path = f"data/results/{aggr}_best_config"
@@ -99,7 +99,7 @@ def draw_adversarial_aggre_diagram(adversarials_list,datasets_list,model,setting
                 results_df = pd.read_csv(results_file_path)
                 for budget in budgets_list:
                     row_results = results_df[results_df['budget'] == budget]
-                    success_rate = row_results['total'].values[0]
+                    success_rate = row_results[column].values[0]
                     mean, _ = extract_saved_result(success_rate)
                     adversarial_results[budget].append(mean)
         
@@ -115,7 +115,7 @@ def draw_adversarial_aggre_diagram(adversarials_list,datasets_list,model,setting
     plt.legend()
 
     if save_fig:
-        plt.savefig(f"{FIGURE_SAVE_PATH}/defense_perf_average_{setting}_aggr.png")
+        plt.savefig(f"{FIGURE_SAVE_PATH}/defense_perf_average_{setting}_aggr_{column}.png")
 
     if show:
         plt.show()
@@ -139,6 +139,6 @@ if __name__ == "__main__":
 
     # draw_adversarial_defense_diagram(adversarials_list,datasets_list, defense_list,setting="poision",save_fig=True)
 
-    draw_adversarial_aggre_diagram(adversarials_list,datasets_list,"GSAGE","poision",save_fig=True,aggr_list=aggrs_list)
+    draw_adversarial_aggre_diagram(adversarials_list,datasets_list,"GSAGE","poision",save_fig=True,aggr_list=aggrs_list,column="low_degree")
     
     
