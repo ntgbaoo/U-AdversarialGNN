@@ -1,20 +1,20 @@
 model: GCN
 model_config:
   dataset: pubmed
-  epochs: 5
+  epochs: 10
   existing_space: 1
   loop_adj: 1
   loop_feat: 4
   loss: train+1LC
-  lr_adj: 0.5
+  lr_adj: 0.1
   lr_feat: 1.0e-06
   model_name: GCN
   noise_feature: false
   noise_structure: false
   purification: GTrans
-  ratio: 0.005
+  ratio: 0.05
   split_indx: 0
-performance: 0.8737322515212982
+performance: 0.8767748478701826
 split:
   idx_test:
   - 18118
