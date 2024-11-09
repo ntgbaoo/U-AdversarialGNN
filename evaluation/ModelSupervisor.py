@@ -80,7 +80,7 @@ class ModelSupervisor:
         #Data
         self.number_nodes = data.num_nodes
         self.edge_index_torch = data.edge_index
-        self.edge_weight = data.edge_weight
+        self.edge_attr = data.edge_attr
         self.features_torch = data.x
         self.labels_torch = data.y
         
@@ -95,8 +95,8 @@ class ModelSupervisor:
         self.edge_index_torch = self.edge_index_torch.to(device)
         self.features_torch = self.features_torch.to(device)
         self.labels_torch = self.labels_torch.to(device)
-        if not self.edge_weight is None:
-            self.edge_weight = self.edge_weight.to(device)
+        if not self.edge_attr is None:
+            self.edge_attr = self.edge_attr.to(device)
 
     
         
@@ -105,9 +105,9 @@ class ModelSupervisor:
         self.optimizer.zero_grad()
         if self.model_name != "GRAND":
             if self.batch_size is not None:
-                out = self.model( self.features_torch, self.edge_index_torch,edge_weight = self.edge_weight ,batch_size = int(self.batch_size) )
+                out = self.model( self.features_torch, self.edge_index_torch,edge_weight = self.edge_attr ,batch_size = int(self.batch_size) )
             else:
-                out = self.model( self.features_torch, self.edge_index_torch,edge_weight = self.edge_weight)
+                out = self.model( self.features_torch, self.edge_index_torch,edge_weight = self.edge_attr)
             loss = F.cross_entropy(out[idx_train], self.labels_torch[idx_train])
         else:
             loss = self.model(self.features_torch, self.edge_index_torch,idx_train,self.labels_torch)
@@ -194,11 +194,11 @@ class ModelSupervisor:
                 data.edge_index = data.adj_t.nonzero(as_tuple=False).t()
         features_torch = data.x.to(self.device)
         edge_index_torch = data.edge_index.to(self.device)
-        edge_weight = data.edge_weight
-        if not edge_weight is None:
-            edge_weight = edge_weight.to(self.device)
+        edge_attr = data.edge_attr
+        if not edge_attr is None:
+            edge_attr = edge_attr.to(self.device)
         with torch.set_grad_enabled(False):
-            output = self.model( features_torch, edge_index_torch,edge_weight)
+            output = self.model( features_torch, edge_index_torch,edge_attr)
         return output
 
     def get_model_prediction(self,data:Data):

@@ -139,6 +139,7 @@ if __name__ == "__main__":
 
     # draw_adversarial_defense_diagram(adversarials_list,datasets_list, defense_list,setting="poision",save_fig=True)
 
-    draw_adversarial_aggre_diagram(adversarials_list,datasets_list,"GSAGE","poision",save_fig=True,aggr_list=aggrs_list,column="low_degree")
+
+    draw_adversarial_aggre_diagram(adversarials_list,datasets_list,"GSAGE","evasion",save_fig=True,aggr_list=aggrs_list,column="other",show=False)
     
     

@@ -5,6 +5,7 @@ import warnings
 from torch_geometric.nn import aggr as torch_aggr
 from greatx.nn.models import SGC,RobustGCN,GNNGUARD,ElasticGNN
 from greatx.defense.purification import SVDPurification
+import torch_geometric.transforms as T
 
 
 # Hide all warnings
@@ -160,6 +161,22 @@ def load_graph_purification(device = None,**kwargs):
         args = kwargs
         args.pop('purification')
         purification = GTransPurification(device=device,**args)
+
+    elif purification_name == "GDC":
+        diffusion_method = args.get("diffusion_method")
+        alpha = args.get("alpha")
+        sparsification_method = args.get("sparsification_method")
+        k = args.get("k")
+        dim = args.get("dim")
+        
+        purification = T.GDC(
+        self_loop_weight=1,
+        normalization_in='sym',
+        normalization_out='col',
+        exact=True,
+        diffusion_kwargs=dict(method=diffusion_method, alpha=alpha),
+        sparsification_kwargs=dict(method=sparsification_method, k=k, dim=dim),
+    )
     else:
         raise Exception('Unsupport or undefined model{}'.format(purification_name))
     

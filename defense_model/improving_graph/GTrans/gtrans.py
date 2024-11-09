@@ -157,7 +157,7 @@ class GTransPurification(EdgeAgent,BaseTransform):
         
         data.edge_index = new_edge_index
         data.x = new_feat
-        data.edge_weight = new_edge_weight
+        data.edge_attr = new_edge_weight
         return data
 
 
