@@ -33,7 +33,7 @@ if __name__ == '__main__':
         exact=True,
     )
     data = transform(data)
-    config = ConfigHandler.load_model_config(model_type="GCN",config_name="best_config",dataset="cora",split=0)
+    config = ConfigHandler.load_model_config(model_type="SoftMedianGCN",config_name="best_config",dataset="cora",split=0)
     model_config = config['model_config']
     split_config = config['split']
     set_random(720)
