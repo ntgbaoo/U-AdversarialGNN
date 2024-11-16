@@ -1,8 +1,11 @@
 import pandas as pd
 import numpy
 
-def generate_summary_table(config,seting,dataset,model,adversarial_lists,save= True):
-    result_dir_path = f"data/results/{config}"
+def generate_summary_table(config,seting,dataset,model,adversarial_lists,save= True, no_degree = False):
+    if no_degree:
+        result_dir_path = f"data/results/ablation/no_degree/{config}"
+    else:
+        result_dir_path = f"data/results/{config}"
     result_dict = {}
     result_dict['budget'] = [1,2,3,4,5]
 
@@ -25,29 +28,57 @@ def generate_summary_table(config,seting,dataset,model,adversarial_lists,save= T
     return result_dict
 
 def retrieve_only_mean(dict:dict):
+    new_dict = {}
     for key in dict.keys():
         curr_arr = dict[key]
         
-        dict[key] = numpy.array([float(element.split(",")[0]) for element in curr_arr])
+        new_dict[key] = numpy.array([float(element.split(",")[0]) for element in curr_arr])
+    return new_dict
     
 
 
 def calc_difference_default_vs_best(seting,dataset,model,adversarial_lists,save=True):
-    default = generate_summary_table("default",seting,dataset,model,adversarial_lists,save=False)
-    best_config = generate_summary_table("best_config",seting,dataset,model,adversarial_lists,save=False)
-    best_config.pop("budget")
-    default.pop("budget")
-    retrieve_only_mean(default)
-    retrieve_only_mean(best_config)
+    ori_default = generate_summary_table("default",seting,dataset,model,adversarial_lists,save=False)
+    ori_best_config = generate_summary_table("best_config",seting,dataset,model,adversarial_lists,save=False)
+    ori_best_config.pop("budget")
+    ori_default.pop("budget")
+    default = retrieve_only_mean(ori_default)
+    best_config = retrieve_only_mean(ori_best_config)
 
     result_dict = {}
     result_dict['budget'] = [1,2,3,4,5]
     for adversarial in default.keys():
-        result_dict[adversarial] = numpy.round((best_config[adversarial] - default[adversarial]),decimals=3)
+        difference = numpy.round((best_config[adversarial] - default[adversarial]),decimals=3)
+        col = []
+        for idx,value in enumerate(difference):
+            col.append(f"{ori_default[adversarial][idx]},{value}")
+        result_dict[adversarial] = col
 
     if save:
         df = pd.DataFrame(result_dict)
         df.to_csv(f"data/results/weekly_meeting_tabels/config_difference_{dataset}_{model}_{seting}.csv") 
+    return result_dict
+
+def calc_difference_no_degree_vs_best(seting,dataset,model,adversarial_lists,save=True):
+    ori_default = generate_summary_table("default",seting,dataset,model,adversarial_lists,save=False,no_degree=True)
+    ori_best_config = generate_summary_table("best_config",seting,dataset,model,adversarial_lists,save=False)
+    ori_best_config.pop("budget")
+    ori_default.pop("budget")
+    default = retrieve_only_mean(ori_default)
+    best_config = retrieve_only_mean(ori_best_config)
+
+    result_dict = {}
+    result_dict['budget'] = [1,2,3,4,5]
+    for adversarial in default.keys():
+        difference = numpy.round((default[adversarial] - best_config[adversarial]),decimals=3)
+        col = []
+        for idx,value in enumerate(difference):
+            col.append(f"{ori_default[adversarial][idx]},{value}")
+        result_dict[adversarial] = col
+
+    if save:
+        df = pd.DataFrame(result_dict)
+        df.to_csv(f"data/results/weekly_meeting_tabels/config_difference_{dataset}_{model}_{seting}_no_degree.csv") 
     return result_dict
 
 def calc_difference_evasion_vs_poision(config,dataset,model,adversarial_lists,save=True):
@@ -79,6 +110,7 @@ if __name__ == "__main__":
     # result = calc_difference_evasion_vs_poision(config,dataset,model,adversarial_lists,save=True)
     # print(result)
 
-    calc_difference_default_vs_best(setting,"cora","GIN",adversarial_lists)
+    calc_difference_no_degree_vs_best("poision","cora","PNA",adversarial_lists)
+    # generate_summary_table("default","poision","citeseer","PNA",adversarial_lists,True)
     
     
