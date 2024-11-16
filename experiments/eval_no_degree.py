@@ -176,7 +176,7 @@ if __name__ == "__main__":
 
                 adversarial_supervisor = AdversarialSupervisor(data,attacker,idx_train,idx_val,idx_test,args.device,use_purification=use_purification,purification_config=purification_config,**configs)
                 high_result,low_result,other_result = adversarial_supervisor.target_attack(bucket_target_nodes,budget,evasion=True,poision=True, evasion_model=node_selector,seed = seed)
-                adversarial_supervisor.save_result(args.adversarial,seed,args.dataset,args.model,budget,args.purification,classifier_config_version)
+                adversarial_supervisor.save_result(args.adversarial,seed,args.dataset,args.model,budget,args.purification,f"{classifier_config_version}_no_degree")
                 evasion_dict['high_margin'].append( high_result[EVASION]/10)
                 poision_dict['high_margin'].append( high_result[POSION]/10)
 
