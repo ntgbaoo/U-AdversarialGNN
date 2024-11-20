@@ -18,6 +18,7 @@ from defense_model.improving_graph.GARNET.garnet import GarnetPurification
 from defense_model.improving_graph import GTransPurification
 from defense_model.improving_graph import JaccardPurification
 from defense_model.improving_architecture.aggregation.soft_median import SoftMedianAggregation
+from defense_model.improving_architecture.conv.GCORN import GCORN
 
 from utility.util import logger
 from static import *
@@ -127,6 +128,9 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
 
         model = GRAND(in_channel,nhid,nlayers,out_channel,
                       drop_out,drop_node_rate=drop_node_rate,temp=temp,lam=lambda_param,sample=sample)
+        
+    elif model_name == "GCORN":
+        model = GCORN(in_channel,nhid,out_channel)
 
 
     else:

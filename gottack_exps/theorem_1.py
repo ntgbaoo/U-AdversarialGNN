@@ -105,7 +105,9 @@ def random_walk_to_target(graph, source, target, max_steps=100):
         if not neighbors:  
             break
         current = random.choice(neighbors)
-    return None  
+    return max_steps  
+
+    
 
 def average_path_length_to_target(graph, source, target, trials=1000, max_steps=100):
     lengths = []
@@ -115,6 +117,33 @@ def average_path_length_to_target(graph, source, target, trials=1000, max_steps=
             lengths.append(length)
     return sum(lengths) / len(lengths) if lengths else float('inf')
 
+
+def generate_orbit_tables_from_sratch(dataset):
+    file_path = 'data/orbit/'
+    filename = file_path +"dpr_"+ dataset + '.out'
+    with open(filename, 'r') as file:
+        lines = file.readlines()
+
+    # Process the lines to create a list of lists
+    data_list = [list(map(int, line.split())) for line in lines]
+
+    # Convert the list of lists to a NumPy array
+
+    graphlet_features = np.array(data_list)
+    mylist = []
+    for i in range(len(graphlet_features)):
+        arr = graphlet_features[i]
+        sorted_indices = np.argsort(arr)[::-1]
+        if sorted_indices[0] < sorted_indices[1]:
+            s1 = str(sorted_indices[0]) + str(sorted_indices[1])
+        else:
+            s1 = str(sorted_indices[1]) + str(sorted_indices[0])
+
+        mylist.append([i, str(sorted_indices[0]), str(sorted_indices[1]), s1])
+
+    my_array = np.array(mylist)
+    df_2d = pd.DataFrame(my_array, columns=['node_number', 'Orbit_type_I', 'Orbit_type_II', 'two_Orbit_type'])
+    return df_2d
 
 if __name__ == '__main__':
     import networkx as nx
@@ -127,7 +156,8 @@ if __name__ == '__main__':
     '''
     random.seed(102)
     dataset_name = 'cora'
-    df_orbit = pd.read_csv('data/orbit/cora_orbit_table.csv')
+    df_orbit = generate_orbit_tables_from_sratch(dataset_name)
+    
     device = "cpu"
 
 
@@ -149,8 +179,8 @@ if __name__ == '__main__':
     result_dict = {}
     # for source in tqdm(all_target_nodes):
     #     for index, row in df_orbit.iterrows():
-    #         target = row['node_number']
-    #         orbit = row['two_Orbit_type']
+    #         target = int(row['node_number'])
+    #         orbit = int(row['two_Orbit_type'])
     #         len_shortest_path = nx.shortest_path_length(cora_graph,source,target)
     #         if not orbit in result_dict:
     #             result_dict[orbit] =  []
@@ -158,9 +188,9 @@ if __name__ == '__main__':
 
     for source in tqdm(all_target_nodes):
         for index, row in df_orbit.iterrows():
-            target = row['node_number']
-            orbit = row['two_Orbit_type']
-            hit_times = average_path_length_to_target(cora_graph,source,target,trials=3,max_steps=1000)
+            target = int(row['node_number'])
+            orbit = int(row['two_Orbit_type'])
+            hit_times = average_path_length_to_target(cora_graph,source,target,trials=10,max_steps=1000)
             if hit_times != float('inf'):
                 if not orbit in result_dict:
                     result_dict[orbit] =  []
@@ -177,6 +207,8 @@ if __name__ == '__main__':
 
     sorted_list = sorted(result_dict,key= lambda k:result_dict[k],reverse=True)
     for element in sorted_list:
+        if element == 1518:
+            print("======")    
         print(element,result_dict[element])
 
 
