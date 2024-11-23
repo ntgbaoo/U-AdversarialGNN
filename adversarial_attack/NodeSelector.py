@@ -14,6 +14,17 @@ from torch_geometric.data import Data
 
 class NodeSelector:
     @staticmethod
+    def _filter_node_minimum_degree(margin_dict,min_degree,data):
+        adj = to_scipy_sparse_matrix(data.edge_index)
+        degree_values = np.array(adj.sum(axis=1)).flatten().tolist()
+        valid_node = [node for node,degree in enumerate(degree_values) if degree >min_degree ]
+        valid_margin_dict = {}
+        for node in margin_dict.keys():
+            if node in valid_node:
+                valid_margin_dict[node] = margin_dict[node]
+        return valid_margin_dict
+    
+    @staticmethod
     def select_nodes_margin(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720,num_rand= 20,min_degree = 0):
         '''
         selecting nodes as reported in nettack paper:
@@ -34,14 +45,7 @@ class NodeSelector:
             margin_dict[idx] = margin
         
         if min_degree > 0:
-            adj = to_scipy_sparse_matrix(data.edge_index)
-            degree_values = np.array(adj.sum(axis=1)).flatten().tolist()
-            valid_node = [node for node,degree in enumerate(degree_values) if degree >min_degree ]
-            valid_margin_dict = {}
-            for node in margin_dict.keys():
-                if node in valid_node:
-                    valid_margin_dict[node] = margin_dict[node]
-            margin_dict = valid_margin_dict
+            margin_dict = NodeSelector._filter_node_minimum_degree(margin_dict,min_degree,data)
         sorted_margins = sorted(margin_dict.items(), key=lambda x:x[1], reverse=True)
         assert len(sorted_margins) >= 20+ num_rand, "Not enough nodes"
 
@@ -58,7 +62,7 @@ class NodeSelector:
         }
     
     @staticmethod
-    def select_nodes_margin_degree(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720,num_rand= 10,min_deree = 0):
+    def select_nodes_margin_degree(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720,num_rand= 10,min_degree = 0):
         '''
         selecting nodes as reported in nettack paper:
         (i) the 10 nodes with highest margin of classification, i.e. they are clearly correctly classified,
@@ -77,6 +81,8 @@ class NodeSelector:
             if margin < 0: # only keep the nodes correctly classified
                 continue
             margin_dict[idx] = margin
+        if min_degree > 0:
+            margin_dict = NodeSelector._filter_node_minimum_degree(margin_dict,min_degree,data)
         sorted_margins = sorted(margin_dict.items(), key=lambda x:x[1], reverse=True)
         high = [x for x, y in sorted_margins[: 10]]
         low = [x for x, y in sorted_margins[-10: ]]
