@@ -64,7 +64,7 @@ class PopularityAttack:
         self.budget = budget
 
     def set_max_perturbations(self, budget):
-        self.n_perturbations = budget
+        self.budget = budget
 
     def data(self):
         modified_data = self.modified_adj.tocoo()
@@ -98,7 +98,6 @@ class PopularityAttack:
             self.modified_edgelist = self.adj
 
         self.target_node = target
-        assert n_influencers < self.nnodes - 1, "number of influencers cannot be >= number of nodes in the graph!"
         neighbors = self.ori_adj[self.target_node].nonzero()[1]
         assert self.target_node not in neighbors 
         

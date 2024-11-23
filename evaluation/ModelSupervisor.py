@@ -28,13 +28,9 @@ class ModelSupervisor:
     def __init__(self,data:Data,device = "cpu",seed = 720,train_early_stopping = True,use_purification = False,purification_config = None,**model_args) -> None:
         # super().__init__()
         set_random(seed)
+        deg = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
+        degree_dist = torch.bincount(deg)
 
-        
-        
-        adj = to_scipy_sparse_matrix(
-            data.edge_index, num_nodes=data.num_nodes)
-        degrees = torch.tensor(np.array(adj.sum(axis=1)).flatten(),dtype=torch.long)  # Sum of rows (or columns, as it's symmetric)
-        degree_dist = torch.bincount(degrees)
         
 
         self.kwagrs = model_args

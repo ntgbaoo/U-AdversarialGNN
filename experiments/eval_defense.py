@@ -23,7 +23,7 @@ from adversarial_attack import SurrogateLoader
 from adversarial_attack import AdversarialSupervisor
 from static import *
 from utility.config import args
-from adversarial_attack import PRBCDAttack,GRBCDAttack
+from adversarial_attack import PRBCDAttack,GRBCDAttack, BaselineAttack
 from data_loader import Splitter
 
 
@@ -55,6 +55,8 @@ def load_attack(attack_method):
     elif attack_method == "PRBCD_greatx":
         from greatx.attack.targeted import PRBCDAttack
         return PRBCDAttack
+    elif attack_method == "baseline_attack":
+        return BaselineAttack
     
 
     

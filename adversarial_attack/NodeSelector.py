@@ -14,7 +14,7 @@ from torch_geometric.data import Data
 
 class NodeSelector:
     @staticmethod
-    def select_nodes_margin(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720,num_rand= 20):
+    def select_nodes_margin(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720,num_rand= 20,min_degree = 0):
         '''
         selecting nodes as reported in nettack paper:
         (i) the 10 nodes with highest margin of classification, i.e. they are clearly correctly classified,
@@ -32,7 +32,16 @@ class NodeSelector:
             if margin < 0: # only keep the nodes correctly classified
                 continue
             margin_dict[idx] = margin
+        
+        if min_degree > 0:
+            adj = to_scipy_sparse_matrix(data.edge_index)
+            degree_values = NodeSelector._calculate_degrees(adj,other)
+            valid_node = [node for (node,degree) in degree_values if degree >min_degree ]
+            for node in margin_dict.keys():
+                if not node in valid_node:
+                    margin_dict.pop(node) 
         sorted_margins = sorted(margin_dict.items(), key=lambda x:x[1], reverse=True)
+        assert len(sorted_margins) >= 20+ num_rand, "Not enough nodes"
 
         high = [x for x, y in sorted_margins[: 10]]
         low = [x for x, y in sorted_margins[-10: ]]
@@ -47,7 +56,7 @@ class NodeSelector:
         }
     
     @staticmethod
-    def select_nodes_margin_degree(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720,num_rand= 10):
+    def select_nodes_margin_degree(target_runner:IModelSupervisor,data:Data,idx_test,seed = 720,num_rand= 10,min_deree = 0):
         '''
         selecting nodes as reported in nettack paper:
         (i) the 10 nodes with highest margin of classification, i.e. they are clearly correctly classified,

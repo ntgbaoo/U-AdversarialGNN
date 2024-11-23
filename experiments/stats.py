@@ -70,7 +70,7 @@ def calc_difference_no_degree_vs_best(seting,dataset,model,adversarial_lists,sav
     result_dict = {}
     result_dict['budget'] = [1,2,3,4,5]
     for adversarial in default.keys():
-        difference = numpy.round((default[adversarial] - best_config[adversarial]),decimals=3)
+        difference = numpy.round((best_config[adversarial]-default[adversarial]),decimals=3)
         col = []
         for idx,value in enumerate(difference):
             col.append(f"{ori_default[adversarial][idx]},{value}")
