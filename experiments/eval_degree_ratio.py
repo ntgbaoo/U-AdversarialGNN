@@ -86,27 +86,24 @@ if __name__ == "__main__":
         splitter = Splitter(**split_config)
         folds = splitter.split(data.x.numpy(),data.y.numpy())
 
-    columns = ['budget','high_margin','low_margin','high_degree','low_degree','other','total','time','time_defense']
+    columns = ['budget','high_margin','low_margin','other','total','time','time_defense']
     rowlist_evasion = []
     rowlist_poision = []
     eps_list = [0.25,0.5,1]
-    min_degree = min(eps_list)
+    min_degree = int(1/min(eps_list))
+    print(min_degree)
 
 
     for eps in eps_list:
         evasion_dict = {
             'high_margin':[],
             'low_margin':[],
-            'high_degree':[],
-            'low_degree':[],
             'other':[],
             'total':[]
         }
         poision_dict = {
             'high_margin':[],
             'low_margin':[],
-            'high_degree':[],
-            'low_degree':[],
             'other':[],
             'total':[]
         }
@@ -141,8 +138,8 @@ if __name__ == "__main__":
                 time_defense_start = timeit.default_timer()
                 node_selector.train_model(idx_train,idx_val,idx_test)
                 time_defense.append(timeit.default_timer() - time_defense_start)
-                target_node_dict= NodeSelector.select_nodes_margin_degree(node_selector,data,idx_test,seed=seed)
-                category_list = ['high_margin','low_margin','highest_degree','lowest_degree','other']
+                target_node_dict= NodeSelector.select_nodes_margin(node_selector,data,idx_test,seed=seed,min_degree=min_degree)
+                category_list = ['high_margin','low_margin','other']
                 bucket_target_nodes = []
                 for cate in category_list:
                     bucket_target_nodes.append(target_node_dict[cate])
@@ -192,21 +189,16 @@ if __name__ == "__main__":
                 evasion_dict['low_margin'].append( low_result[EVASION]/10)
                 poision_dict['low_margin'].append( low_result[POSION]/10)
 
-                evasion_dict['high_degree'].append( highest_degree_result[EVASION]/10)
-                poision_dict['high_degree'].append( highest_degree_result[POSION]/10)
 
-                evasion_dict['low_degree'].append( lowest_degree_result[EVASION]/10)
-                poision_dict['low_degree'].append( lowest_degree_result[POSION]/10)
-
-                evasion_dict['other'].append( other_result[EVASION]/10)
-                poision_dict['other'].append( other_result[POSION]/10)
+                evasion_dict['other'].append( other_result[EVASION]/20)
+                poision_dict['other'].append( other_result[POSION]/20)
                 
-                evasion_count = high_result[EVASION]  + low_result[EVASION] + highest_degree_result[EVASION] + lowest_degree_result[EVASION] + other_result[EVASION]
-                poision_count = high_result[POSION] + low_result[POSION] + highest_degree_result[POSION] + lowest_degree_result[POSION] + other_result[POSION]
-                evasion_dict['total'].append(evasion_count/50)
-                poision_dict['total'].append(poision_count/50)
+                evasion_count = high_result[EVASION]  + low_result[EVASION]  + other_result[EVASION]
+                poision_count = high_result[POSION] + low_result[POSION]  + other_result[POSION]
+                evasion_dict['total'].append(evasion_count/40)
+                poision_dict['total'].append(poision_count/40)
 
-                time_total = high_result['time']  + low_result['time'] + highest_degree_result['time'] + lowest_degree_result['time'] + other_result['time']
+                time_total = high_result['time']  + low_result['time']  + other_result['time']
                 time.append(time_total)
 
             print(evasion_dict)
@@ -214,11 +206,9 @@ if __name__ == "__main__":
             print(time) 
 
         row_evasion = [
-            budget,
+            eps,
             get_stat(evasion_dict['high_margin']),
             get_stat(evasion_dict['low_margin']),
-            get_stat(evasion_dict['high_degree']),
-            get_stat(evasion_dict['low_degree']),
             get_stat(evasion_dict['other']),
             get_stat(evasion_dict['total']),
             get_stat(time),
@@ -227,11 +217,9 @@ if __name__ == "__main__":
         rowlist_evasion.append(row_evasion)
 
         row_poision = [
-            budget,
+            
             get_stat(poision_dict['high_margin']),
             get_stat(poision_dict['low_margin']),
-            get_stat(poision_dict['high_degree']),
-            get_stat(poision_dict['low_degree']),
             get_stat(poision_dict['other']),
             get_stat(poision_dict['total']),
             get_stat(time),

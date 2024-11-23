@@ -35,11 +35,13 @@ class NodeSelector:
         
         if min_degree > 0:
             adj = to_scipy_sparse_matrix(data.edge_index)
-            degree_values = NodeSelector._calculate_degrees(adj,other)
-            valid_node = [node for (node,degree) in degree_values if degree >min_degree ]
+            degree_values = np.array(adj.sum(axis=1)).flatten().tolist()
+            valid_node = [node for node,degree in enumerate(degree_values) if degree >min_degree ]
+            valid_margin_dict = {}
             for node in margin_dict.keys():
-                if not node in valid_node:
-                    margin_dict.pop(node) 
+                if node in valid_node:
+                    valid_margin_dict[node] = margin_dict[node]
+            margin_dict = valid_margin_dict
         sorted_margins = sorted(margin_dict.items(), key=lambda x:x[1], reverse=True)
         assert len(sorted_margins) >= 20+ num_rand, "Not enough nodes"
 
