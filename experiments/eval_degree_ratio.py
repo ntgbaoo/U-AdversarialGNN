@@ -246,18 +246,17 @@ if __name__ == "__main__":
 
 
     if args.purification is not None:
-        if not os.path.exists("{}{}/{}_{}/{}".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset)):
-            os.makedirs("{}{}/{}_{}/{}".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset))
+        if not os.path.exists("{}ablation/degree_ratio/{}/{}_{}/{}".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset)):
+            os.makedirs("{}ablation/degree_ratio/{}/{}_{}/{}".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset))
 
-        df_poision.to_csv("{}{}/{}_{}/{}/{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset,args.adversarial))
-        df_evasion.to_csv("{}{}/{}_{}/{}/{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification,args.dataset,args.adversarial))
+        df_poision.to_csv("{}ablation/degree_ratio/{}/{}_{}/{}/{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset,args.adversarial))
+        df_evasion.to_csv("{}ablation/degree_ratio/{}/{}_{}/{}/{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification,args.dataset,args.adversarial))
     else:
-        if not os.path.exists("{}{}/{}/{}/".format(PATH_RESULT,classifier_config_version,args.model,args.dataset)):
-            os.makedirs("{}{}/{}/{}/".format(PATH_RESULT,classifier_config_version,args.model,args.dataset))
+        if not os.path.exists("{}ablation/degree_ratio/{}/{}/{}/".format(PATH_RESULT,classifier_config_version,args.model,args.dataset)):
+            os.makedirs("{}ablation/degree_ratio/{}/{}/{}/".format(PATH_RESULT,classifier_config_version,args.model,args.dataset))
 
-        df_poision.to_csv("{}{}/{}/{}/{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial))
-        df_evasion.to_csv("{}{}/{}/{}/{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial))
-
+        df_poision.to_csv("{}ablation/degree_ratio/{}/{}/{}/{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial))
+        df_evasion.to_csv("{}ablation/no_degree/{}/{}/{}/{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial))
 
 
 
