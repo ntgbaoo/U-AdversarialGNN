@@ -80,6 +80,9 @@ EVASION = "evasion"
 POSION = "poision"
 GOTTACK ="GOttack"
 GRBCD_NAME = "GRBCD"
+PRBCD_greatX = "PRBCD_greatx"
+DEGREE_ATTACK = "degree_attack"
+L1_NORM_ATTACK = "l1norm_attack"
 
 
 

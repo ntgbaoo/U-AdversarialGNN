@@ -5,7 +5,8 @@ from .AdversarialSupervisor import AdversarialSupervisor
 from .NodeSelector import NodeSelector
 from .Nettack import Nettack
 from .GOttack import OrbitAttack
-from .BaselineAttack import BaselineAttack
+from .BaselineAttack import DegreeAttack,L1NormAttack,L2NormAttack,NuclearNormAttack,FrobeniusNormAttack
+from .GOttack import OrbitAttack
 
 classes = __all__ = [
     "PRBCDAttack",
@@ -15,6 +16,6 @@ classes = __all__ = [
     "NodeSelector",
     "Nettack",
     "OrbitAttack",
-    "BaselineAttack"
+    "DegreeAttack"
 
 ]
