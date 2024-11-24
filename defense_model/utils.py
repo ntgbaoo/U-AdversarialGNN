@@ -130,7 +130,7 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
                       drop_out,drop_node_rate=drop_node_rate,temp=temp,lam=lambda_param,sample=sample)
         
     elif model_name == "GCORN":
-        model = GCORN(in_channel,nhid,out_channel)
+        model = GCORN(in_channel,nhid,nlayers,out_channel,drop_out)
 
 
     else:

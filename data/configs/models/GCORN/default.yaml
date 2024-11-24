@@ -4,6 +4,8 @@ model_config:
   lr: 0.01
   num_epochs: 300
   optimizer: "ADAM"
-  patience: 500
   patience: 50
+  nlayers : 2
+  drop_out: 0.5
+
 

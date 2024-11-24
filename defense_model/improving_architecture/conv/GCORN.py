@@ -99,15 +99,17 @@ class GCORN(torch.nn.Module):
     hidden_channels (int) : The hidden dimension of the embeddings to be used
     out_channels (int) : The output dimension (the number of classes to predict)
     """
-    def __init__(self, in_channels, hidden_channels, out_channels):
+
+    def __init__(self, in_channels, hidden_channels, nlayers,out_channels,drop_out = 0.5):
         super().__init__()
 
         self.activation = nn.ReLU()
+        self.drop_out = drop_out
+        self.convs = []
+        self.convs.append(ConvClass(in_channels, hidden_channels,activation = self.activation))
 
-        self.conv1 = ConvClass(in_channels, hidden_channels,
-                                                activation = self.activation)
-        self.conv2 = ConvClass(hidden_channels, hidden_channels,
-                                                activation = self.activation)
+        for _ in range(1,nlayers):
+            self.convs.append(ConvClass(hidden_channels, hidden_channels,activation = self.activation))
 
         self.lin = MLPClassifier(hidden_channels, out_channels, self.activation)
 
@@ -115,9 +117,9 @@ class GCORN(torch.nn.Module):
     def forward(self, x, edge_index, edge_weight=None):
         adj_true = to_dense_adj(edge_index)[0, :,:]
         norm_adj = normalize_tensor_adj(adj_true)
-        x = self.conv1(x, norm_adj)
-        x = F.dropout(x, p=0.5, training=self.training)
-        x = self.conv2(x, norm_adj)
+        for conv in self.convs:
+            x = conv(x, norm_adj)
+            x = F.dropout(x, p=self.drop_out, training=self.training)
         x = self.lin(x)
 
         return F.log_softmax(x, dim=1)
