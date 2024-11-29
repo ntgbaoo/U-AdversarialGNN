@@ -5,6 +5,7 @@ import os
 
 PLOT_AVAILABLE_COLORS = ["blue","orange","green","red","gray","purple","brown","pink","cyan","olive"]
 FIGURE_SAVE_PATH = "data/figs"
+MARKER = ["o","v","s","P","*","X","D","^"]
 
 def extract_saved_result(result:str):
     result = result.replace("(","")
@@ -37,7 +38,7 @@ def draw_adversarial_average_diagram(adversarials_list,datasets_list,models_list
                     adversarial_results[budget].append(mean)
         
         diagram_y = [stat.mean(adversarial_results[budget]) for budget in budgets_list]
-        plt.plot(budgets_list,diagram_y,label=adversarial,color=PLOT_AVAILABLE_COLORS[idx], marker = "o")
+        plt.plot(budgets_list,diagram_y,label=adversarial,color=PLOT_AVAILABLE_COLORS[idx], marker = MARKER[idx])
 
     dataset_str = datasets_list[0] if len(datasets_list) == 1 else datasets_list.join(",")
     plt.title(f'Average attack success rate on defense models in {setting} setting on {dataset_str}')
@@ -121,6 +122,43 @@ def draw_adversarial_aggre_diagram(adversarials_list,datasets_list,model,setting
         plt.show()
 
 
+def draw_node_category(adversarials_list,datasets_list,setting = "evasion",config = "best_config",models_list = ["GCN","GIN","GSAGE","PNA"] , 
+                                     budgets_list = [1,2,3,4,5],save_fig = True, show = True,column = "total"):
+
+
+    plt.figure(figsize=(4, 4))
+    for idx,model in enumerate(models_list):
+        result_dir_path = f"data/results/{config}"
+
+        adversarial_results = {key : [] for key in budgets_list}
+        for adversarial in adversarials_list:
+            for dataset in datasets_list:
+                results_file_path = f"{result_dir_path}/{model}/{dataset}/{adversarial}_{setting}.csv"
+                results_df = pd.read_csv(results_file_path)
+                for budget in budgets_list:
+                    row_results = results_df[results_df['budget'] == budget]
+                    success_rate = row_results[column].values[0]
+                    mean, _ = extract_saved_result(success_rate)
+                    adversarial_results[budget].append(mean)
+        
+        diagram_y = [stat.mean(adversarial_results[budget]) for budget in budgets_list]
+        plt.plot(budgets_list,diagram_y,label=model,color=PLOT_AVAILABLE_COLORS[idx], marker = MARKER[idx])
+
+    dataset_str = datasets_list[0] if len(datasets_list) == 1 else ",".join(datasets_list)
+    node_cat = column.replace("_"," ")
+    # plt.title(f'Average miss-classification rate of {node_cat} nodes in {setting} setting on {dataset_str}')
+    plt.xlabel('Budget')
+    plt.ylim(0, 1)
+    plt.xticks(budgets_list)
+    plt.ylabel('Attack success rate (%)')
+    plt.legend()
+
+    if save_fig:
+        plt.savefig(f"{FIGURE_SAVE_PATH}/node_cat_{column}_{setting}_{config}.pdf")
+
+    if show:
+        plt.show()
+
 
 
 if __name__ == "__main__":
@@ -131,15 +169,16 @@ if __name__ == "__main__":
     aggrs_list = ["sum","mean","max","median"]
 
     #cora
-    datasets_list = ['cora']
-    defense_list = ["RobustGCN","GNNGuard","GRAND","ElasticGNN","GCN","GCN_Jaccard","GCN_GARNET","GCN_GTrans"]
-    adversarials_list = ["nettack","fga","prbcdattack"]
+    datasets_list = ['cora','citeseer','pubmed']
+    defense_list = ["RobustGCN","GNNGuard","GRAND","ElasticGNN","GCN_Jaccard","GCN_GARNET","GCN_GTrans"]
 
     # prepare_figure_dir()
 
     # draw_adversarial_defense_diagram(adversarials_list,datasets_list, defense_list,setting="poision",save_fig=True)
 
 
-    draw_adversarial_aggre_diagram(adversarials_list,datasets_list,"GSAGE","evasion",save_fig=True,aggr_list=aggrs_list,column="other",show=False)
+    # draw_adversarial_aggre_diagram(adversarials_list,datasets_list,"GSAGE","evasion",save_fig=True,aggr_list=aggrs_list,column="other",show=False)
     
+
+    draw_node_category(adversarials_list,datasets_list=datasets_list,setting="evasion",save_fig=True,column="other",show=True,config="default")
     

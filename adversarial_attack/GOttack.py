@@ -28,15 +28,12 @@ from utility.util import set_random
 from torch_geometric.data import Data
 from torch_geometric.utils import degree, to_scipy_sparse_matrix,to_edge_index,to_dense_adj
 from copy import copy
-
-
-
-
+import pandas as pd
 
 class OrbitAttack:
 
 
-    def __init__(self, data:Data , device='cpu',seed = 720):
+    def __init__(self, data:Data , device='cpu',seed = 720,orbit_type = 1518):
         """
         Input:
             model: surrogate model
@@ -68,10 +65,10 @@ class OrbitAttack:
 
         self.modified_adj = None
         self.modified_features = None
+        orbit_dict = pd.read_csv(f"data/orbit/{data.name}_orbit_table.csv")
+        self.matching_index = orbit_dict.index[orbit_dict["two_Orbit_type"] == orbit_type].tolist()
 
-    def update_orbit(self,orbit_dict,attack_type = 1518):
-        self.matching_index = orbit_dict.index[orbit_dict["two_Orbit_type"] == attack_type].tolist()
-
+    
 
     def setup_surrogate(self,model):
         self.surrogate = model

@@ -23,7 +23,7 @@ from adversarial_attack import SurrogateLoader
 from adversarial_attack import AdversarialSupervisor
 from static import *
 from utility.config import args
-from adversarial_attack import PRBCDAttack,GRBCDAttack, DegreeAttack,L1NormAttack
+from adversarial_attack import PRBCDAttack,GRBCDAttack, DegreeAttack,L1NormAttack,OrbitAttack
 from data_loader import Splitter
 
 
@@ -59,14 +59,15 @@ def load_attack(attack_method):
         return DegreeAttack
     elif attack_method == L1_NORM_ATTACK:
         return L1NormAttack
-    
+    elif attack_method == GOTTACK:
+        return OrbitAttack
 
     
 
 def get_surrogate_name(attack_method):
     if attack_method == SGA_NAME:
         return 'SGC'
-    elif attack_method in [NETTACK_NAME,FGA_NAME,PGDATTACK_NAME,IGATTACK_NAME,PRBCD_greatX]:
+    elif attack_method in [NETTACK_NAME,FGA_NAME,PGDATTACK_NAME,IGATTACK_NAME,PRBCD_greatX,GOTTACK]:
         return 'GCN_surrogate'
     else:
         return None
