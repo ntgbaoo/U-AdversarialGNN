@@ -135,7 +135,7 @@ class RandomDegreeAttack(RandomAttack):
         attacker_nodes = list(set(neighbors) - set([self.target, u]))
         threshold = int(len(attacker_nodes) * 0.5)
         if threshold > 5:
-            attacker_nodes = random.sample(attacker_nodes,threshold,threshold)
+            attacker_nodes = random.sample(attacker_nodes,threshold)
 
         if len(attacker_nodes) == 0:
             return None

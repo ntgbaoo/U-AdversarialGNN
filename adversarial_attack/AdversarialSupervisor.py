@@ -38,7 +38,7 @@ class AdversarialSupervisor:
         self.idx_train = idx_train
         self.idx_val = idx_val
         self.idx_test = idx_test
-        self.degrees = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long).numpy()
+        self.degrees = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long).cpu().numpy()
 
         self.labels = []
         self.evasion_preds = []
