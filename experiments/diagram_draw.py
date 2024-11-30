@@ -169,7 +169,7 @@ if __name__ == "__main__":
     aggrs_list = ["sum","mean","max","median"]
 
     #cora
-    datasets_list = ['cora','citeseer','pubmed']
+    datasets_list = ['cora','citeseer']
     defense_list = ["RobustGCN","GNNGuard","GRAND","ElasticGNN","GCN_Jaccard","GCN_GARNET","GCN_GTrans"]
 
     # prepare_figure_dir()
@@ -180,5 +180,5 @@ if __name__ == "__main__":
     # draw_adversarial_aggre_diagram(adversarials_list,datasets_list,"GSAGE","evasion",save_fig=True,aggr_list=aggrs_list,column="other",show=False)
     
 
-    draw_node_category(adversarials_list,datasets_list=datasets_list,setting="evasion",save_fig=True,column="other",show=True,config="default")
+    draw_node_category(adversarials_list,datasets_list=datasets_list,setting="poision",save_fig=True,column="other",show=False,config="default")
     

@@ -5,10 +5,13 @@ import sys
 from torch_geometric.utils import degree, to_scipy_sparse_matrix
 import copy
 import numpy as np
+import random
+
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from utility.util import set_random
+from greatx.attack.targeted import RandomAttack
 
 class DegreeAttack:
     def __init__(self, data:Data , device='cpu',seed = 720):
@@ -94,6 +97,68 @@ class NuclearNormAttack(NormAttack):
     @property
     def p(self):
         return "nuc"
+
+
+class RandomDegreeAttack(RandomAttack):
+    def __init__(self, data, device = "cpu", seed = None, name = None, **kwargs):
+        super().__init__(data, device, seed, name, **kwargs)
+        self.deg = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long).cpu().numpy()
+
+    def get_added_edge(self, influence_nodes):
+        u = random.choice(influence_nodes)
+        neighbors = self.adjacency_matrix[u].indices.tolist()
+        attacker_nodes = list(self.nodes_set - set(neighbors) -
+                              set([self.target, u]))
+        
+        attacker_nodes = random.sample(attacker_nodes,int(len(attacker_nodes) * 0.3))
+        best_node = None
+        best_degree = -1
+        for node in attacker_nodes:
+            if self.deg[node] > best_degree:
+                best_degree = self.deg[node]
+                best_node = node
+        v = best_node
+
+        if self.is_legal_edge(u, v) and not (v is None):
+            return (u, v)
+        return None
+    
+    def compute_norm(self,node):
+        neighbors = self.adjacency_matrix[node].indices.tolist()
+        neighbors.append(node)
+        return torch.norm(self.ori_data.x[neighbors,:]).item()
+        
+
+    def get_removed_edge(self, influence_nodes):
+        u = random.choice(influence_nodes)
+        neighbors = self.adjacency_matrix[u].indices.tolist()
+        attacker_nodes = list(set(neighbors) - set([self.target, u]))
+        threshold = int(len(attacker_nodes) * 0.5)
+        if threshold > 5:
+            attacker_nodes = random.sample(attacker_nodes,threshold,threshold)
+
+        if len(attacker_nodes) == 0:
+            return None
+
+        best_node = None
+        best_norm = float('-inf')
+        for node in attacker_nodes:
+            node_norm = self.compute_norm(node)
+            if node_norm > best_norm:
+                best_norm = node_norm
+                best_node = node
+
+        v = best_node
+
+        if self.is_singleton_edge(u, v) and not(v is None):
+            return None
+
+        if self.is_legal_edge(u, v):
+            return (u, v)
+        else:
+            return None
+    
+
 
        
        
