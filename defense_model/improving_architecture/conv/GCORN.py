@@ -113,6 +113,11 @@ class GCORN(torch.nn.Module):
 
         self.lin = MLPClassifier(hidden_channels, out_channels, self.activation)
 
+    def to(self,device):
+        self.lin.to(device)
+        for conv in self.convs:
+            conv.to(device)
+        return self
 
     def forward(self, x, edge_index, edge_weight=None):
         adj_true = to_dense_adj(edge_index)[0, :,:]
