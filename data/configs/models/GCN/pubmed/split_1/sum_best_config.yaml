@@ -1,14 +1,16 @@
 model_config:
   aggr: sum
-  drop_out: 0.5
-  hidden_unit: 128
+  batch_size: 32
+  drop_out: 0.7
+  hidden_unit: 32
   lr: 0.1
   model: GCN
   num_epochs: 1000
   num_layers: 2
   optimizer: ADAM
   patience: 50
-performance: 0.8656186612576064
+  weight_decay: 0.0005
+performance: 0.8772819472616633
 split:
   idx_test:
   - 18310
