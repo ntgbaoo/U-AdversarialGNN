@@ -1,0 +1,127 @@
+import pandas as pd
+import statistics as stat
+from pprint import pprint
+RESULT_PATH = "data/results"
+
+adversarial_name = {
+    'rnd' : 'Random',
+    'fga': 'FGA',
+    'nettack':'NETTACK',
+    'pgdattack': ' PGD',
+    'prbcdattack' : 'PR-BCD',
+    'sga' :'SGA'
+}
+
+setting_dict = {
+    "evasion": "Evasion",
+    "poision": "Poison"
+}
+
+def extract_saved_result(result:str):
+    result = result.replace("(","")
+    result = result.replace(")","")
+    result = result.replace(" ","")
+    mean,std = result.split(",")
+    return float(mean),float(std) 
+
+def generate_meta_table(budget,config_setting,no_degree = False,adversarials_list = ['nettack'], models_list= ["GCN"],datasets_list = ['cora']):
+    r"""
+    Generate table in format as follow:
+
+    \begin{table*}[tbp]
+    \centering
+    \caption{Misclassification rate (in $\%$) ($\uparrow$) of target nodes in four datasets where four backbone GNNs (GCN, GIN, GraphSAGE and PNA) are attacked in node classification with budget $\Delta=5$ in evasion setting.}
+    \label{tab:missclass-table}
+    \resizebox{\linewidth}{!}{ 
+        \begin{tabular}{cc | cccc | cccc | cccc |c }
+        \toprule 
+        &\multicolumn{1}{c}{Dataset}& \multicolumn{4}{c}{Cora} & \multicolumn{4}{c}{Citeseer}  &  \multicolumn{4}{c}{Pubmed} &   \\ \midrule
+        &Method  & GCN & GIN & GSAGE & PNA & GCN & GIN & GSAGE & PNA & GCN & GIN & GSAGE & PNA  & Ranking\\ \midrule
+        \multirow{7}{*}{\rotatebox{90}{\textbf{Evasion}}} &Random & 30.04 & 37.73 & 37.60 & 39.07 & 36.00 & 37.47 & 35.07 & 46.40 & 15.07 & 19.33 & 13.07 & 12.93\\
+            &FGA & \underline{64.67} & \underline{55.47} & \underline{55.33} & \underline{62.80} & 58.27 & \underline{55.33} & \underline{57.87} & \underline{56.13} & \underline{58.00} & \underline{55.47} & \underline{42.40} & \underline{50.80}\\ 
+            &Nettack & 63.73 & \textbf{65.20} & \textbf{63.73} & \textbf{68.80} & \underline{59.73} & \textbf{62.53} & \textbf{58.53} & \textbf{69.60} & \textbf{58.67} & \textbf{55.87} & \textbf{42.53} & \textbf{52.80}\\
+            &PGD & 59.20 & 47.60 & 46.13 & 48.40 & 55.47 & 45.60 & 45.33 & 42.53 & 44.93 & 39.87 & 32.00 & 30.93\\
+            &PR-BCD & \textbf{65.73} & 54.13 & 51.07 & 52.13 & \textbf{65.87} & 49.60 & 53.60 & 53.07 & 54.13 & 36.13 & 28.80 & 28.53\\
+            &SGA & 60.67 & 51.20 & 49.47 & 50.53 & 53.37 & 47.60 & 45.20 & 48.13 & 54.80 & 50.27 & 36.53 & 44.93\\
+        \hline
+
+    """
+    output = f"""
+    \\begin{{table*}}[tbp]
+    \\centering
+    \\caption{{Misclassification rate (in $\\%$) ($\\uparrow$) of target nodes in four datasets where four backbone GNNs (GCN, GIN, GraphSAGE and PNA) are attacked in node classification with budget $\\Delta=5$ in evasion setting.}}
+    \\label{{tab:missclass-table}}
+    \resizebox{{\\linewidth}}{{!}}{{ 
+        \\begin{{tabular}}{{cc | cccc | cccc | cccc |c }}
+        \\toprule 
+        &\\multicolumn{{1}}{{c}}{{Dataset}}& \\multicolumn{{4}}{{c}}{{Cora}} & \\multicolumn{{4}}{{c}}{{Citeseer}}  &  \\multicolumn{{4}}{{c}}{{Pubmed}} &   \\\\ \\midrule
+        &Method  & GCN & GIN & GSAGE & PNA & GCN & GIN & GSAGE & PNA & GCN & GIN & GSAGE & PNA  & Ranking\\\\ \\midrule
+    """
+    for setting in ["evasion","poision"]:
+        adversarial_rank = {}
+        best_second_record = {}
+        for dataset in datasets_list:
+            for model in models_list:
+                adversarial_performance = []
+                for adversarial in adversarials_list:
+                    result_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{adversarial}_{setting}.csv"
+                    resulf_df = pd.read_csv(result_file_path)
+                    results = resulf_df['total'].tolist()
+                    assert len(results) == 5
+                    mean,std = extract_saved_result(results[-1])
+
+                    adversarial_performance.append((adversarial,mean))
+                adversarial_sort = [x[0] for x in sorted(adversarial_performance,reverse=True, key=lambda item: item[1])]
+                for idx,sort_adv in enumerate(adversarial_sort):
+                    if not sort_adv in adversarial_rank:
+                        adversarial_rank[sort_adv]= []
+                    adversarial_rank[sort_adv].append(idx + 1)
+                
+                if not model in best_second_record:
+                    best_second_record[model] = {}
+                
+                best_second_record[model][dataset] = adversarial_sort[:2]
+        
+        for key in adversarial_rank.keys():
+            adversarial_rank[key] = stat.mean(adversarial_rank[key])
+
+        multi_row = len(adversarials_list)
+        for idx,adversarial in enumerate(adversarials_list):
+            if idx == 0:
+                row = f"""
+                \\multirow{{{multi_row}}}{{*}}{{\\rotatebox{{90}}{{\\textbf{{{setting_dict[setting]}}}}}}} & {adversarial_name[adversarial]}
+                """
+            else:
+                row = f"""
+                & {adversarial_name[adversarial]}
+                """
+
+            for dataset in datasets_list:
+                for model in models_list:
+                    best = best_second_record[model][dataset][0]
+                    second = best_second_record[model][dataset][1]
+                    result_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{adversarial}_{setting}.csv"
+                    resulf_df = pd.read_csv(result_file_path)
+                    results = resulf_df['total'].tolist()
+                    assert len(results) == 5
+                    mean,std = extract_saved_result(results[-1])
+
+                    if adversarial == best:
+                        row += f" &\\textbf{{{str(round(mean*100,2))}}}"
+                    elif adversarial == second:
+                        row += f" &\\underline{{{str(round(mean*100,2))}}}"
+                    else:
+                        row += f" & {str(round(mean*100,2))}"
+            row += "\\\\"
+
+            output += f"{row}"
+
+    return output
+
+
+if __name__ == "__main__":
+    adversarials_list = ['rnd','fga','nettack','pgdattack','prbcdattack','sga']
+    models_list = ['GCN',"GIN","GSAGE","PNA"]
+    datasets_list = ['cora','citeseer','pubmed']
+    output = generate_meta_table(1,"best_config",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list)
+    print(output)

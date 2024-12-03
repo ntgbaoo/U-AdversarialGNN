@@ -128,7 +128,7 @@ if __name__ == "__main__":
             print(configs)
             
 
-            for idx_run in range(2):
+            for idx_run in range(args.num_run):
                 seed = args.seed + idx_run
                 node_selector = ModelSupervisor(data,args.device,seed=seed,use_purification=use_purification,purification_config=purification_config,**configs)
                 time_defense_start = timeit.default_timer()
