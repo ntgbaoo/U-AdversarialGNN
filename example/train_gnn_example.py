@@ -1,9 +1,10 @@
 import torch.nn.functional as F
 from torch_geometric.datasets import Planetoid
 import torch_geometric.transforms as T
+from torch_geometric.utils import degree
+import torch
+import numpy as np
 
-
-        
 if __name__ == '__main__':
     import sys
     import os
@@ -24,7 +25,8 @@ if __name__ == '__main__':
                     args.seed) + '_log.txt')
     
     data,split = DataLoader.load(args.dataset)
-    config = ConfigHandler.load_model_config(model_type="GCN",config_name="max_best_config",dataset="cora",split=0)
+    
+    config = ConfigHandler.load_model_config(model_type="PNA",config_name="best_config",dataset="cora",split=0)
     model_config = config['model_config']
     split_config = config['split']
     set_random(720)

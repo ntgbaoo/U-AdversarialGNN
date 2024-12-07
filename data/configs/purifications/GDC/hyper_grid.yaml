@@ -1,0 +1,16 @@
+
+diffusion_method : 
+  - "ppr"
+alpha :
+  - 0.05 
+  - 0.1
+  - 0.15
+  - 0.2
+  - 0.25
+  - 0.30
+sparsification_method : 
+  - "topk"
+k : 
+  - 64 
+  - 128 
+dim : 0

@@ -1,0 +1,8 @@
+model_config:
+  diffusion_kwargs:
+    method : 'ppr'
+    alpha : 0.15
+  sparsification_kwargs:
+    method : "topk"
+    k : 128 
+    dim : 0

@@ -23,7 +23,9 @@ from adversarial_attack import SurrogateLoader
 from adversarial_attack import AdversarialSupervisor
 from static import *
 from utility.config import args
-from adversarial_attack import PRBCDAttack,GRBCDAttack
+from adversarial_attack import PRBCDAttack,GRBCDAttack, DegreeAttack,L1NormAttack,OrbitAttack,RandomDegreeAttack
+from data_loader import Splitter
+
 
 
 from greatx.utils import mark, split_nodes
@@ -46,20 +48,28 @@ def load_attack(attack_method):
     elif attack_method == IGATTACK_NAME:
         return IGAttack
     elif attack_method == PRBCD_NAME:
+        from adversarial_attack import PRBCDAttack,GRBCDAttack
         return PRBCDAttack
     elif attack_method == GRBCD_NAME:
         return GRBCDAttack
-    elif attack_method == "PRBCD_greatx":
+    elif attack_method == PRBCD_greatX:
         from greatx.attack.targeted import PRBCDAttack
         return PRBCDAttack
-    
+    elif attack_method == DEGREE_ATTACK:
+        return DegreeAttack
+    elif attack_method == L1_NORM_ATTACK:
+        return L1NormAttack
+    elif attack_method == GOTTACK:
+        return OrbitAttack
+    elif attack_method == "random_degree_attack":
+        return RandomDegreeAttack
 
     
 
 def get_surrogate_name(attack_method):
     if attack_method == SGA_NAME:
         return 'SGC'
-    elif attack_method in [NETTACK_NAME,FGA_NAME,PGDATTACK_NAME,IGATTACK_NAME,"PRBCD_greatx"]:
+    elif attack_method in [NETTACK_NAME,FGA_NAME,PGDATTACK_NAME,IGATTACK_NAME,PRBCD_greatX,GOTTACK]:
         return 'GCN_surrogate'
     else:
         return None
@@ -73,7 +83,14 @@ if __name__ == "__main__":
     # args.seed = 720
     # args.adversarial = SGA_NAME
 
+    classifier_config_version = args.config_setting
     data,split = DataLoader.load(args.dataset)
+
+    if classifier_config_version == "default":
+        split_config = ConfigHandler.load_split_config(config_name="default")
+        splitter = Splitter(**split_config)
+        folds = splitter.split(data.x.numpy(),data.y.numpy())
+
     columns = ['budget','high_margin','low_margin','high_degree','low_degree','other','total','time','time_defense']
     rowlist_evasion = []
     rowlist_poision = []
@@ -105,14 +122,20 @@ if __name__ == "__main__":
         for split_idx in range(5):
             if args.purification is not None:
                 use_purification = True
-                purification_config = ConfigHandler.load_purification_config(args.purification,args.model,"best_config",args.dataset,split=split_idx)['model_config']
+                purification_config = ConfigHandler.load_purification_config(args.purification,args.model,classifier_config_version,args.dataset,split=split_idx)['model_config']
                 print(purification_config)
 
-            split_model = ConfigHandler.load_model_config(args.model,args.config_setting,args.dataset,split_idx)
-            split = split_model['split']
+            split_model = ConfigHandler.load_model_config(args.model,classifier_config_version,args.dataset,split_idx)
+            if classifier_config_version != "default":
+                split = split_model['split']
+                idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_test']
+            else:
+                fold = folds[split_idx]
+                idx_train,idx_val,idx_test =fold.idx_train,fold.idx_val,fold.idx_test
+
             configs = split_model.get('model_config')
             print(configs)
-            idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_test']
+            
 
             for idx_run in range(args.num_run):
                 seed = args.seed + idx_run
@@ -130,15 +153,20 @@ if __name__ == "__main__":
                 # surrogate_supervisor = 
                 attacker = load_attack(args.adversarial)(data, device=args.device,seed=seed)
                 surrogate_name = get_surrogate_name(args.adversarial)
+                if classifier_config_version.split("_")[0] in AVAILABLE_AGGRE and "best" in classifier_config_version:
+                    surrogate_config_setting = "best_config"
+                else:
+                    surrogate_config_setting = classifier_config_version
 
                 if args.adversarial is GFATTACK_NAME and args.dataset == "cora":
                     attacker.T = data.num_nodes//2   
 
                 
                 if args.adversarial == PRBCD_NAME or args.adversarial == GRBCD_NAME:
-
                     attacker.update_config(10000,200)
-                    split_model_surrogate = ConfigHandler.load_model_config("GCN","best_config",args.dataset,split_idx)
+                    
+
+                    split_model_surrogate = ConfigHandler.load_model_config("GCN",surrogate_config_setting,args.dataset,split_idx)
                     configs_surrogate = split_model_surrogate.get('model_config')
                     surrogate = ModelSupervisor(data,args.device,seed=seed,**configs_surrogate)
                     surrogate.train_model(idx_train,idx_val,idx_test)
@@ -148,8 +176,7 @@ if __name__ == "__main__":
                         attacker.update_config(10000,125)
 
                 if surrogate_name is not None:
-                   
-                    split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,"best_config",args.dataset,split_idx)
+                    split_model_surrogate = ConfigHandler.load_model_config(surrogate_name,surrogate_config_setting,args.dataset,split_idx)
                     configs_surrogate = split_model_surrogate.get('model_config')
                     surrogate = ModelSupervisor(data,args.device,seed=seed,**configs_surrogate)
                     surrogate.train_model(idx_train,idx_val,idx_test)
@@ -160,7 +187,7 @@ if __name__ == "__main__":
 
                 adversarial_supervisor = AdversarialSupervisor(data,attacker,idx_train,idx_val,idx_test,args.device,use_purification=use_purification,purification_config=purification_config,**configs)
                 high_result,low_result, highest_degree_result,lowest_degree_result,other_result = adversarial_supervisor.target_attack(bucket_target_nodes,budget,evasion=True,poision=True, evasion_model=node_selector,seed = seed)
-                adversarial_supervisor.save_result(args.adversarial,seed,args.dataset,args.model,budget,args.purification)
+                adversarial_supervisor.save_result(args.adversarial,seed,args.dataset,args.model,budget,args.purification,classifier_config_version)
                 evasion_dict['high_margin'].append( high_result[EVASION]/10)
                 poision_dict['high_margin'].append( high_result[POSION]/10)
 
@@ -219,15 +246,19 @@ if __name__ == "__main__":
     df_poision = pd.DataFrame(rowlist_poision,columns=columns)
     df_evasion = pd.DataFrame(rowlist_evasion,columns=columns)
 
-    if not os.path.exists("{}{}/{}/".format(PATH_RESULT,args.model,args.dataset)):
-        os.makedirs("{}{}/{}/".format(PATH_RESULT,args.model,args.dataset))
 
     if args.purification is not None:
-        df_poision.to_csv("{}{}_{}/{}/{}_poision.csv".format(PATH_RESULT,args.model,args.purification ,args.dataset,args.adversarial))
-        df_evasion.to_csv("{}{}_{}/{}/{}_evasion.csv".format(PATH_RESULT,args.model,args.purification,args.dataset,args.adversarial))
+        if not os.path.exists("{}{}/{}_{}/{}".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset)):
+            os.makedirs("{}{}/{}_{}/{}".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset))
+
+        df_poision.to_csv("{}{}/{}_{}/{}/{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset,args.adversarial))
+        df_evasion.to_csv("{}{}/{}_{}/{}/{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification,args.dataset,args.adversarial))
     else:
-        df_poision.to_csv("{}{}/{}/{}_poision.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
-        df_evasion.to_csv("{}{}/{}/{}_evasion.csv".format(PATH_RESULT,args.model,args.dataset,args.adversarial))
+        if not os.path.exists("{}{}/{}/{}/".format(PATH_RESULT,classifier_config_version,args.model,args.dataset)):
+            os.makedirs("{}{}/{}/{}/".format(PATH_RESULT,classifier_config_version,args.model,args.dataset))
+
+        df_poision.to_csv("{}{}/{}/{}/{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial))
+        df_evasion.to_csv("{}{}/{}/{}/{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial))
 
 
 

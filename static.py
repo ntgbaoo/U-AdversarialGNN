@@ -51,6 +51,7 @@ ADAM = "ADAM"
 STEP_LR = "StepLR"
 GAMMA = "gamma"
 SPLIT_IDX = "split_idx"
+AVAILABLE_AGGRE = ['mean','sum','max','median','softmedian']
 
 #PATH
 BEST_CONFIG = "best_config_split_"
@@ -77,8 +78,11 @@ DICE_NAME = "dice"
 PRBCD_NAME = "prbcdattack"
 EVASION = "evasion"
 POSION = "poision"
-GOTTACK ="GOttack"
+GOTTACK ="gottack"
 GRBCD_NAME = "GRBCD"
+PRBCD_greatX = "PRBCD_greatx"
+DEGREE_ATTACK = "degree_attack"
+L1_NORM_ATTACK = "l1norm_attack"
 
 
 

@@ -5,6 +5,7 @@ import warnings
 from torch_geometric.nn import aggr as torch_aggr
 from greatx.nn.models import SGC,RobustGCN,GNNGUARD,ElasticGNN
 from greatx.defense.purification import SVDPurification
+import torch_geometric.transforms as T
 
 
 # Hide all warnings
@@ -16,8 +17,12 @@ from defense_model.improving_training.GRAND.grand import GRAND
 from defense_model.improving_graph.GARNET.garnet import GarnetPurification
 from defense_model.improving_graph import GTransPurification
 from defense_model.improving_graph import JaccardPurification
+from defense_model.improving_architecture.aggregation.soft_median import SoftMedianAggregation
+from defense_model.improving_architecture.conv.GCORN import GCORN
+
 from utility.util import logger
 from static import *
+
 
 def load_model(in_channel,out_channel,degree_dist,**kwargs):
 
@@ -29,6 +34,8 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
 
     if aggr == "median":
         aggr = torch_aggr.MedianAggregation()
+    if aggr == "softmedian":
+        aggr = SoftMedianAggregation()
     
     assert model_name is not None, "Please define model"
     assert in_channel is not None, "Please defne in_channel"
@@ -98,7 +105,6 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
     elif model_name == "SoftMedianGCN":
         # model = SoftMedianGCN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
         from torch_geometric.nn.models.basic_gnn import GCN
-        from defense_model.improving_architecture.aggregation.soft_median import SoftMedianAggregation
         model = GCN(in_channel,
                     nhid,
                     nlayers,
@@ -122,6 +128,9 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
 
         model = GRAND(in_channel,nhid,nlayers,out_channel,
                       drop_out,drop_node_rate=drop_node_rate,temp=temp,lam=lambda_param,sample=sample)
+        
+    elif model_name == "GCORN":
+        model = GCORN(in_channel,nhid,nlayers,out_channel,drop_out)
 
 
     else:
@@ -156,6 +165,22 @@ def load_graph_purification(device = None,**kwargs):
         args = kwargs
         args.pop('purification')
         purification = GTransPurification(device=device,**args)
+
+    elif purification_name == "GDC":
+        diffusion_method = args.get("diffusion_method")
+        alpha = args.get("alpha")
+        sparsification_method = args.get("sparsification_method")
+        k = args.get("k")
+        dim = args.get("dim")
+        
+        purification = T.GDC(
+        self_loop_weight=1,
+        normalization_in='sym',
+        normalization_out='col',
+        exact=True,
+        diffusion_kwargs=dict(method=diffusion_method, alpha=alpha),
+        sparsification_kwargs=dict(method=sparsification_method, k=k, dim=dim),
+    )
     else:
         raise Exception('Unsupport or undefined model{}'.format(purification_name))
     

@@ -24,12 +24,13 @@ class ModelGrid(Grid):
 
     def init_grid(self):
         optimizer_state = self.config_dict.pop(OPTIMIZER_STATE)
+        scheduler_state = None
         if SCHEDULER_STATE in self.config_dict:
             scheduler_state = self.config_dict.pop(SCHEDULER_STATE)
 
         super().init_grid()
         self._update_config_optimizer(optimizer_state)
-        if SCHEDULER_STATE in self.config_dict:
+        if not scheduler_state is None:
             self._update_configs_scheduler(scheduler_state)
         return self.all_configs
     

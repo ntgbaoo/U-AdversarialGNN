@@ -1,17 +1,20 @@
 model: GCN
 model_config:
-  epochs: 5
+  dataset: cora
+  epochs: 10
   existing_space: 1
   loop_adj: 1
   loop_feat: 4
   loss: train+1LC
   lr_adj: 0.01
-  lr_feat: 1e-3
+  lr_feat: 1.0e-06
+  model_name: GCN
   noise_feature: false
   noise_structure: false
   purification: GTrans
-  ratio: 5e-3
-performance: 0
+  ratio: 0.005
+  split_indx: 1
+performance: 0.8875502008032129
 split:
   idx_test:
   - 1173

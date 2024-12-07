@@ -27,14 +27,13 @@ from greatx.nn.models.surrogate import Surrogate
 from utility.util import set_random
 from torch_geometric.data import Data
 from torch_geometric.utils import degree, to_scipy_sparse_matrix,to_edge_index,to_dense_adj
+from copy import copy
+import pandas as pd
+
+class OrbitAttack:
 
 
-
-
-class OrbitAttack(BaseAttack):
-
-
-    def __init__(self, data:Data , device='cpu',seed = 720):
+    def __init__(self, data:Data , device='cpu',seed = 720,orbit_type = 1518):
         """
         Input:
             model: surrogate model
@@ -66,10 +65,10 @@ class OrbitAttack(BaseAttack):
 
         self.modified_adj = None
         self.modified_features = None
+        orbit_dict = pd.read_csv(f"data/orbit/{data.name}_orbit_table.csv")
+        self.matching_index = orbit_dict.index[orbit_dict["two_Orbit_type"] == orbit_type].tolist()
 
-    def update_orbit(self,orbit_dict,attack_type = 1518):
-        self.matching_index = orbit_dict.index[orbit_dict["two_Orbit_type"] == attack_type].tolist()
-
+    
 
     def setup_surrogate(self,model):
         self.surrogate = model
@@ -90,6 +89,18 @@ class OrbitAttack(BaseAttack):
         self.W = W.t().cpu().numpy()
         self.nclass = self.W.shape[-1]
 
+    def freeze_surrogate(self) -> "Surrogate":
+        """Freezie the parameters of the surrogate model.
+
+        Returns
+        -------
+        Surrogate
+            the class itself
+        """
+        for para in self.surrogate.parameters():
+            para.requires_grad_(False)
+        return self
+
     def set_max_perturbations(self,budget):
         self.n_perturbations = budget
 
@@ -100,6 +111,8 @@ class OrbitAttack(BaseAttack):
         self.feature_perturbations = []
         self.influencer_nodes = []
         self.potential_edges = []
+
+    
 
     def filter_potential_singletons(self, modified_adj):
         """Computes a mask for entries potentially leading to singleton nodes, i.e.
@@ -173,7 +186,7 @@ class OrbitAttack(BaseAttack):
 
         # adj_norm = utils.normalize_adj_tensor(modified_adj, sparse=True)
         self.adj_norm = utils.normalize_adj(self.modified_adj)
-        self.W = self.get_linearized_weight()
+        # self.W = self.get_linearized_weight()
 
         logits = (self.adj_norm @ self.adj_norm @ self.modified_features @ self.W )[target]
 
@@ -206,7 +219,6 @@ class OrbitAttack(BaseAttack):
             best_edge_ix = struct_scores.argmin()
             best_edge_score = struct_scores.min()
             best_edge = filtered_edges_final[best_edge_ix]
-            self.best_edge_list.append(best_edge)
 
 
             # perform edge perturbation

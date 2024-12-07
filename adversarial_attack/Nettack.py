@@ -129,6 +129,9 @@ class Nettack:
     def set_max_perturbations(self,budget):
         self.n_perturbations = budget
 
+    def set_idx_train(self,train_idx):
+        self.train_idx = train_idx
+
     def reset(self):
         self.modified_adj = None
         self.modified_features = None

@@ -6,6 +6,9 @@ import statistics as stats
 import io
 import timeit
 import json
+from torch_geometric.utils import degree
+import torch
+
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -35,12 +38,14 @@ class AdversarialSupervisor:
         self.idx_train = idx_train
         self.idx_val = idx_val
         self.idx_test = idx_test
+        self.degrees = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long).cpu().numpy()
+
         self.labels = []
         self.evasion_preds = []
         self.poision_preds = []        
 
     def target_attack(self,bucket_target_nodes:Tuple[List[int],...],budget,evasion = False, poision = True,
-                      evasion_model:ModelSupervisor= None,seed = 720,structure_attack = True, feature_attack = False):
+                      evasion_model:ModelSupervisor= None,seed = 720,structure_attack = True, feature_attack = False,use_epsilon = False):
         assert evasion or poision, "Either evasion or posion setting"
         return_tuple = ()
         counter = 0     
@@ -62,15 +67,23 @@ class AdversarialSupervisor:
                 self.labels.append(truth_label)
 
                 self.adversarial.reset()
-                self.adversarial.set_max_perturbations(budget)
+                if use_epsilon:
+                    node_budget = int(round(budget * self.degrees[node]))
+                    print(f"Node degree:{self.degrees[node]}")
+                    print(f"Node budget:{node_budget}")
+                else:
+                    node_budget = budget
+
+                self.adversarial.set_max_perturbations(node_budget)
                 start_attack = timeit.default_timer()
-                try:
-                    self.adversarial.attack(node,num_budgets = budget,structure_attack = structure_attack, feature_attack = feature_attack)
-                except Exception as e:
-                    duration = timeit.default_timer() - start_attack
-                    total += duration
-                    counter += 1
-                    continue
+                    
+                # try:
+                self.adversarial.attack(node,num_budgets = node_budget,structure_attack = structure_attack, feature_attack = feature_attack)
+                # except Exception as e:
+                #     duration = timeit.default_timer() - start_attack
+                #     total += duration
+                #     counter += 1
+                #     continue
                 duration = timeit.default_timer() - start_attack
                 total += duration
 
@@ -99,11 +112,11 @@ class AdversarialSupervisor:
             return_tuple += (result,)
         return return_tuple
 
-    def save_result(self,adversarial_name, seed, dataset_name,model_name,budget,purification_name = None ):
+    def save_result(self,adversarial_name, seed, dataset_name,model_name,budget,purification_name = None,config_setting="best_config" ):
         if purification_name is None:
-            saved_path = "{}{}/{}/budget{}/".format(PATH_CACHED_PRED,model_name,dataset_name,budget)
+            saved_path = "{}{}/{}/{}/budget{}/".format(PATH_CACHED_PRED,config_setting,model_name,dataset_name,budget)
         else:
-            saved_path = "{}{}_{}/{}/budget{}/".format(PATH_CACHED_PRED,model_name,purification_name,dataset_name,budget)
+            saved_path = "{}{}/{}_{}/{}/budget{}/".format(PATH_CACHED_PRED,config_setting,model_name,purification_name,dataset_name,budget)
 
         if not os.path.exists(saved_path):
             os.makedirs(saved_path)
@@ -116,5 +129,6 @@ class AdversarialSupervisor:
         }
         with open(saved_file, 'w') as json_file:
             json.dump(saved_dict, json_file,indent=4)
+
 
 
