@@ -28,11 +28,11 @@ def generate_meta_table(budget,config_setting,no_degree = False,adversarials_lis
     r"""
     Generate table in format as follow:
 
-    \begin{table*}[tbp]
-    \centering
-    \caption{Misclassification rate (in $\%$) ($\uparrow$) of target nodes in four datasets where four backbone GNNs (GCN, GIN, GraphSAGE and PNA) are attacked in node classification with budget $\Delta=5$ in evasion setting.}
-    \label{tab:missclass-table}
-    \resizebox{\linewidth}{!}{ 
+    \\begin{table*}[tbp]
+    \\centering
+    \\caption{Misclassification rate (in $\%$) ($\uparrow$) of target nodes in four datasets where four backbone GNNs (GCN, GIN, GraphSAGE and PNA) are attacked in node classification with budget $\Delta=5$ in evasion setting.}
+    \\label{tab:missclass-table}
+        resizebox{\linewidth}{!}{ 
         \begin{tabular}{cc | cccc | cccc | cccc |c }
         \toprule 
         &\multicolumn{1}{c}{Dataset}& \multicolumn{4}{c}{Cora} & \multicolumn{4}{c}{Citeseer}  &  \multicolumn{4}{c}{Pubmed} &   \\ \midrule
@@ -46,15 +46,23 @@ def generate_meta_table(budget,config_setting,no_degree = False,adversarials_lis
         \hline
 
     """
+    columns = 'cc | ' + ' | '.join(['c'* len(models_list)] * len(datasets_list)) + ' | c'
+
+    table_head = f"&\\multicolumn{{1}}{{c}}{{Dataset}}"
+    for dataset in datasets_list:
+        table_head += f"& \\multicolumn{{{len(models_list)}}}{{c}}{{{dataset}}}"
+
+    table_head += "& \\\\ \\midrule"
+    
     output = f"""
     \\begin{{table*}}[tbp]
     \\centering
-    \\caption{{Misclassification rate (in $\\%$) ($\\uparrow$) of target nodes in four datasets where four backbone GNNs (GCN, GIN, GraphSAGE and PNA) are attacked in node classification with budget $\\Delta=5$ in evasion setting.}}
+    \\caption{{Misclassification rate (in $\\%$) ($\\uparrow$) of target nodes in four datasets where four backbone GNNs (GCN, GIN, GraphSAGE and PNA) are attacked in node classification with budget $\\Delta={budget}$.}}
     \\label{{tab:missclass-table}}
-    \resizebox{{\\linewidth}}{{!}}{{ 
-        \\begin{{tabular}}{{cc | cccc | cccc | cccc |c }}
+        \\resizebox{{\\linewidth}}{{!}}{{ 
+        \\begin{{tabular}}{{ {columns} }}
         \\toprule 
-        &\\multicolumn{{1}}{{c}}{{Dataset}}& \\multicolumn{{4}}{{c}}{{Cora}} & \\multicolumn{{4}}{{c}}{{Citeseer}}  &  \\multicolumn{{4}}{{c}}{{Pubmed}} &   \\\\ \\midrule
+        {table_head}
         &Method  & GCN & GIN & GSAGE & PNA & GCN & GIN & GSAGE & PNA & GCN & GIN & GSAGE & PNA  & Ranking\\\\ \\midrule
     """
     for setting in ["evasion","poision"]:
@@ -68,7 +76,7 @@ def generate_meta_table(budget,config_setting,no_degree = False,adversarials_lis
                     resulf_df = pd.read_csv(result_file_path)
                     results = resulf_df['total'].tolist()
                     assert len(results) == 5
-                    mean,std = extract_saved_result(results[-1])
+                    mean,std = extract_saved_result(results[budget-1])
 
                     adversarial_performance.append((adversarial,mean))
                 adversarial_sort = [x[0] for x in sorted(adversarial_performance,reverse=True, key=lambda item: item[1])]
@@ -104,17 +112,25 @@ def generate_meta_table(budget,config_setting,no_degree = False,adversarials_lis
                     resulf_df = pd.read_csv(result_file_path)
                     results = resulf_df['total'].tolist()
                     assert len(results) == 5
-                    mean,std = extract_saved_result(results[-1])
+                    mean,std = extract_saved_result(results[budget-1])
+                    mean = round(mean*100,2)
+                    mean = "{:.2f}".format(mean)
 
                     if adversarial == best:
-                        row += f" &\\textbf{{{str(round(mean*100,2))}}}"
+                        row += f" &\\textbf{{{mean}}}"
                     elif adversarial == second:
-                        row += f" &\\underline{{{str(round(mean*100,2))}}}"
+                        row += f" &\\underline{{{mean}}}"
                     else:
-                        row += f" & {str(round(mean*100,2))}"
-            row += "\\\\"
+                        row += f" & {mean}"
+            row += f"& {round(adversarial_rank[adversarial],2)}\\\\"
 
             output += f"{row}"
+        output += "\\hline"
+    output += f"""
+    \\end{{tabular}}
+    }}
+    \\end{{table*}}
+    """
 
     return output
 
@@ -123,5 +139,5 @@ if __name__ == "__main__":
     adversarials_list = ['rnd','fga','nettack','pgdattack','prbcdattack','sga']
     models_list = ['GCN',"GIN","GSAGE","PNA"]
     datasets_list = ['cora','citeseer','pubmed']
-    output = generate_meta_table(1,"best_config",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list)
+    output = generate_meta_table(1,"default",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list)
     print(output)
