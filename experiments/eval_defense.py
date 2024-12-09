@@ -23,7 +23,7 @@ from adversarial_attack import SurrogateLoader
 from adversarial_attack import AdversarialSupervisor
 from static import *
 from utility.config import args
-from adversarial_attack import PRBCDAttack,GRBCDAttack, DegreeAttack,L1NormAttack,OrbitAttack,RandomDegreeAttack
+from adversarial_attack import PRBCDAttack,GRBCDAttack, DegreeAttack,L1NormAttack,OrbitAttack,RandomDegreeAttack,RandomOnlyAddAttack, RandomOnlyRemoveAttack
 from data_loader import Splitter
 
 
@@ -63,6 +63,11 @@ def load_attack(attack_method):
         return OrbitAttack
     elif attack_method == "random_degree_attack":
         return RandomDegreeAttack
+    elif attack_method == "random_degree_add_attack":
+        return RandomOnlyAddAttack
+    elif attack_method == "random_degree_remove_attack":
+        return RandomOnlyRemoveAttack
+    
 
     
 

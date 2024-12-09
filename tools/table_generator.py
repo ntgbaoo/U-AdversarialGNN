@@ -135,9 +135,162 @@ def generate_meta_table(budget,config_setting,no_degree = False,adversarials_lis
     return output
 
 
+def generate_complete_table(config_setting,no_degree = False,adversarials_list = ['nettack'], models_list= ["GCN"],datasets_list = ['cora']):
+    r"""
+    Generate table in format as follow:
+
+    \\begin{table}[ht]
+    \\centering
+    \\caption{}
+    \\small
+    \\renewcommand\\arraystretch{1.2}
+    \\setlength{\\tabcolsep}{3pt}
+    \\label{tab:missclass-table}
+        \\resizebox{\\linewidth}{!}{ 
+        \\begin{tabular}{ c| cc | ccccc | ccccc | ccccc | c  }
+        \\toprule
+           \\multicolumn{3}{c}{Dataset} & \\multicolumn{5}{c}{Cora} & \\multicolumn{5}{c}{Citeseer} & \\multicolumn{5}{c}{Pubmed} \\\\
+           \\hline
+           && $\\Delta \\rightarrow$ & 1 & 2 & 3 & 4 & 5 & 1 & 2 & 3 & 4 & 5 & 1 & 2 & 3 & 4 & 5& Avg. Rank \\\\
+    """
+    columns = 'c | cc | ' + ' | '.join(['c'* 5] * len(datasets_list)) + ' | c'
+    datasets_row = ' & '.join([f'\\multicolumn{{5}}{{c}}{{{dataset}}}' for dataset in datasets_list])
+    budget_row = ' & '.join(([' & '.join(['1','2','3','4','5'])] * len(datasets_list) ))
+
+    table_head = f"&\\multicolumn{{1}}{{c}}{{Dataset}}"
+    for dataset in datasets_list:
+        table_head += f"& \\multicolumn{{{len(models_list)}}}{{c}}{{{dataset}}}"
+
+    table_head += "& \\\\ \\midrule"
+    
+    output = f"""
+    \\begin{{table}}[ht]
+    \\centering
+    \\caption{{}}
+    \\small
+    \\renewcommand\\arraystretch{{1.2}}
+    \\setlength{{\\tabcolsep}}{{3pt}}
+    \\label{{tab:missclass-table}}
+        \\resizebox{{\\linewidth}}{{!}}{{ 
+                \\begin{{tabular}}{{ {columns} }}
+                \\toprule
+                \\multicolumn{{3}}{{c}}{{Dataset}} & {datasets_row} \\\\
+                \\hline
+                && $\\Delta \\rightarrow$ & {budget_row} & Avg. Rank\\\\
+                \\cline{{2-19}}
+
+
+    """
+    # print(output)
+    for setting in ["evasion","poision"]:
+        adversarial_ranking_all = {}
+        best_second_record_all = {}
+
+        for budget in [1,2,3,4,5]:
+            
+            best_second_record_budget = {}
+            for model in models_list:
+                if not model in adversarial_ranking_all:
+                    adversarial_ranking_all[model]= {}
+
+                for dataset in datasets_list:
+                    adversarial_performance = []
+                    for adversarial in adversarials_list:
+                        result_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{adversarial}_{setting}.csv"
+                        resulf_df = pd.read_csv(result_file_path)
+                        results = resulf_df['total'].tolist()
+                        assert len(results) == 5
+                        mean,std = extract_saved_result(results[budget-1])
+
+                        adversarial_performance.append((adversarial,mean))
+                    adversarial_sort = [x[0] for x in sorted(adversarial_performance,reverse=True, key=lambda item: item[1])]
+                    for idx,sort_adv in enumerate(adversarial_sort):
+                        if not sort_adv in adversarial_ranking_all[model]:
+                            adversarial_ranking_all[model][sort_adv]= []
+                        adversarial_ranking_all[model][sort_adv].append(idx + 1)
+                    
+                    if not model in best_second_record_budget:
+                        best_second_record_budget[model] = {}
+                    
+                    best_second_record_budget[model][dataset] = adversarial_sort[:2]
+
+                
+            best_second_record_all[budget] = best_second_record_budget
+
+        
+        for model in adversarial_ranking_all.keys():
+            adversarial_rank = adversarial_ranking_all[model]
+            for adversarial in adversarial_rank.keys():
+                # print(model,adversarial,adversarial_ranking_all[model][adversarial])
+                adversarial_ranking_all[model][adversarial] = stat.mean(adversarial_ranking_all[model][adversarial])
+                
+
+        multi_row = len(adversarials_list)
+        for indx_model, model in enumerate(models_list): 
+            # if indx_model == 0:
+            #     multi_row = len(models_list) * len(adversarials_list)
+            #     row = f"""
+            #     \\multirow{{{multi_row}}}{{*}}{{\\rotatebox{{90}}{{\\textbf{{{setting_dict[setting]}}}}}}}
+            #     """
+            # else:
+            #     row = f"""
+            #     &
+            #     """
+
+            for idx_adver,adversarial in enumerate(adversarials_list):
+                if idx_adver == 0:
+                    if indx_model == 0:
+                        multi_row = len(models_list) * len(adversarials_list)
+                        row = f"""
+                        \\multirow{{{multi_row}}}{{*}}{{\\rotatebox{{90}}{{\\textbf{{{setting_dict[setting]}}}}}}}"""
+                    else:
+                        row = f""""""
+                    multi_row = len(adversarials_list)
+                    row += f"&\\multirow{{{multi_row}}}{{*}}{{\\rotatebox{{90}}{{\\textbf{{{model}}}}}}}"
+                else:
+                    row = """
+                        &"""
+                row += f"& {adversarial_name[adversarial]}"
+
+                for dataset in datasets_list:
+                    result_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{adversarial}_{setting}.csv"
+                    for budget in [1,2,3,4,5]:
+                        best = best_second_record_all[budget][model][dataset][0]
+                        second = best_second_record_all[budget][model][dataset][1]
+                        resulf_df = pd.read_csv(result_file_path)
+                        results = resulf_df['total'].tolist()
+                        assert len(results) == 5
+                        mean,std = extract_saved_result(results[budget-1])
+                        mean = round(mean*100,2)
+                        mean = "{:.2f}".format(mean)
+                        std = "{:.2f}".format(std)
+
+                        if adversarial == best:
+                            row += f" &\\textbf{{{mean} $\\pm$ {std}}}"
+                        elif adversarial == second:
+                            row += f" &\\underline{{{mean} $\\pm$ {std}}}"
+                        else:
+                            row += f" & {mean} $\\pm$ {std}"
+                rank = "{:.2f}".format(adversarial_ranking_all[model][adversarial])
+                row += f"& {rank}\\\\"
+
+                output += f"{row}"
+            output += f"""
+                        \\cline{{2-19}}
+                    """
+        output += "\\hline"
+    output += f"""
+    \\bottomrule
+    \\end{{tabular}}
+    }}
+    \\end{{table}}
+    """
+
+    return output
+
 if __name__ == "__main__":
     adversarials_list = ['rnd','fga','nettack','pgdattack','prbcdattack','sga']
     models_list = ['GCN',"GIN","GSAGE","PNA"]
     datasets_list = ['cora','citeseer','pubmed']
-    output = generate_meta_table(1,"default",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list)
+    output = generate_complete_table("best_config",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list)
     print(output)

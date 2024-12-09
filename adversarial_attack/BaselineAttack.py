@@ -6,12 +6,13 @@ from torch_geometric.utils import degree, to_scipy_sparse_matrix
 import copy
 import numpy as np
 import random
+from tqdm import tqdm
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from utility.util import set_random
-from greatx.attack.targeted import RandomAttack
+from greatx.attack.targeted import RandomAttack,TargetedAttacker
 
 class DegreeAttack:
     def __init__(self, data:Data , device='cpu',seed = 720):
@@ -159,6 +160,84 @@ class RandomDegreeAttack(RandomAttack):
             return None
     
 
+class RandomOnlyAddAttack(RandomDegreeAttack):
+    def attack(self, target, *, num_budgets=None, threshold=0,
+               direct_attack=True, structure_attack=True, feature_attack=False,
+               disable=False):
 
-       
-       
+        TargetedAttacker.attack(self= self,target=target, target_label=None, num_budgets=num_budgets,
+                       direct_attack=direct_attack,
+                       structure_attack=structure_attack,
+                       feature_attack=feature_attack)
+        # assert 0 < threshold < 1
+
+        if direct_attack:
+            influence_nodes = [target]
+        else:
+            influence_nodes = self.adjacency_matrix[target].indices.tolist()
+
+        num_chosen = 0
+
+        with tqdm(total=self.num_budgets, desc='Peturbing graph...',
+                  disable=disable) as pbar:
+            while num_chosen < self.num_budgets:
+                # randomly choose to add or remove edges
+                if random.random() <= threshold:
+                    delta = 1
+                    edge = self.get_added_edge(influence_nodes)
+                else:
+                    delta = -1
+                    edge = self.get_removed_edge(influence_nodes)
+
+                if edge is not None:
+                    u, v = edge
+                    if delta > 0:
+                        self.add_edge(u, v, num_chosen)
+                    else:
+                        self.remove_edge(u, v, num_chosen)
+
+                    num_chosen += 1
+                    pbar.update(1)
+
+        return self
+    
+class RandomOnlyRemoveAttack(RandomDegreeAttack):
+    def attack(self, target, *, num_budgets=None, threshold=1,
+               direct_attack=True, structure_attack=True, feature_attack=False,
+               disable=False):
+
+        TargetedAttacker.attack(self = self,target=target, target_label=None, num_budgets=num_budgets,
+                       direct_attack=direct_attack,
+                       structure_attack=structure_attack,
+                       feature_attack=feature_attack)
+        # assert 0 < threshold < 1
+
+        if direct_attack:
+            influence_nodes = [target]
+        else:
+            influence_nodes = self.adjacency_matrix[target].indices.tolist()
+
+        num_chosen = 0
+
+        with tqdm(total=self.num_budgets, desc='Peturbing graph...',
+                  disable=disable) as pbar:
+            while num_chosen < self.num_budgets:
+                # randomly choose to add or remove edges
+                if random.random() <= threshold:
+                    delta = 1
+                    edge = self.get_added_edge(influence_nodes)
+                else:
+                    delta = -1
+                    edge = self.get_removed_edge(influence_nodes)
+
+                if edge is not None:
+                    u, v = edge
+                    if delta > 0:
+                        self.add_edge(u, v, num_chosen)
+                    else:
+                        self.remove_edge(u, v, num_chosen)
+
+                    num_chosen += 1
+                    pbar.update(1)
+
+        return self
