@@ -161,7 +161,7 @@ class RandomDegreeAttack(RandomAttack):
     
 
 class RandomOnlyAddAttack(RandomDegreeAttack):
-    def attack(self, target, *, num_budgets=None, threshold=0,
+    def attack(self, target, *, num_budgets=None, threshold=1,
                direct_attack=True, structure_attack=True, feature_attack=False,
                disable=False):
 
@@ -184,6 +184,7 @@ class RandomOnlyAddAttack(RandomDegreeAttack):
                 # randomly choose to add or remove edges
                 if random.random() <= threshold:
                     delta = 1
+                    print("add edge")
                     edge = self.get_added_edge(influence_nodes)
                 else:
                     delta = -1
@@ -197,6 +198,7 @@ class RandomOnlyAddAttack(RandomDegreeAttack):
                         self.remove_edge(u, v, num_chosen)
 
                     num_chosen += 1
+                    # print(num_chosen)
                     pbar.update(1)
 
         return self

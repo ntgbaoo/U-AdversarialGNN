@@ -83,6 +83,7 @@ class OrbitAttack:
             if W is None:
                 W = para
             else:
+                # print(W)
                 W = para @ W
 
         assert W is not None
@@ -407,8 +408,6 @@ class OrbitAttack:
         """
 
         data = copy(self.ori_data)
-        edge_weight = data.edge_weight
-        assert edge_weight is None, 'weighted graph is not supported now.'
 
         coo_matrix = self.modified_adj.tocoo()
         # Extract row and column indices (edges)
@@ -418,9 +417,6 @@ class OrbitAttack:
         # Stack the indices to create the edge list
         edge_list = torch.stack([row, col], dim=0)
         data.edge_index = edge_list
-
-        if edge_weight is not None:
-            data.edge_weight = edge_weight
 
         if self.attack_features:
             data.x = torch.tensor(self.modified_features,dtype=torch.float)
