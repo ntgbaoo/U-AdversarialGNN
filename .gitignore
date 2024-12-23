@@ -14,8 +14,12 @@ build/
 
 #Data folder
 data/dataset/
+data/figs/
+utility/data
+
 
 #Output log
 output/log/
 
-# /gottack_exps
+/gottack_exps
+data/results/gottack_exps
