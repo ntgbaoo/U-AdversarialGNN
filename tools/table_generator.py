@@ -11,7 +11,7 @@ adversarial_name = {
     'prbcdattack' : 'PR-BCD',
     'sga' :'SGA',
     'gottack' : 'GOttack',
-    'random_degree_attack': 'RL1-RND' 
+    'random_degree_attack': '\\propseRND' 
 }
 
 setting_dict = {
@@ -183,6 +183,7 @@ def generate_complete_table(config_setting,no_degree = False,adversarials_list =
 
 
     """
+    overal_ranking = {}
     # print(output)
     for setting in ["evasion","poision"]:
         adversarial_ranking_all = {}
@@ -214,7 +215,13 @@ def generate_complete_table(config_setting,no_degree = False,adversarials_list =
                     for idx,sort_adv in enumerate(adversarial_sort):
                         if not sort_adv in adversarial_ranking_all[model]:
                             adversarial_ranking_all[model][sort_adv]= []
+                        
+                        if not sort_adv in overal_ranking:
+                            overal_ranking[sort_adv] = []
+
                         adversarial_ranking_all[model][sort_adv].append(idx + 1)
+                        overal_ranking[sort_adv].append(idx + 1)
+
                     
                     if not model in best_second_record_budget:
                         best_second_record_budget[model] = {}
@@ -267,7 +274,7 @@ def generate_complete_table(config_setting,no_degree = False,adversarials_list =
 
                             if adversarial == best:
                                 row += f" &\\textbf{{{mean} $\\pm$ {std}}}"
-                            elif adversarial == second:
+                            elif adversarial == second and len(adversarials_list) > 2:
                                 row += f" &\\underline{{{mean} $\\pm$ {std}}}"
                             else:
                                 row += f" & {mean} $\\pm$ {std}"
@@ -289,7 +296,11 @@ def generate_complete_table(config_setting,no_degree = False,adversarials_list =
     \\end{{table}}
     """
 
-    return output
+    for adversarial in overal_ranking.keys():
+        overal_ranking[adversarial] = stat.mean(overal_ranking[adversarial])
+    
+
+    return output,overal_ranking
 
 def generate_difference_with_our_evaluation_table(config_setting,no_degree = False,adversarials_list = ['nettack'], models_list= ["GCN"],datasets_list = ['cora']):
     r"""
@@ -299,8 +310,8 @@ def generate_difference_with_our_evaluation_table(config_setting,no_degree = Fal
     \\centering
     \\caption{}
     \\small
-    \\renewcommand\\arraystretch{1.2}
-    \\setlength{\\tabcolsep}{3pt}
+    \\renewcommand\\arraystretch{1.1}
+    \\setlength{\\tabcolsep}{10pt}
     \\label{tab:missclass-table}
         \\resizebox{\\linewidth}{!}{ 
         \\begin{tabular}{ c| cc | ccccc | ccccc | ccccc | c  }
@@ -332,13 +343,76 @@ def generate_difference_with_our_evaluation_table(config_setting,no_degree = Fal
                 \\toprule
                 \\multicolumn{{3}}{{c}}{{Dataset}} & {datasets_row} \\\\
                 \\hline
-                && $\\Delta \\rightarrow$ & {budget_row} & Avg. Rank\\\\
+                && $\\Delta \\rightarrow$ & {budget_row} & Avg. Rank \\\\
                 \\cline{{2-19}}
 
 
     """
     # print(output)
+    difference_list = []
     for setting in ["evasion","poision"]:
+        our_adversarial_ranking_all = {}
+        compared_adversarial_ranking_all = {}
+        
+        for budget in [1,2,3,4,5]:
+            
+            for model in models_list:
+                if not model in our_adversarial_ranking_all:
+                    our_adversarial_ranking_all[model]= {}
+                    compared_adversarial_ranking_all[model] = {}
+
+                for dataset in datasets_list:
+                    our_adversarial_performance = []
+                    compared_adversarial_performance = []
+                    for adversarial in adversarials_list:
+                        try:
+
+                            our_result_file_path = f"{RESULT_PATH}/best_config/{model}/{dataset}/{adversarial}_{setting}.csv"
+                            our_resulf_df = pd.read_csv(our_result_file_path)
+                            our_results = our_resulf_df['total'].tolist()
+                            assert len(our_results) == 5
+                            our_mean,std = extract_saved_result(our_results[budget-1])
+                            our_adversarial_performance.append((adversarial,our_mean))
+
+                            if config_setting == "default":
+                                compared_results_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{adversarial}_{setting}.csv"
+                            elif config_setting == "no_degree":
+                                compared_results_file_path = f"{RESULT_PATH}/ablation/{config_setting}/best_config/{model}/{dataset}/{adversarial}_{setting}.csv"
+                            compare_resulf_df = pd.read_csv(compared_results_file_path)
+                            compare_results = compare_resulf_df['total'].tolist()
+                            assert len(compare_results) == 5
+                            compare_mean,std = extract_saved_result(compare_results[budget-1])
+                            compared_adversarial_performance.append((adversarial,compare_mean))
+
+                            
+                           
+                        except Exception as e:
+                            print(e)
+                            our_adversarial_performance.append((adversarial,0))
+                        
+                    our_adversarial_sort = [x[0] for x in sorted(our_adversarial_performance,reverse=True, key=lambda item: item[1])]
+                    for idx,sort_adv in enumerate(our_adversarial_sort):
+                        if not sort_adv in our_adversarial_ranking_all[model]:
+                            our_adversarial_ranking_all[model][sort_adv]= []
+                        our_adversarial_ranking_all[model][sort_adv].append(idx + 1)
+
+                    compare_adversarial_sort = [x[0] for x in sorted(compared_adversarial_performance,reverse=True, key=lambda item: item[1])]
+                    for idx,sort_adv in enumerate(compare_adversarial_sort):
+                        if not sort_adv in compared_adversarial_ranking_all[model]:
+                            compared_adversarial_ranking_all[model][sort_adv]= []
+                        compared_adversarial_ranking_all[model][sort_adv].append(idx + 1)
+                    
+
+        
+        for model in our_adversarial_ranking_all.keys():
+            adversarial_rank = our_adversarial_ranking_all[model]
+            for adversarial in adversarial_rank.keys():
+                our_adversarial_ranking_all[model][adversarial] = stat.mean(our_adversarial_ranking_all[model][adversarial])
+
+        for model in compared_adversarial_ranking_all.keys():
+            adversarial_rank = compared_adversarial_ranking_all[model]
+            for adversarial in adversarial_rank.keys():
+                compared_adversarial_ranking_all[model][adversarial] = stat.mean(compared_adversarial_ranking_all[model][adversarial])
                 
         multi_row = len(adversarials_list)
         for indx_model, model in enumerate(models_list): 
@@ -363,9 +437,9 @@ def generate_difference_with_our_evaluation_table(config_setting,no_degree = Fal
                     if config_setting == "default":
                         compared_results_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{adversarial}_{setting}.csv"
                     elif config_setting == "no_degree":
-                        compared_results_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{adversarial}_{setting}.csv"
+                        compared_results_file_path = f"{RESULT_PATH}/ablation/{config_setting}/best_config/{model}/{dataset}/{adversarial}_{setting}.csv"
                     for budget in [1,2,3,4,5]:
-                        
+                        # try:
                         our_resulf_df = pd.read_csv(our_result_file_path)
                         our_results = our_resulf_df['total'].tolist()
                         assert len(our_results) == 5
@@ -373,18 +447,39 @@ def generate_difference_with_our_evaluation_table(config_setting,no_degree = Fal
 
                         compared_resulf_df = pd.read_csv(compared_results_file_path)
                         compared_results = compared_resulf_df['total'].tolist()
+                        # print(compared_results_file_path)
+                        # print(compared_results)
                         assert len(compared_results) == 5
                         compared_mean,compared_std = extract_saved_result(compared_results[budget-1])
 
                         difference = round((our_mean-compared_mean)*100,2)
-                        difference = "{:.2f}".format(difference)
+                        difference_list.append(difference)
+                        if difference == 0:
+                            difference = "{:.2f}".format(difference)
+                        elif difference > 0:
+                            difference = "\positive{{{:.2f}}}".format(difference)
+                        elif difference < 0:
+                            difference = "\\negative{{{:.2f}}}".format(difference)
                         row += f" & {difference}"
+                        # except Exception as e:
+                            # print(e)
+                            # row += f" & XX.XX $\\pm$ XX"
+
                         
-                row += "\\\\"
+                # row += "\\\\"
+                rank = our_adversarial_ranking_all[model][adversarial] - compared_adversarial_ranking_all[model][adversarial]
+                if rank == 0:
+                    rank = "{:.2f}".format(rank)
+                elif rank > 0:
+                    rank = "\positive{{{:.2f}}}".format(rank)
+                elif rank < 0:
+                    rank = "\\negative{{{:.2f}}}".format(rank)
+                row += f"& {rank}\\\\"
+
 
                 output += f"{row}"
             output += f"""
-                        \\cline{{2-14}}
+                        \\cline{{2-19}}
                     """
         output += "\\hline"
     output += f"""
@@ -393,24 +488,28 @@ def generate_difference_with_our_evaluation_table(config_setting,no_degree = Fal
     }}
     \\end{{table}}
     """
-
-    return output
+    
+    return output,stat.mean(difference_list)
 
 if __name__ == "__main__":
-    # adversarials_list = ['random_degree_attack','fga','nettack','pgdattack','prbcdattack','sga','gottack']
-    adversarials_list = ['fga','nettack','pgdattack','prbcdattack','sga']
+    adversarials_list = ['random_degree_attack','fga','nettack','pgdattack','prbcdattack','sga','gottack']
+    # adversarials_list = ['random_degree_attack','rnd']
+
+    # adversarials_list = ['fga','nettack','pgdattack','prbcdattack','sga']
     models_list = ['GCN',"GIN","GSAGE","PNA"]
     defense_models = ['GCN_GARNET',"GNNGuard","GRAND"]
-    datasets_list = ['cora','citeseer','pubmed']
-    # datasets_list = ['cora']
+    # datasets_list = ['cora','citeseer','pubmed']
+    datasets_list = ['pubmed']
 
-    # output = generate_complete_table("best_config",adversarials_list=adversarials_list,models_list=defense_models,datasets_list=datasets_list)
-    # print(output)
+    output,overal_ranking = generate_complete_table("best_config",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list)
+    print(output)
+    print(overal_ranking)
     
     # difference
-    adversarials_list = ['fga','nettack','pgdattack','prbcdattack','sga']
-    models_list = ['GCN',"GIN","GSAGE","PNA"]
-    datasets_list = ['cora','citeseer','pubmed']
-    output = generate_difference_with_our_evaluation_table("default",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list)
-    print(output)
+    # adversarials_list = ['fga','nettack','pgdattack','prbcdattack','sga','gottack']
+    # models_list = ['GCN',"GIN","GSAGE","PNA"]
+    # datasets_list = ['cora','citeseer','pubmed']
+    # output,mean_diff = generate_difference_with_our_evaluation_table("default",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list)
+    # print(output)
+    # print(mean_diff)
 

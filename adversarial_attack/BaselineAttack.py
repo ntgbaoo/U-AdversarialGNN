@@ -101,9 +101,10 @@ class NuclearNormAttack(NormAttack):
 
 
 class RandomDegreeAttack(RandomAttack):
-    def __init__(self, data, device = "cpu", seed = None, name = None, **kwargs):
+    def __init__(self, data, device = "cpu", seed = None, name = None, r = 0.5,**kwargs):
         super().__init__(data, device, seed, name, **kwargs)
         self.deg = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long).cpu().numpy()
+        self.r = r
 
     def get_added_edge(self, influence_nodes):
         u = random.choice(influence_nodes)
@@ -111,7 +112,7 @@ class RandomDegreeAttack(RandomAttack):
         attacker_nodes = list(self.nodes_set - set(neighbors) -
                               set([self.target, u]))
         
-        attacker_nodes = random.sample(attacker_nodes,int(len(attacker_nodes) * 0.3))
+        attacker_nodes = random.sample(attacker_nodes,int(len(attacker_nodes) * self.r))
         best_node = None
         best_degree = -1
         for node in attacker_nodes:
@@ -134,7 +135,7 @@ class RandomDegreeAttack(RandomAttack):
         u = random.choice(influence_nodes)
         neighbors = self.adjacency_matrix[u].indices.tolist()
         attacker_nodes = list(set(neighbors) - set([self.target, u]))
-        threshold = int(len(attacker_nodes) * 0.5)
+        threshold = int(len(attacker_nodes) * self.r)
         if threshold > 5:
             attacker_nodes = random.sample(attacker_nodes,threshold)
 
