@@ -5,7 +5,7 @@ import os
 
 PLOT_AVAILABLE_COLORS = ["blue","orange","green","red","gray","purple","brown","pink","cyan","olive"]
 FIGURE_SAVE_PATH = "data/figs"
-MARKER = ["o","v","s","P","*","X","D","^"]
+MARKER = ["o","v","s","P","*","X","D","^",">","<"]
 
 def extract_saved_result(result:str):
     result = result.replace("(","")
@@ -71,10 +71,10 @@ def draw_adversarial_defense_diagram(adversarials_list,datasets_list,models_list
                     adversarial_results[budget].append(mean)
         
         diagram_y = [stat.mean(adversarial_results[budget]) for budget in budgets_list]
-        plt.plot(budgets_list,diagram_y,label=model,color=PLOT_AVAILABLE_COLORS[idx], marker = "o")
+        plt.plot(budgets_list,diagram_y,label=model,color=PLOT_AVAILABLE_COLORS[idx],marker = MARKER[idx],markersize=8)
 
     dataset_str = datasets_list[0] if len(datasets_list) == 1 else datasets_list.join(",")
-    plt.title(f'Average attack success rate on defense models in {setting} setting on {dataset_str}')
+    # plt.title(f'Average attack success rate on defense models in {setting} setting on {dataset_str}')
     plt.xlabel('Budget')
     plt.ylim(0, 1)
     plt.xticks(budgets_list)
@@ -82,7 +82,7 @@ def draw_adversarial_defense_diagram(adversarials_list,datasets_list,models_list
     plt.legend()
 
     if save_fig:
-        plt.savefig(f"{FIGURE_SAVE_PATH}/defense_perf_average_{setting}_{config}.png")
+        plt.savefig(f"{FIGURE_SAVE_PATH}/defense_perf_average_{setting}_{config}_{dataset_str}.pdf")
 
     if show:
         plt.show()
@@ -170,15 +170,22 @@ if __name__ == "__main__":
 
     #cora
     datasets_list = ['cora','citeseer']
-    defense_list = ["RobustGCN","GNNGuard","GRAND","ElasticGNN","GCN_Jaccard","GCN_GARNET","GCN_GTrans"]
+    defense_list = ["RobustGCN","GNNGuard","GRAND","ElasticGNN","GCN_Jaccard","GCN_GARNET"]
 
     # prepare_figure_dir()
 
-    # draw_adversarial_defense_diagram(adversarials_list,datasets_list, defense_list,setting="poision",save_fig=True)
+    datasets_list = ['pubmed']
+    defense_adversarial = {
+    'cora' : ['nettack','prbcdattack','gottack'],
+    'citeseer':['nettack','prbcdattack','fga'],
+    'pubmed':['nettack','fga','gottack']
+    }
+    print(len(defense_list) + len(models_list))
+    draw_adversarial_defense_diagram(defense_adversarial['pubmed'],datasets_list, defense_list + ['GSAGE'],setting="evasion",save_fig=True,show=False)
 
 
     # draw_adversarial_aggre_diagram(adversarials_list,datasets_list,"GSAGE","evasion",save_fig=True,aggr_list=aggrs_list,column="other",show=False)
     
 
-    draw_node_category(adversarials_list,datasets_list=datasets_list,setting="poision",save_fig=True,column="other",show=False,config="default")
+    # draw_node_category(adversarials_list,datasets_list=datasets_list,setting="poision",save_fig=True,column="other",show=False,config="default")
     

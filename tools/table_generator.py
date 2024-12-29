@@ -3,6 +3,12 @@ import statistics as stat
 from pprint import pprint
 RESULT_PATH = "data/results"
 
+defense_adversarial = {
+    'cora' : ['nettack','prbcdattack','gottack'],
+    'citeseer':['nettack','prbcdattack','fga'],
+    'pubmed':['nettack','fga','gottack']
+}
+
 adversarial_name = {
     'rnd' : 'Random',
     'fga': 'FGA',
@@ -491,6 +497,163 @@ def generate_difference_with_our_evaluation_table(config_setting,no_degree = Fal
     
     return output,stat.mean(difference_list)
 
+
+def generate_complete_table_for_defense(config_setting,no_degree = False, models_list= ["GCN"], dataset = "cora"):
+    r"""
+    Generate table in format as follow:
+
+    \\begin{table}[ht]
+    \\centering
+    \\caption{}
+    \\small
+    \\renewcommand\\arraystretch{1.2}
+    \\setlength{\\tabcolsep}{3pt}
+    \\label{tab:missclass-table}
+        \\resizebox{\\linewidth}{!}{ 
+        \\begin{tabular}{ c| cc | ccccc | ccccc | ccccc | c  }
+        \\toprule
+           \\multicolumn{3}{c}{Dataset} & \\multicolumn{5}{c}{Cora} & \\multicolumn{5}{c}{Citeseer} & \\multicolumn{5}{c}{Pubmed} \\\\
+           \\hline
+           && $\\Delta \\rightarrow$ & 1 & 2 & 3 & 4 & 5 & 1 & 2 & 3 & 4 & 5 & 1 & 2 & 3 & 4 & 5& Avg. Rank \\\\
+    """
+    columns = 'c | cc | ccccc | c'
+    budget_row = ' & '.join(['1','2','3','4','5'])
+
+    
+    output = f"""
+    \\begin{{table}}[ht]
+    \\centering
+    \\caption{{}}
+    \\small
+    \\renewcommand\\arraystretch{{1.2}}
+    \\setlength{{\\tabcolsep}}{{3pt}}
+    \\label{{tab:missclass-table}}
+        \\resizebox{{\\linewidth}}{{!}}{{ 
+                \\begin{{tabular}}{{ {columns} }}
+                \\toprule
+                \\hline
+                && $\\Delta \\rightarrow$ & {budget_row} & Avg. Rank\\\\
+                \\cline{{2-9}}
+
+
+    """
+    adversarials_list = defense_adversarial[dataset]
+    # print(output)
+    for setting in ["evasion","poision"]:
+        defense_ranking_all = {}
+        best_second_record_all = {}
+
+        for budget in [1,2,3,4,5]:
+            
+            best_second_record_budget = {}
+            for adversarial in adversarials_list:
+            
+                if not adversarial in defense_ranking_all:
+                    defense_ranking_all[adversarial]= {}
+
+                adversarial_performance = []
+                # for adversarial in adversarials_list:
+                for model in models_list:
+                    try:
+                        result_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{adversarial}_{setting}.csv"
+                        resulf_df = pd.read_csv(result_file_path)
+                        results = resulf_df['total'].tolist()
+                        assert len(results) == 5
+                        mean,std = extract_saved_result(results[budget-1])
+                        adversarial_performance.append((model,mean))
+                    except Exception as e:
+                        print(e)
+                        adversarial_performance.append((model,0))
+                    
+                defense_sort = [x[0] for x in sorted(adversarial_performance, key=lambda item: item[1])]
+                for idx,sort_defense in enumerate(defense_sort):
+                    if not sort_defense in defense_ranking_all[adversarial]:
+                        defense_ranking_all[adversarial][sort_defense]= []
+                    
+                    
+
+                    defense_ranking_all[adversarial][sort_defense].append(idx + 1)
+
+                
+                # if not adversarial in best_second_record_budget:
+                #     best_second_record_budget[adversarial] = {}
+                
+                best_second_record_budget[adversarial] = defense_sort[:2]
+
+                
+            best_second_record_all[budget] = best_second_record_budget
+
+        
+        for adversarial in defense_ranking_all.keys():
+            model_rank = defense_ranking_all[adversarial]
+            for model in model_rank.keys():
+                defense_ranking_all[adversarial][model] = stat.mean(defense_ranking_all[adversarial][model])
+                
+
+        # multi_row = len(models_list)
+        for idx_adver,adversarial in enumerate(adversarials_list):
+
+            for indx_model, model in enumerate(models_list): 
+            # for idx_adver,adversarial in enumerate(adversarials_list):
+                if indx_model == 0:
+                    if idx_adver == 0:
+                        multi_row = len(models_list) * len(adversarials_list)
+                        row = f"""
+                        \\multirow{{{multi_row}}}{{*}}{{\\rotatebox{{90}}{{\\textbf{{{setting_dict[setting]}}}}}}}"""
+                    else:
+                        row = f""""""
+                    multi_row = len(models_list)
+                    row += f"&\\multirow{{{multi_row}}}{{*}}{{\\rotatebox{{90}}{{\\textbf{{{adversarial_name[adversarial]}}}}}}}"
+                else:
+                    row = """
+                        &"""
+                model_name = model.replace("_","-")
+                row += f"& {model_name}"
+
+                result_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{adversarial}_{setting}.csv"
+                for budget in [1,2,3,4,5]:
+                    try:
+
+                        best = best_second_record_all[budget][adversarial][0]
+                        second = best_second_record_all[budget][adversarial][1]
+                        resulf_df = pd.read_csv(result_file_path)
+                        results = resulf_df['total'].tolist()
+                        assert len(results) == 5
+                        mean,std = extract_saved_result(results[budget-1])
+                        mean = round(mean*100,2)
+                        mean = "{:.2f}".format(mean)
+                        std = "{:.2f}".format(std)
+
+                        if model == best:
+                            row += f" &\\textbf{{{mean} $\\pm$ {std}}}"
+                        elif model == second and len(models_list) > 2:
+                            row += f" &\\underline{{{mean} $\\pm$ {std}}}"
+                        else:
+                            row += f" & {mean} $\\pm$ {std}"
+                    except Exception as e:
+                        print(e)
+                        row += f" & XX.XX $\\pm$ XX"
+                rank = "{:.2f}".format(defense_ranking_all[adversarial][model])
+                row += f"& {rank}\\\\"
+
+                output += f"{row}"
+            output += f"""
+                        \\cline{{2-9}}
+                    """
+        output += "\\hline"
+    output += f"""
+    \\bottomrule
+    \\end{{tabular}}
+    }}
+    \\end{{table}}
+    """
+
+    # for adversarial in overal_ranking.keys():
+    #     overal_ranking[adversarial] = stat.mean(overal_ranking[adversarial])
+    
+
+    return output
+
 if __name__ == "__main__":
     adversarials_list = ['random_degree_attack','fga','nettack','pgdattack','prbcdattack','sga','gottack']
     # adversarials_list = ['random_degree_attack','rnd']
@@ -501,9 +664,9 @@ if __name__ == "__main__":
     # datasets_list = ['cora','citeseer','pubmed']
     datasets_list = ['pubmed']
 
-    output,overal_ranking = generate_complete_table("best_config",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list)
-    print(output)
-    print(overal_ranking)
+    # output,overal_ranking = generate_complete_table("best_config",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list)
+    # print(output)
+    # print(overal_ranking)
     
     # difference
     # adversarials_list = ['fga','nettack','pgdattack','prbcdattack','sga','gottack']
@@ -512,4 +675,7 @@ if __name__ == "__main__":
     # output,mean_diff = generate_difference_with_our_evaluation_table("default",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list)
     # print(output)
     # print(mean_diff)
-
+    
+    defense_models = ['GCN_Jaccard','GCN_GARNET',"GNNGuard","GRAND","ElasticGNN","RobustGCN"]
+    output = generate_complete_table_for_defense("best_config",models_list=defense_models + models_list,dataset="pubmed")
+    print(output)
