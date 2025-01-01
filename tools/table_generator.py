@@ -662,11 +662,11 @@ if __name__ == "__main__":
     models_list = ['GCN',"GIN","GSAGE","PNA"]
     defense_models = ['GCN_GARNET',"GNNGuard","GRAND"]
     # datasets_list = ['cora','citeseer','pubmed']
-    datasets_list = ['pubmed']
+    datasets_list = ['cora']
 
-    # output,overal_ranking = generate_complete_table("best_config",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list)
-    # print(output)
-    # print(overal_ranking)
+    output,overal_ranking = generate_complete_table("best_config",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list)
+    print(output)
+    print(overal_ranking)
     
     # difference
     # adversarials_list = ['fga','nettack','pgdattack','prbcdattack','sga','gottack']
@@ -676,6 +676,6 @@ if __name__ == "__main__":
     # print(output)
     # print(mean_diff)
     
-    defense_models = ['GCN_Jaccard','GCN_GARNET',"GNNGuard","GRAND","ElasticGNN","RobustGCN"]
-    output = generate_complete_table_for_defense("best_config",models_list=defense_models + models_list,dataset="pubmed")
-    print(output)
+    # defense_models = ['GCN_Jaccard','GCN_GARNET',"GNNGuard","GRAND","ElasticGNN","RobustGCN"]
+    # output = generate_complete_table_for_defense("best_config",models_list=defense_models + models_list,dataset="pubmed")
+    # print(output)

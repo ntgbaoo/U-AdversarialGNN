@@ -1,4 +1,4 @@
-from torch_geometric.nn.models.basic_gnn import GIN,GraphSAGE,PNA,GAT,EdgeCNN
+from torch_geometric.nn.models.basic_gnn import GraphSAGE,PNA,GAT,EdgeCNN,GIN
 import sys
 import os
 import warnings
@@ -19,6 +19,7 @@ from defense_model.improving_graph import GTransPurification
 from defense_model.improving_graph import JaccardPurification
 from defense_model.improving_architecture.aggregation.soft_median import SoftMedianAggregation
 from defense_model.improving_architecture.conv.GCORN import GCORN
+# from defense_model.custom.model.GIN import GIN
 
 from utility.util import logger
 from static import *
