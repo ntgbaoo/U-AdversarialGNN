@@ -42,7 +42,6 @@ class PurificationSelector:
         counter = 1
         print("Finding the best configuration over {} configurataions".format(len(self.all_configs)))
         for index,config in enumerate(self.all_configs):
-            
             config_perf = self._run_model_on_config(self.model_config,config,seed)        
             self.results[index] = config_perf
             print(f'\rINFO : finished {counter}/{len(self.all_configs)}', end='')
