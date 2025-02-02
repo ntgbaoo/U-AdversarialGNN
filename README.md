@@ -1,6 +1,5 @@
-# U-AdversarialGNN
-Unifying Adversarial Attacks on Graph Neural Networks
-(cloned from  DeepRobust, 08 June 2024)
+# Adversarial GNN Benchmark
+TowardsPracticalandFairEvaluation
 
 
 ## Installation
@@ -37,26 +36,7 @@ pip install ogb
 
 
 
-*Expected result:* **True** *if you have GPU(s) available*
-
-6. Install dependencies for Gradient-free Graph Advantage Actor Critic (G2A2C)
-
-The paper can be found [here.](https://arxiv.org/pdf/2211.10782)
-
-```
-pip install  dgl -f https://data.dgl.ai/wheels/cu121/repo.html
-pip install pyro-ppl==1.8.1 pydantic
-```
-
-7. Install packages for performing hyper-parameters tuning in parallel
-
-```
-pip install tensorboard ray==2.10.0 
-pip install -U "ray[tune]"
-
-```
-
-8. Install additional packages
+6. Install additional packages
 
 ```
 pip install opt-einsum hnswlib
@@ -82,10 +62,15 @@ pip install torch_scatter==2.1.2
 pip install torch_sparse==0.6.18
 ```
 
-## Create branches and development
+## Experiment run instruction
 
-```
-git fetch origin
+### Fine tune GNNs and purification
 
-git checkout -b [branch] origin/[branch]
+1. GNNs
+
+To fine tune GNN models, please use `hyper_tuning_all_split.py`. For example:
 ```
+python experiments/hyper_tuning_all_split.py --model=GCN --dataset=ogbn-arxiv
+```
+
+2. 
