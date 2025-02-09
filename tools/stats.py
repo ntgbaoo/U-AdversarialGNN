@@ -143,15 +143,16 @@ if __name__ == "__main__":
     # result = calc_difference_evasion_vs_poision(config,dataset,model,adversarial_lists,save=True)
     # print(result)
 
-    calc_difference_no_degree_vs_best("poision","cora","PNA",adversarial_lists)
+    result_dict = calc_difference_no_degree_vs_best("poision","cora","PNA",adversarial_lists)
+    print(result_dict)
     # generate_summary_table("default","poision","citeseer","PNA",adversarial_lists,True)
 
 
-    adversarials_list = ['random_degree_attack','rnd']
-    models_list = ['GCN',"GIN","GSAGE","PNA"]
-    defense_models = ['GCN_GARNET',"GNNGuard","GRAND"]
-    datasets_list = ['cora','citeseer','pubmed']
+    # adversarials_list = ['random_degree_attack','rnd']
+    # models_list = ['GCN',"GIN","GSAGE","PNA"]
+    # defense_models = ['GCN_GARNET',"GNNGuard","GRAND"]
+    # datasets_list = ['cora','citeseer','pubmed']
 
-    print(compute_diff_between_attack(adversarials_list[0],adversarials_list[1],settings_list = ['evasion','poision'],models_list=['GRAND'],datasets_list=datasets_list))
+    # print(compute_diff_between_attack(adversarials_list[0],adversarials_list[1],settings_list = ['evasion','poision'],models_list=['GRAND'],datasets_list=datasets_list))
     
     

@@ -23,14 +23,18 @@ if __name__ == "__main__":
     hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
     grid_generator = ModelGrid(hyper_grid_config)
     all_configs = grid_generator.init_grid()
-    data,_ = DataLoader.load(args.dataset)
-    split_config = ConfigHandler.load_split_config(config_name="default")
+    data,default_split = DataLoader.load(args.dataset)
+    if args.use_default_split:
+        idx_train,idx_val,idx_test = default_split['train'], default_split['valid'],default_split['test']
+    else:
+        split_config = ConfigHandler.load_split_config(config_name="default")
 
-    splitter = Splitter(**split_config)
-    folds = splitter.split(data.x.numpy(),data.y.numpy())
+        splitter = Splitter(**split_config)
+        folds = splitter.split(data.x.numpy(),data.y.numpy())
+        
+        fold = folds[args.split_idx]
+        idx_train,idx_val,idx_test =fold.idx_train,fold.idx_val,fold.idx_test
     
-    fold = folds[args.split_idx]
-    idx_train,idx_val,idx_test =fold.idx_train,fold.idx_val,fold.idx_test
     hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
     modelSelector = ModelSelector(
         config_dict= hyper_grid_config,
@@ -43,7 +47,10 @@ if __name__ == "__main__":
     start = timeit.default_timer()
     modelSelector.process_model_selection()
     end = timeit.default_timer()
-    modelSelector.save_config(args.split_idx,args.dataset)
+    if args.use_default_split:
+        modelSelector.save_config("default",args.dataset)
+    else:
+        modelSelector.save_config(args.split_idx,args.dataset)
     print("Total time:{}".format(end -start))
     print(modelSelector.get_best_config())
     
