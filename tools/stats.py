@@ -1,5 +1,9 @@
 import pandas as pd
 import numpy
+import statistics as stat
+
+RESULT_PATH = "data/results"
+
 
 def generate_summary_table(config,seting,dataset,model,adversarial_lists,save= True, no_degree = False):
     if no_degree:
@@ -99,7 +103,36 @@ def calc_difference_evasion_vs_poision(config,dataset,model,adversarial_lists,sa
         df.to_csv(f"data/results/weekly_meeting_tabels/setting_difference_{dataset}_{model}_{config}.csv") 
     return result_dict
     
+def extract_saved_result(result:str):
+    result = result.replace("(","")
+    result = result.replace(")","")
+    result = result.replace(" ","")
+    mean,std = result.split(",")
+    return float(mean),float(std) 
     
+def compute_diff_between_attack(attack, compared_attack,config_setting="best_config",settings_list = ["evasion","poision"], models_list= ["GCN"],datasets_list = ['cora']):
+    differences = []
+    for setting in settings_list:
+        for budget in [1,2,3,4,5]:
+            for model in models_list:
+                for dataset in datasets_list:
+                    result_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{attack}_{setting}.csv"
+                    resulf_df = pd.read_csv(result_file_path)
+                    results = resulf_df['total'].tolist()
+                    assert len(results) == 5
+                    mean,std = extract_saved_result(results[budget-1])
+
+                    result_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{compared_attack}_{setting}.csv"
+                    resulf_df = pd.read_csv(result_file_path)
+                    results = resulf_df['total'].tolist()
+                    assert len(results) == 5
+                    compared_mean,compared_std = extract_saved_result(results[budget-1])
+                    # print(mean,compared_mean)
+                    differences.append(mean - compared_mean)
+    
+    return stat.mean(differences) 
+
+                        
 if __name__ == "__main__":
     config = "default"
     setting = "poision"
@@ -110,7 +143,16 @@ if __name__ == "__main__":
     # result = calc_difference_evasion_vs_poision(config,dataset,model,adversarial_lists,save=True)
     # print(result)
 
-    calc_difference_no_degree_vs_best("poision","cora","PNA",adversarial_lists)
+    result_dict = calc_difference_no_degree_vs_best("poision","cora","PNA",adversarial_lists)
+    print(result_dict)
     # generate_summary_table("default","poision","citeseer","PNA",adversarial_lists,True)
+
+
+    # adversarials_list = ['random_degree_attack','rnd']
+    # models_list = ['GCN',"GIN","GSAGE","PNA"]
+    # defense_models = ['GCN_GARNET',"GNNGuard","GRAND"]
+    # datasets_list = ['cora','citeseer','pubmed']
+
+    # print(compute_diff_between_attack(adversarials_list[0],adversarials_list[1],settings_list = ['evasion','poision'],models_list=['GRAND'],datasets_list=datasets_list))
     
     

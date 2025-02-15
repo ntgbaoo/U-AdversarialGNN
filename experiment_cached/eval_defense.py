@@ -99,7 +99,7 @@ if __name__ == "__main__":
     # args.adversarial = SGA_NAME
 
     classifier_config_version = args.config_setting
-    data,split = DataLoader.load(args.dataset)
+    data,default_split = DataLoader.load(args.dataset)
 
     if classifier_config_version == "default":
         split_config = ConfigHandler.load_split_config(config_name="default")
@@ -149,8 +149,8 @@ if __name__ == "__main__":
         use_purification = False
 
         
-
-        for split_idx in range(5):
+        split_idx_list = ["default_split"] if args.use_default_split else range(5)
+        for split_idx in split_idx_list:
             if args.purification is not None:
                 use_purification = True
                 purification_config = ConfigHandler.load_purification_config(args.purification,args.model,classifier_config_version,args.dataset,split=split_idx)['model_config']
@@ -160,6 +160,8 @@ if __name__ == "__main__":
             if classifier_config_version != "default":
                 split = split_model['split']
                 idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_test']
+            elif args.use_default_split:
+                idx_train, idx_val, idx_test = default_split['idx_train'],default_split['idx_val'],default_split['idx_test']
             else:
                 fold = folds[split_idx]
                 idx_train,idx_val,idx_test =fold.idx_train,fold.idx_val,fold.idx_test

@@ -2,10 +2,23 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import statistics as stat
 import os
+import numpy as np
 
 PLOT_AVAILABLE_COLORS = ["blue","orange","green","red","gray","purple","brown","pink","cyan","olive"]
 FIGURE_SAVE_PATH = "data/figs"
 MARKER = ["o","v","s","P","*","X","D","^",">","<"]
+
+adversarial_name = {
+    'rnd' : 'Random',
+    'fga': 'FGA',
+    'nettack':'NETTACK',
+    'pgdattack': ' PGD',
+    'prbcdattack' : 'PR-BCD',
+    'sga' :'SGA',
+    'gottack' : 'GOttack',
+    'random_degree_attack': 'I1D-RND' 
+}
+
 
 def extract_saved_result(result:str):
     result = result.replace("(","")
@@ -160,9 +173,114 @@ def draw_node_category(adversarials_list,datasets_list,setting = "evasion",confi
         plt.show()
 
 
+def draw_meta_fig(adversarials_list,dataset,setting = "evasion",config = "best_config",model = "GCN", budget = 1,save_fig = True, show = True,column = "total",legend = True, yaxis = True):
+    config_means = []
+    config_stds = []
+    default_means = []
+    default_stds = []
+    no_degree_means = []
+    no_degree_stds = []
+
+    for adversarial in adversarials_list:
+        # result for config
+        result_dir_path = f"data/results/{config}"
+        results_file_path = f"{result_dir_path}/{model}/{dataset}/{adversarial}_{setting}.csv"
+        results_df = pd.read_csv(results_file_path)
+        row_results = results_df[results_df['budget'] == budget]
+        success_rate = row_results[column].values[0]
+        mean, std = extract_saved_result(success_rate)
+        config_means.append(mean)
+        config_stds.append(std)
+
+        # result for compared_config
+        result_dir_path = f"data/results/default"
+        results_file_path = f"{result_dir_path}/{model}/{dataset}/{adversarial}_{setting}.csv"
+        results_df = pd.read_csv(results_file_path)
+        row_results = results_df[results_df['budget'] == budget]
+        success_rate = row_results[column].values[0]
+        mean, _ = extract_saved_result(success_rate)
+        default_means.append(mean)
+        default_stds.append(std)
+
+        result_dir_path = f"data/results/ablation/no_degree/best_config"
+        results_file_path = f"{result_dir_path}/{model}/{dataset}/{adversarial}_{setting}.csv"
+        results_df = pd.read_csv(results_file_path)
+        row_results = results_df[results_df['budget'] == budget]
+        success_rate = row_results[column].values[0]
+        mean, _ = extract_saved_result(success_rate)
+        no_degree_means.append(mean)
+        no_degree_stds.append(std)
+    
+    # Create the figure and axes
+    diagram_width =10
+    width = diagram_width + 0.2
+    if yaxis:
+        width += 1
+    if legend:
+        width += 4.8
+    fig, ax = plt.subplots(figsize=(width, 8))
+
+    # Define width for each bar
+    bar_width = 0.5
+
+
+    # Calculate x-positions for each bar group
+    x_positions = np.arange(len(adversarials_list))*2
+
+    # Plot the first set of bars
+    ax.bar(x_positions, default_means, bar_width, label='w/o model selection', color='orange',alpha=0.7,yerr= default_stds)
+
+    # Plot the second set of bars, shifted to the right
+    ax.bar(x_positions + bar_width, config_means, bar_width, label='Our evaluation', color='blue',alpha=0.7, yerr = config_stds)
+
+    # Plot the third set of bars, shifted further to the right
+    ax.bar(x_positions + 2 * bar_width, no_degree_means, bar_width, label='w/o node degree', color='green',alpha=0.7,yerr = no_degree_stds)
+
+    # Set y-ticks and labels
+    ax.set_xticks(x_positions + bar_width)  # Center y-ticks between bars
+    for i in range(len(adversarials_list)):
+        adversarials_list[i] = adversarial_name[adversarials_list[i]]
+    
+    if yaxis:
+        ax.set_ylabel('Misclassification Rate',fontsize=28)
+
+    ax.set_xticklabels(adversarials_list,fontsize=25)
+
+    # Add labels and title
+    ax.set_ylim(0, 1.0) 
+    ax.tick_params(axis='y', labelsize=26)
+
+    # ax.set_ylabel('Adversarial attacks')
+    # ax.set_title('Adversarial Accuracy vs. Correct Predictions')
+
+    # Add legend
+    if legend:
+        ax.legend(bbox_to_anchor=(1.01, 1), loc='upper left',borderaxespad=0.,fontsize = 25) 
+    
+    # ax.legend() 
+
+
+    # Adjust spacing between bars
+    if yaxis:
+        left = 0.10
+    else:
+        ax.set_yticklabels([]) 
+        left = 0.01
+    right = (diagram_width/width) + left
+    print(right)
+    plt.subplots_adjust(left=left, right=right)  # Adjust as needed
+    # Show the plot
+    if save_fig:
+            plt.savefig(f"{FIGURE_SAVE_PATH}/meta_{dataset}_budget{budget}_{model}_{setting}.pdf")
+
+    if show:
+        plt.show()
+   
+
+
 
 if __name__ == "__main__":
-    adversarials_list = ["nettack","fga","sga","rnd","pgdattack","prbcdattack","gfattack"]
+    adversarials_list = ["nettack","fga","sga","rnd","pgdattack","prbcdattack"]
     # adversarials_list = ["nettack","fga","sga","rnd","prbcdattack","gfattack"]
     datasets_list = ["cora","citeseer","pubmed"]
     models_list = ["GCN","GIN","GSAGE","PNA"]
@@ -180,12 +298,15 @@ if __name__ == "__main__":
     'citeseer':['nettack','prbcdattack','fga'],
     'pubmed':['nettack','fga','gottack']
     }
-    print(len(defense_list) + len(models_list))
-    draw_adversarial_defense_diagram(defense_adversarial['pubmed'],datasets_list, defense_list + ['GSAGE'],setting="evasion",save_fig=True,show=False)
+    # print(len(defense_list) + len(models_list))
+
+    # draw_adversarial_defense_diagram(defense_adversarial['pubmed'],datasets_list, defense_list + ['GSAGE'],setting="evasion",save_fig=True,show=False)
 
 
     # draw_adversarial_aggre_diagram(adversarials_list,datasets_list,"GSAGE","evasion",save_fig=True,aggr_list=aggrs_list,column="other",show=False)
     
 
     # draw_node_category(adversarials_list,datasets_list=datasets_list,setting="poision",save_fig=True,column="other",show=False,config="default")
-    
+
+    adversarials_list = ["random_degree_attack","fga","nettack","pgdattack","prbcdattack","sga","gottack"]
+    draw_meta_fig(adversarials_list[::-1],"pubmed",config="best_config",model="GSAGE",budget=5,save_fig=True,show=True, legend = True, yaxis = False,setting="poision")

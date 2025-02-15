@@ -308,7 +308,7 @@ def generate_complete_table(config_setting,no_degree = False,adversarials_list =
 
     return output,overal_ranking
 
-def generate_difference_with_our_evaluation_table(config_setting,no_degree = False,adversarials_list = ['nettack'], models_list= ["GCN"],datasets_list = ['cora']):
+def generate_difference_with_our_evaluation_table(config_setting,no_degree = False,adversarials_list = ['nettack'], models_list= ["GCN"],datasets_list = ['cora'],budgets = [1,2,3,4,5]):
     r"""
     Generate table in format as follow:
 
@@ -360,7 +360,7 @@ def generate_difference_with_our_evaluation_table(config_setting,no_degree = Fal
         our_adversarial_ranking_all = {}
         compared_adversarial_ranking_all = {}
         
-        for budget in [1,2,3,4,5]:
+        for budget in budgets:
             
             for model in models_list:
                 if not model in our_adversarial_ranking_all:
@@ -444,7 +444,7 @@ def generate_difference_with_our_evaluation_table(config_setting,no_degree = Fal
                         compared_results_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{adversarial}_{setting}.csv"
                     elif config_setting == "no_degree":
                         compared_results_file_path = f"{RESULT_PATH}/ablation/{config_setting}/best_config/{model}/{dataset}/{adversarial}_{setting}.csv"
-                    for budget in [1,2,3,4,5]:
+                    for budget in budgets:
                         # try:
                         our_resulf_df = pd.read_csv(our_result_file_path)
                         our_results = our_resulf_df['total'].tolist()
@@ -459,7 +459,7 @@ def generate_difference_with_our_evaluation_table(config_setting,no_degree = Fal
                         compared_mean,compared_std = extract_saved_result(compared_results[budget-1])
 
                         difference = round((our_mean-compared_mean)*100,2)
-                        difference_list.append(difference)
+                        difference_list.append(abs(difference))
                         if difference == 0:
                             difference = "{:.2f}".format(difference)
                         elif difference > 0:
@@ -538,6 +538,7 @@ def generate_complete_table_for_defense(config_setting,no_degree = False, models
 
     """
     adversarials_list = defense_adversarial[dataset]
+    defense_average_rank = {}
     # print(output)
     for setting in ["evasion","poision"]:
         defense_ranking_all = {}
@@ -634,6 +635,10 @@ def generate_complete_table_for_defense(config_setting,no_degree = False, models
                         print(e)
                         row += f" & XX.XX $\\pm$ XX"
                 rank = "{:.2f}".format(defense_ranking_all[adversarial][model])
+                if not model in defense_average_rank:
+                    defense_average_rank[model] = []
+
+                defense_average_rank[model].append(defense_ranking_all[adversarial][model])
                 row += f"& {rank}\\\\"
 
                 output += f"{row}"
@@ -650,6 +655,9 @@ def generate_complete_table_for_defense(config_setting,no_degree = False, models
 
     # for adversarial in overal_ranking.keys():
     #     overal_ranking[adversarial] = stat.mean(overal_ranking[adversarial])
+    for defense in defense_average_rank.keys():
+        defense_average_rank[defense] = stat.mean(defense_average_rank[defense])
+    print(defense_average_rank)
     
 
     return output
@@ -661,21 +669,22 @@ if __name__ == "__main__":
     # adversarials_list = ['fga','nettack','pgdattack','prbcdattack','sga']
     models_list = ['GCN',"GIN","GSAGE","PNA"]
     defense_models = ['GCN_GARNET',"GNNGuard","GRAND"]
-    # datasets_list = ['cora','citeseer','pubmed']
-    datasets_list = ['cora']
+    datasets_list = ['cora','citeseer','pubmed']
+    # datasets_list = ['cora']
 
-    output,overal_ranking = generate_complete_table("best_config",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list)
-    print(output)
-    print(overal_ranking)
+    # output,overal_ranking = generate_complete_table("best_config",adversarials_list=adversarials_list,models_list=defense_models ,datasets_list=datasets_list)
+    # print(output)
+    # print(overal_ranking)
     
     # difference
-    # adversarials_list = ['fga','nettack','pgdattack','prbcdattack','sga','gottack']
-    # models_list = ['GCN',"GIN","GSAGE","PNA"]
-    # datasets_list = ['cora','citeseer','pubmed']
-    # output,mean_diff = generate_difference_with_our_evaluation_table("default",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list)
-    # print(output)
+    adversarials_list = ['fga','nettack','pgdattack','prbcdattack','sga','gottack',"random_degree_attack"]
+    models_list = ['GCN',"GIN","GSAGE","PNA"]
+    datasets_list = ['cora','citeseer','pubmed']
+    # for budget in [1,2,3,4,5]:
+    # output,mean_diff = generate_difference_with_our_evaluation_table("default",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list,budgets=[1,2,3,4,5])
     # print(mean_diff)
+        # print(budget,mean_diff)
     
-    # defense_models = ['GCN_Jaccard','GCN_GARNET',"GNNGuard","GRAND","ElasticGNN","RobustGCN"]
-    # output = generate_complete_table_for_defense("best_config",models_list=defense_models + models_list,dataset="pubmed")
+    defense_models = ['GCN_Jaccard','GCN_GARNET',"GNNGuard","GRAND","ElasticGNN","RobustGCN"]
+    output = generate_complete_table_for_defense("best_config",models_list=defense_models + models_list,dataset="citeseer")
     # print(output)
