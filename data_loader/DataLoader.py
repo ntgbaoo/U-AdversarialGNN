@@ -4,9 +4,12 @@ import os
 import numpy as np
 from ogb.nodeproppred import PygNodePropPredDataset
 import torch_geometric.transforms as T
+from torch_geometric.datasets.heterophilous_graph_dataset import HeterophilousGraphDataset
+from torch_geometric.datasets import WikipediaNetwork
+import warnings
+import torch
 
-
-
+warnings.filterwarnings("ignore")
 
 
 # Edit path to import from different module
@@ -39,6 +42,20 @@ DATASETS_greatX = {
     'pdn',
 }
 
+PyG_HETEROPHILOUS_DATASET = {
+    'Roman-empire',
+    'Amazon-ratings',
+    'Minesweeper',
+    'Tolokers',
+    'Questions'
+}
+
+PyG_WIKI_NETWORK_DATASET = {
+    'chameleon',
+    'crocodile',
+    'squirrel'
+    }
+
 
 class DataLoader:
     @abstractmethod
@@ -58,6 +75,14 @@ class DataLoader:
             default_split  = ogb_dataset.get_idx_split()
             data = ogb_dataset[0]
             data.y = data.y.squeeze()
+
+        elif dataset in PyG_HETEROPHILOUS_DATASET:
+            data = HeterophilousGraphDataset(name = dataset, root = PATH_DATASET)
+            
+        elif dataset in PyG_WIKI_NETWORK_DATASET:
+            data = WikipediaNetwork(name = dataset, root = PATH_DATASET)[0]
+            default_split = data.train_mask[:,0],data.val_mask[:,0],data.test_mask[:,0]
+        
         else:
             raise Exception("Unsupport datasets")
         
@@ -66,9 +91,22 @@ class DataLoader:
     
 
 if __name__ == '__main__':
-    data_ogbn = DataLoader.load("ogbn-products")    
-    idx_train,idx_val,idx_test = data_ogbn.idx_train, data_ogbn.idx_val, data_ogbn.idx_test
-    adj, features, labels = data_ogbn.adj, data_ogbn.feature, data_ogbn.label
+    # data_ogbn = DataLoader.load("ogbn-products")    
+    # idx_train,idx_val,idx_test = data_ogbn.idx_train, data_ogbn.idx_val, data_ogbn.idx_test
+    # adj, features, labels = data_ogbn.adj, data_ogbn.feature, data_ogbn.label
+
+    # data_hete = DataLoader.load("Minesweeper")[0]
+    # print(data_hete)
+    # print(data_hete.train_mask.shape)
+    # print(data_hete.train_mask)
+
+    data_wiki,_ = DataLoader.load("squirrel")
+    print(data_wiki.train_mask[:,0])
+    print(torch.nonzero(data_wiki.train_mask[:,0], as_tuple=True)[0])
+    # print(data_hete)
+    # print(data_hete.train_mask.shape)
+    # print(data_hete.train_mask)
+
     
 
 

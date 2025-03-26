@@ -10,7 +10,7 @@ import timeit
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utility import ConfigHandler
-from data_loader import DataLoader
+from data_loader import DataLoader,PyG_WIKI_NETWORK_DATASET
 from greatx.attack.targeted import SGAttack,RandomAttack,DICEAttack,GFAttack,FGAttack,PGDAttack,IGAttack
 from adversarial_attack import Nettack
 from greatx.datasets import GraphDataset
@@ -162,6 +162,10 @@ if __name__ == "__main__":
                 idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_test']
             elif args.use_default_split:
                 idx_train, idx_val, idx_test = default_split['idx_train'],default_split['idx_val'],default_split['idx_test']
+            elif args.dataset in PyG_WIKI_NETWORK_DATASET:
+                #added heterophily datasets here
+                mask_train,mask_val,mask_test = data.train_mask[:,split_idx],data.val_mask[:,split_idx],data.test_mask[:,split_idx] 
+                idx_train,idx_val,idx_test = torch.nonzero(mask_train,as_tuple=True)[0], torch.nonzero(mask_val,as_tuple=True)[0],torch.nonzero(mask_test,as_tuple=True)[0]
             else:
                 fold = folds[split_idx]
                 idx_train,idx_val,idx_test =fold.idx_train,fold.idx_val,fold.idx_test

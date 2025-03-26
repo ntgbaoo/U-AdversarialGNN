@@ -3,6 +3,7 @@ import os
 import warnings
 import numpy as np
 import timeit
+import torch
 # Hide all warnings
 warnings.filterwarnings("ignore")
     
@@ -14,7 +15,7 @@ from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
 from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
 from evaluation import ModelSupervisor
 from evaluation import ModelSelector
-from data_loader import DataLoader
+from data_loader import DataLoader, PyG_WIKI_NETWORK_DATASET
 from data_loader import Splitter
 from utility import ConfigHandler
 from evaluation import ModelGrid
@@ -31,6 +32,10 @@ if __name__ == "__main__":
     for split_idx in range(0,5):
         fold = folds[split_idx]
         idx_train,idx_val,idx_test =fold.idx_train,fold.idx_val,fold.idx_test
+        if args.dataset in PyG_WIKI_NETWORK_DATASET:
+            mask_train,mask_val,mask_test = data.train_mask[:,split_idx],data.val_mask[:,split_idx],data.test_mask[:,split_idx] 
+            idx_train,idx_val,idx_test = torch.nonzero(mask_train,as_tuple=True)[0], torch.nonzero(mask_val,as_tuple=True)[0],torch.nonzero(mask_test,as_tuple=True)[0]
+            # print(idx_train)
         hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
         modelSelector = ModelSelector(
             config_dict= hyper_grid_config,
@@ -50,7 +55,3 @@ if __name__ == "__main__":
      
 
     
-   
-    
-
-
