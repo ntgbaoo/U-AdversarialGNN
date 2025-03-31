@@ -100,9 +100,9 @@ if __name__ == '__main__':
     # print(data_hete.train_mask.shape)
     # print(data_hete.train_mask)
 
-    data_wiki,_ = DataLoader.load("squirrel")
-    print(data_wiki.train_mask[:,0])
-    print(torch.nonzero(data_wiki.train_mask[:,0], as_tuple=True)[0])
+    ogb_dataset,_ = DataLoader.load("cora")
+    print(ogb_dataset.x[0])
+    # print(torch.nonzero(data_wiki.train_mask[:,0], as_tuple=True)[0])
     # print(data_hete)
     # print(data_hete.train_mask.shape)
     # print(data_hete.train_mask)

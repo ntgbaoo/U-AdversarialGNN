@@ -19,6 +19,7 @@ from defense_model.improving_graph import GTransPurification
 from defense_model.improving_graph import JaccardPurification
 from defense_model.improving_architecture.aggregation.soft_median import SoftMedianAggregation
 from defense_model.improving_architecture.conv.GCORN import GCORN
+from defense_model.improving_architecture.aggregation.RUNG import RUNG
 # from defense_model.custom.model.GIN import GIN
 
 from utility.util import logger
@@ -132,6 +133,17 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
         
     elif model_name == "GCORN":
         model = GCORN(in_channel,nhid,nlayers,out_channel,drop_out)
+
+    elif model_name == "RUNG":
+        gamma = kwargs.get('gamma')
+        lambda_hat = kwargs.get('lambda_hat')
+        model = RUNG(in_channel,
+                     out_channel,
+                     [nhid]*nlayers,
+                     gamma, 
+                     lambda_hat,
+                     dropout = drop_out
+                     )
 
 
     else:

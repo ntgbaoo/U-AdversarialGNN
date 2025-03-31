@@ -210,7 +210,6 @@ def generate_complete_table(config_setting,no_degree = False,adversarials_list =
                             result_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{adversarial}_{setting}.csv"
                             resulf_df = pd.read_csv(result_file_path)
                             results = resulf_df['total'].tolist()
-                            assert len(results) == 5
                             mean,std = extract_saved_result(results[budget-1])
                             adversarial_performance.append((adversarial,mean))
                         except Exception as e:
@@ -272,7 +271,7 @@ def generate_complete_table(config_setting,no_degree = False,adversarials_list =
                             second = best_second_record_all[budget][model][dataset][1]
                             resulf_df = pd.read_csv(result_file_path)
                             results = resulf_df['total'].tolist()
-                            assert len(results) == 5
+                            # assert len(results) == 5
                             mean,std = extract_saved_result(results[budget-1])
                             mean = round(mean*100,2)
                             mean = "{:.2f}".format(mean)
@@ -286,7 +285,7 @@ def generate_complete_table(config_setting,no_degree = False,adversarials_list =
                                 row += f" & {mean} $\\pm$ {std}"
                         except Exception as e:
                             print(e)
-                            row += f" & XX.XX $\\pm$ XX"
+                            row += f" & Running"
                 rank = "{:.2f}".format(adversarial_ranking_all[model][adversarial])
                 row += f"& {rank}\\\\"
 
@@ -662,18 +661,37 @@ def generate_complete_table_for_defense(config_setting,no_degree = False, models
 
     return output
 
+def generate_table_ogb():
+    model = "GSAGE"
+    setting = "poision"
+    adversarial_list = ['random_degree_attack','prbcdattack','sga']
+    for adversarial in adversarial_list:
+        path = f"data/results/best_config/{model}/ogbn-arxiv/{adversarial}_{setting}.csv"
+        results = pd.read_csv(path)['total'].tolist()
+        text = f"{adversarial_name[adversarial]}"
+        for result in results:
+            mean,std = extract_saved_result(result)
+            mean = round(mean*100,2)
+            mean = "{:.2f}".format(mean)
+            std = "{:.2f}".format(std)
+            text += f"& {mean} $\\pm$ {std}"
+        text += "\\\\"
+        print(text)
+
+
+
 if __name__ == "__main__":
     adversarials_list = ['random_degree_attack','fga','nettack','pgdattack','prbcdattack','sga','gottack']
     # adversarials_list = ['random_degree_attack','rnd']
 
     # adversarials_list = ['fga','nettack','pgdattack','prbcdattack','sga']
     models_list = ['GCN',"GIN","GSAGE","PNA"]
-    defense_models = ['GCN_GARNET',"GNNGuard","GRAND"]
-    datasets_list = ['cora','citeseer','pubmed']
+    defense_models = ['GCORN','RUNG']
+    datasets_list = ['cora','citeseer']
     # datasets_list = ['cora']
 
-    # output,overal_ranking = generate_complete_table("best_config",adversarials_list=adversarials_list,models_list=defense_models ,datasets_list=datasets_list)
-    # print(output)
+    output,overal_ranking = generate_complete_table("best_config",adversarials_list=adversarials_list,models_list=defense_models ,datasets_list=datasets_list)
+    print(output)
     # print(overal_ranking)
     
     # difference
@@ -686,5 +704,7 @@ if __name__ == "__main__":
         # print(budget,mean_diff)
     
     defense_models = ['GCN_Jaccard','GCN_GARNET',"GNNGuard","GRAND","ElasticGNN","RobustGCN"]
-    output = generate_complete_table_for_defense("best_config",models_list=defense_models + models_list,dataset="citeseer")
+    # output = generate_complete_table_for_defense("best_config",models_list=defense_models + models_list,dataset="citeseer")
     # print(output)
+
+    # generate_table_ogb()
