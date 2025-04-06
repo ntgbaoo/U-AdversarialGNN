@@ -77,10 +77,13 @@ class DataLoader:
             data.y = data.y.squeeze()
 
         elif dataset in PyG_HETEROPHILOUS_DATASET:
-            data = HeterophilousGraphDataset(name = dataset, root = PATH_DATASET)
+            data = HeterophilousGraphDataset(name = dataset, root = PATH_DATASET)[0]
+            default_split = None
+            
             
         elif dataset in PyG_WIKI_NETWORK_DATASET:
-            data = WikipediaNetwork(name = dataset, root = PATH_DATASET)[0]
+            gcn_geo_pre = False if dataset == "crocodile" else True
+            data = WikipediaNetwork(name = dataset, root = PATH_DATASET,geom_gcn_preprocess= gcn_geo_pre)[0]
             default_split = data.train_mask[:,0],data.val_mask[:,0],data.test_mask[:,0]
         
         else:
@@ -100,8 +103,14 @@ if __name__ == '__main__':
     # print(data_hete.train_mask.shape)
     # print(data_hete.train_mask)
 
-    ogb_dataset,_ = DataLoader.load("cora")
-    print(ogb_dataset.x[0])
+    ogb_dataset,_ = DataLoader.load("chameleon")
+    print(ogb_dataset)
+
+    # ogb_dataset,_ = DataLoader.load("crocodile")
+    # print(ogb_dataset)
+
+    ogb_dataset,_ = DataLoader.load("squirrel")
+    print(ogb_dataset)
     # print(torch.nonzero(data_wiki.train_mask[:,0], as_tuple=True)[0])
     # print(data_hete)
     # print(data_hete.train_mask.shape)
