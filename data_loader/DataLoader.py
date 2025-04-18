@@ -84,7 +84,8 @@ class DataLoader:
             default_split = None
             
         elif dataset in PyG_WIKI_NETWORK_DATASET:
-            data = WikipediaNetwork(name = dataset, root = PATH_DATASET)[0]
+            gcn_geo_pre = False if dataset == "crocodile" else True
+            data = WikipediaNetwork(name = dataset, root = PATH_DATASET,geom_gcn_preprocess= gcn_geo_pre)[0]
             default_split = data.train_mask[:,0],data.val_mask[:,0],data.test_mask[:,0]
         
         else:

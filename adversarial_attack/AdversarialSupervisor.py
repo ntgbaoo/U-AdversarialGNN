@@ -77,13 +77,13 @@ class AdversarialSupervisor:
                 self.adversarial.set_max_perturbations(node_budget)
                 start_attack = timeit.default_timer()
                     
-                # try:
-                self.adversarial.attack(node,num_budgets = node_budget,structure_attack = structure_attack, feature_attack = feature_attack)
-                # except Exception as e:
-                #     duration = timeit.default_timer() - start_attack
-                #     total += duration
-                #     counter += 1
-                #     continue
+                try:
+                    self.adversarial.attack(node,num_budgets = node_budget,structure_attack = structure_attack, feature_attack = feature_attack)
+                except Exception as e:
+                    duration = timeit.default_timer() - start_attack
+                    total += duration
+                    counter += 1
+                    continue
                 duration = timeit.default_timer() - start_attack
                 total += duration
 

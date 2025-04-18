@@ -681,13 +681,17 @@ def generate_table_ogb():
 
 
 if __name__ == "__main__":
-    adversarials_list = ['random_degree_attack','fga','nettack','pgdattack','prbcdattack','sga','gottack']
+    # adversarials_list = ['random_degree_attack','fga','nettack','pgdattack','prbcdattack','sga','gottack']
+    adversarials_list = ['fga','pgdattack','prbcdattack','sga',"random_degree_attack"]
+
     # adversarials_list = ['random_degree_attack','rnd']
 
     # adversarials_list = ['fga','nettack','pgdattack','prbcdattack','sga']
-    models_list = ['GCN',"GIN","GSAGE","PNA"]
-    defense_models = ['GCORN','RUNG']
-    datasets_list = ['cora','citeseer']
+    models_list = ['GCN',"GIN","GSAGE"]
+    # defense_models = ['GCORN','RUNG']
+    defense_models = ['ElasticGNN','GCN_GARNET','GNNGuard','GRAND','RobustGCN']
+
+    datasets_list = ['squirrel']
     # datasets_list = ['cora']
 
     output,overal_ranking = generate_complete_table("best_config",adversarials_list=adversarials_list,models_list=defense_models ,datasets_list=datasets_list)
@@ -695,8 +699,10 @@ if __name__ == "__main__":
     # print(overal_ranking)
     
     # difference
-    adversarials_list = ['fga','nettack','pgdattack','prbcdattack','sga','gottack',"random_degree_attack"]
-    models_list = ['GCN',"GIN","GSAGE","PNA"]
+    # adversarials_list = ['fga','nettack','pgdattack','prbcdattack','sga','gottack',"random_degree_attack"]
+    adversarials_list = ['fga','pgdattack','prbcdattack','sga',"random_degree_attack"]
+
+    models_list = ['GCN',"GIN","GSAGE"]
     datasets_list = ['cora','citeseer','pubmed']
     # for budget in [1,2,3,4,5]:
     # output,mean_diff = generate_difference_with_our_evaluation_table("default",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list,budgets=[1,2,3,4,5])

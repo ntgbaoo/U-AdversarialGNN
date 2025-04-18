@@ -1,4 +1,4 @@
-model: 'GCORN'
+model: 'RUNG'
 aggr: 
   - "sum"
 num_layers:
@@ -8,15 +8,14 @@ num_layers:
 hidden_unit:
   - 32
   - 64
-  - 128
+
 lr:
   - 0.001
   - 0.01
-  - 0.1
+
 drop_out: 
   - 0.5
   - 0.6
-  - 0.7
 
 gamma:
   - 0.5
@@ -35,4 +34,5 @@ optimizer_state:
   optimizer: "ADAM"
 patience: 
   - 50
+
 
