@@ -28,6 +28,8 @@ from torch_geometric.nn import GINConv, GATConv, GCNConv, JumpingKnowledge
 from torch_geometric.nn.inits import glorot, zeros
 from torch_geometric.nn.conv import MessagePassing
 from torch_scatter import scatter_add
+from torch_geometric.utils import add_self_loops, degree, to_dense_adj
+
 
 
 
@@ -169,28 +171,21 @@ def inject_noise(x, scale_noise):
 
 class Noisy_GCN(nn.Module):
 
-    def __init__(self, nfeat, nhid, nclass, dropout=0.5, lr=0.01, drop=False, weight_decay=5e-4, n_edge=1,with_relu=True,
-                 with_bias=True, device=None, noise_ratio_1=0.1):
+    def __init__(self, nfeat, nhid, nclass, dropout=0.5, drop=False,with_relu=True,
+                 with_bias=True, device=None, noise_ratio_1=0.1,attention = False):
 
         super(Noisy_GCN, self).__init__()
 
-        assert device is not None, "Please specify 'device'!"
-        self.device = device
+        # assert device is not None, "Please specify 'device'!"
+        # self.device = device
         self.nfeat = nfeat
         self.hidden_sizes = [nhid]
         self.nclass = nclass
         self.dropout = dropout
-        self.lr = lr
+        self.attention = attention
 
-        weight_decay = 0
-
-        if not with_relu:
-            self.weight_decay = 0
-        else:
-            self.weight_decay = weight_decay
         self.with_relu = with_relu
         self.with_bias = with_bias
-        self.n_edge = n_edge
         self.output = None
         self.best_model = None
         self.best_output = None
@@ -246,16 +241,19 @@ class Noisy_GCN(nn.Module):
         # # self.fc1 = Linear(dim*3, dim)
         # self.fc2 = Linear(dim*2, int(nclass))
 
-    def forward(self, x, adj):
+    def forward(self, x, edge_index,edge_weight):
         """we don't change the edge_index, just update the edge_weight;
         some edge_weight are regarded as removed if it equals to zero"""
-        x = x.to_dense()
+        self.device = edge_index.device
+        # adj = to_dense_adj(edge_index)[0, :,:]
+        
+        # x = x.to_dense()
 
         """GCN and GAT"""
         if self.attention:
             adj = self.att_coef(x, adj, i=0).to(self.device)
-        edge_index = adj._indices()
-        x = self.gc1(x, edge_index, edge_weight=adj._values())
+        # edge_index = adj._indices()
+        x = self.gc1(x, edge_index, edge_weight=edge_weight)
 
         if self.training:
             noise = inject_noise(x, self.noise_ratio_1)
@@ -271,8 +269,8 @@ class Noisy_GCN(nn.Module):
             edge_index = torch.stack((row, col), dim=0)
             adj_values = adj_memory[row, col]
         else:
-            edge_index = adj._indices()
-            adj_values = adj._values()
+            edge_index = edge_index
+            adj_values = edge_weight
 
 
 
@@ -460,131 +458,3 @@ class Noisy_GCN(nn.Module):
                 self._train_with_early_stopping(labels, idx_train, idx_val, train_iters, patience, verbose)
             else:
                 self._train_with_val(labels, idx_train, idx_val, train_iters, verbose)
-
-    def _train_without_val(self, labels, idx_train, train_iters, verbose):
-        self.train()
-        optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
-        for i in range(train_iters):
-            optimizer.zero_grad()
-            output = self.forward(self.features, self.adj_norm)
-            loss_train = F.nll_loss(output[idx_train], labels[idx_train], weight=None)   # this weight is the weight of each training nodes
-            loss_train.backward()
-            optimizer.step()
-            if verbose and i % 20 == 0:
-                print('Epoch {}, training loss: {}'.format(i, loss_train.item()))
-
-        self.eval()
-        output = self.forward(self.features, self.adj_norm)
-        self.output = output
-
-    def _train_with_val(self, labels, idx_train, idx_val, train_iters, verbose):
-        if verbose:
-            print('=== training gcn model ===')
-        optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
-
-        best_loss_val = 100
-        best_acc_val = 0
-
-        for i in range(train_iters):
-            # print('epoch', i)
-            self.train()
-            optimizer.zero_grad()
-            output = self.forward(self.features, self.adj_norm)
-            loss_train = F.nll_loss(output[idx_train], labels[idx_train])
-            loss_train.backward()
-            optimizer.step()
-            self.eval()
-
-            loss_val = F.nll_loss(output[idx_val], labels[idx_val])
-            acc_val = utils.accuracy(output[idx_val], labels[idx_val])
-            # acc_test = utils.accuracy(output[self.idx_test], labels[self.idx_test])
-
-            # if verbose and i % 5 == 0:
-            #     print('Epoch {}, training loss: {}, val acc: {}, '.format(i, loss_train.item(), acc_val))
-
-            if best_loss_val > loss_val:
-                best_loss_val = loss_val
-                self.output = output
-                weights = deepcopy(self.state_dict())
-
-            if acc_val > best_acc_val:
-                best_acc_val = acc_val
-                self.output = output
-                weights = deepcopy(self.state_dict())
-
-        if verbose:
-            print('=== picking the best model according to the performance on validation ===')
-        self.load_state_dict(weights)
-        # """my test"""
-        # output_ = self.forward(self.features, self.adj_norm)
-        # acc_test_ = utils.accuracy(output_[self.idx_test], labels[self.idx_test])
-        # print('With best weights, test acc:', acc_test_)
-
-    def _train_with_early_stopping(self, labels, idx_train, idx_val, train_iters, patience, verbose):
-        if verbose:
-            print('=== training gcn model ===')
-        optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
-
-        early_stopping = patience
-        best_loss_val = 100
-
-        for i in range(train_iters):
-            self.train()
-            optimizer.zero_grad()
-            output = self.forward(self.features, self.adj_norm)
-            loss_train = F.nll_loss(output[idx_train], labels[idx_train])
-            loss_train.backward()
-            optimizer.step()
-
-            self.eval()
-            output = self.forward(self.features, self.adj_norm)
-
-            if verbose and i % 10 == 0:
-                print('Epoch {}, training loss: {}'.format(i, loss_train.item()))
-
-
-            loss_val = F.nll_loss(output[idx_val], labels[idx_val])
-
-            if best_loss_val > loss_val:
-                best_loss_val = loss_val
-                self.output = output
-                weights = deepcopy(self.state_dict())
-                patience = early_stopping
-            else:
-                patience -= 1
-            if i > early_stopping and patience <= 0:
-                break
-
-        if verbose:
-             print('=== early stopping at {0}, loss_val = {1} ==='.format(i, best_loss_val) )
-        self.load_state_dict(weights)
-
-    def test(self, idx_test):
-        self.eval()
-        output = self.predict()  # here use the self.features and self.adj_norm in training stage
-        loss_test = F.nll_loss(output[idx_test], self.labels[idx_test])
-        acc_test = utils.accuracy(output[idx_test], self.labels[idx_test])
-        # print("Test set results:",
-        #       "loss= {:.4f}".format(loss_test.item()),
-        #       "accuracy= {:.4f}".format(acc_test.item()))
-        return acc_test, output
-
-    def _set_parameters(self):
-        # TODO
-        pass
-
-    def predict(self, features=None, adj=None):
-        '''By default, inputs are unnormalized data'''
-        self.eval()
-        if features is None and adj is None:
-            return self.forward(self.features, self.adj_norm)
-        else:
-            if type(adj) is not torch.Tensor:
-                features, adj = utils.to_tensor(features, adj, device=self.device)
-
-            self.features = features
-            if utils.is_sparse_tensor(adj):
-                self.adj_norm = utils.normalize_adj_tensor(adj, sparse=True)
-            else:
-                self.adj_norm = utils.normalize_adj_tensor(adj)
-            return self.forward(self.features, self.adj_norm)

@@ -45,7 +45,6 @@ class ModelSelector:
             aggre_type = config.get(AGGREGATION)
             
             config_perf = self._run_model_on_config(config,seed)   
-            print(config_perf)     
             self.all_config_results_dict[aggre_type].append({"config_idx": index,"perfomance": config_perf})
             print(f'\rINFO : finished {counter}/{len(self.all_configs)}', end='')
             counter +=1

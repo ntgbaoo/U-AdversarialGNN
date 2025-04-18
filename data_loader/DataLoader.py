@@ -71,13 +71,17 @@ class DataLoader:
             split = split_nodes(data.y,random_state=720)
             default_split = {IDX_TRAIN:split.train_nodes,IDX_VAL:split.val_nodes,IDX_TEST:split.test_nodes}
         elif dataset in ['ogbn-products','ogbn-proteins','ogbn-arxiv','ogbn-papers100M','ogbn-mag']:
+            data = PygNodePropPredDataset(name = dataset, root = PATH_DATASET,transform=T.ToSparseTensor())[0]
+            adj_t = data.adj_t.to_symmetric()
             ogb_dataset = PygNodePropPredDataset(name = dataset, root = PATH_DATASET,transform=T.ToUndirected())
             default_split  = ogb_dataset.get_idx_split()
             data = ogb_dataset[0]
+            data.adj_t = adj_t
             data.y = data.y.squeeze()
 
         elif dataset in PyG_HETEROPHILOUS_DATASET:
             data = HeterophilousGraphDataset(name = dataset, root = PATH_DATASET)
+            default_split = None
             
         elif dataset in PyG_WIKI_NETWORK_DATASET:
             data = WikipediaNetwork(name = dataset, root = PATH_DATASET)[0]
@@ -100,8 +104,8 @@ if __name__ == '__main__':
     # print(data_hete.train_mask.shape)
     # print(data_hete.train_mask)
 
-    ogb_dataset,_ = DataLoader.load("cora")
-    print(ogb_dataset.x[0])
+    ogb_dataset,_ = DataLoader.load("ogbn-arxiv")
+    print(ogb_dataset.adj_t)
     # print(torch.nonzero(data_wiki.train_mask[:,0], as_tuple=True)[0])
     # print(data_hete)
     # print(data_hete.train_mask.shape)

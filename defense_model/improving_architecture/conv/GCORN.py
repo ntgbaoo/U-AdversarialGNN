@@ -120,7 +120,9 @@ class GCORN(torch.nn.Module):
         return self
 
     def forward(self, x, edge_index, edge_weight=None):
+
         adj_true = to_dense_adj(edge_index)[0, :,:]
+
         norm_adj = normalize_tensor_adj(adj_true)
         for conv in self.convs:
             x = conv(x, norm_adj)

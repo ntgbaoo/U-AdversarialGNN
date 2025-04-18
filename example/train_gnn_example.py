@@ -26,9 +26,9 @@ if __name__ == '__main__':
     
     data,split = DataLoader.load(args.dataset)
     
-    config = ConfigHandler.load_model_config(model_type="PNA",config_name="best_config",dataset="cora",split=0)
+    config = ConfigHandler.load_model_config(model_type="GCORN")
     model_config = config['model_config']
-    split_config = config['split']
+    split_config = split
     set_random(720)
     runner = ModelSupervisor(data,device=args.device,**model_config)
     idx_train,idx_val,idx_test = split_config['idx_train'],split_config['idx_val'],split_config['idx_test']

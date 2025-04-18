@@ -14,12 +14,15 @@ warnings.filterwarnings("ignore")
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from defense_model.improving_training.GRAND.grand import GRAND
+from defense_model.improving_training import Noisy_GCN
+
 from defense_model.improving_graph.GARNET.garnet import GarnetPurification
 from defense_model.improving_graph import GTransPurification
 from defense_model.improving_graph import JaccardPurification
 from defense_model.improving_architecture.aggregation.soft_median import SoftMedianAggregation
 from defense_model.improving_architecture.conv.GCORN import GCORN
 from defense_model.improving_architecture.aggregation.RUNG import RUNG
+from defense_model.improving_architecture.hang_model import GNN_graphcon
 # from defense_model.custom.model.GIN import GIN
 
 from utility.util import logger
@@ -144,7 +147,8 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
                      lambda_hat,
                      dropout = drop_out
                      )
-
+    elif model_name == "NoisyGNN":
+        model = Noisy_GCN(nfeat = in_channel, nhid = nhid , nclass = out_channel,dropout=drop_out)
 
     else:
         raise Exception('Unsupport or undefined model{}'.format(model_name))

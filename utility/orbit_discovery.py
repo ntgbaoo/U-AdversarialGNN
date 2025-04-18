@@ -23,27 +23,34 @@ if __name__ == '__main__':
     from utility import ConfigHandler
     from static import *
 
-    args.dataset = "citeseer"
+    args.dataset = "squirrel"
     
     data,split = DataLoader.load(args.dataset)
 
     edge_index = data.edge_index
+    G = nx.Graph()
 
-    # G = nx.Graph()
+    # Add edges to the graph
+    uni_edge = set()
+    # print(edge_index.shape[1])
+    for i in range(edge_index.shape[1]):
+        src = edge_index[0, i].item()
+        dst = edge_index[1, i].item()
+        if not (src,dst) in uni_edge and src != dst:
+            G.add_edge(src, dst)
+            uni_edge.add((src,dst))
+            uni_edge.add((dst,src))
+    nx.write_edgelist(G, "graph.txt", data=False)
 
-    # # Add edges to the graph
-    # for i in range(edge_index.size(1)):
-    #     src = edge_index[0, i].item()
-    #     dst = edge_index[1, i].item()
-    #     G.add_edge(src, dst)
+       
 
     print("Generating graph")
-    G = to_networkx(data, to_undirected=True)
+    # G = to_networkx(data, to_undirected=True)
+    # G = to_networkx(data)
     print("Done generating graph")
-    print(len(list(G.nodes)))
 
 
     orbit_counts = orca.orbit_counts("node", 5, G)
     print("Done counting orbit")
     orbit_df = generate_orbit_tables_from_count(orbit_counts,sorted(list(G.nodes)))
-    orbit_df.to_csv("citeseer_orbit_df.csv")
+    orbit_df.to_csv("squirrel_orbit_df.csv")

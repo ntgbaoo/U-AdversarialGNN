@@ -7,3 +7,5 @@ model_config:
   patience: 50
   nlayers : 2
   drop_out: 0.5
+  lambda_hat: 0.7
+  gamma: 0.5
