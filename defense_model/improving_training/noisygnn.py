@@ -172,7 +172,7 @@ def inject_noise(x, scale_noise):
 class Noisy_GCN(nn.Module):
 
     def __init__(self, nfeat, nhid, nclass, dropout=0.5, drop=False,with_relu=True,
-                 with_bias=True, device=None, noise_ratio_1=0.1,attention = False):
+                 with_bias=True, noise_ratio_1=0.1,attention = False):
 
         super(Noisy_GCN, self).__init__()
 

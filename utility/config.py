@@ -29,6 +29,9 @@ parser.add_argument('--budget_start', type=int, default=1, help='starting budget
 parser.add_argument('--budget_end', type=int, default=5, help='endding budget')
 parser.add_argument('--config_setting', type=str, default="best_config", help='name of purification')
 parser.add_argument('--use_default_split', type=bool, default=False, help='Use default split provided by the dataset')
+parser.add_argument('--adaptive_surrogate', type=str, default='GCN', help='Adaptive attack (PRBCD) on model')
+
+
 
 
 

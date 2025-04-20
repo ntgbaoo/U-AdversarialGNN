@@ -202,8 +202,8 @@ if __name__ == "__main__":
                 if args.adversarial == PRBCD_NAME or args.adversarial == GRBCD_NAME:
                     attacker.update_config(10000,200)
                     
-
-                    split_model_surrogate = ConfigHandler.load_model_config("GCN",surrogate_config_setting,args.dataset,split_idx)
+                    print("Running PRBCD on surrogate model {}".format(args.adaptive_surrogate))
+                    split_model_surrogate = ConfigHandler.load_model_config(args.adaptive_surrogate,surrogate_config_setting,args.dataset,split_idx)
                     configs_surrogate = split_model_surrogate.get('model_config')
                     surrogate = ModelSupervisor(data,args.device,seed=seed,**configs_surrogate)
                     surrogate.train_model(idx_train,idx_val,idx_test)
