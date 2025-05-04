@@ -110,18 +110,23 @@ if __name__ == "__main__":
     rowlist_evasion = []
     rowlist_poision = []
 
+    adaptive = ""
+    if args.adaptive_surrogate == args.model and args.adversarial == PRBCD_NAME:
+        adaptive = "adaptive"
+
+
     if args.purification is not None:
         if not os.path.exists("{}{}/{}_{}/{}".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset)):
             os.makedirs("{}{}/{}_{}/{}".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset))
 
-        poision_path = "{}{}/{}_{}/{}/{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset,args.adversarial)
-        evasion_path = "{}{}/{}_{}/{}/{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification,args.dataset,args.adversarial)
+        poision_path = "{}{}/{}_{}/{}/{}_{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset,args.adversarial,adaptive)
+        evasion_path = "{}{}/{}_{}/{}/{}_{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification,args.dataset,args.adversarial,adaptive)
     else:
         if not os.path.exists("{}{}/{}/{}/".format(PATH_RESULT,classifier_config_version,args.model,args.dataset)):
             os.makedirs("{}{}/{}/{}/".format(PATH_RESULT,classifier_config_version,args.model,args.dataset))
 
-        poision_path = "{}{}/{}/{}/{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial)
-        evasion_path = "{}{}/{}/{}/{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial)
+        poision_path = "{}{}/{}/{}/{}_{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial,adaptive)
+        evasion_path = "{}{}/{}/{}/{}_{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial,adaptive)
 
 
     for budget in range(args.budget_start,args.budget_end + 1):
@@ -202,8 +207,8 @@ if __name__ == "__main__":
                 if args.adversarial == PRBCD_NAME or args.adversarial == GRBCD_NAME:
                     attacker.update_config(10000,200)
                     
-
-                    split_model_surrogate = ConfigHandler.load_model_config("GCN",surrogate_config_setting,args.dataset,split_idx)
+                    print("Running PRBCD on surrogate model {}".format(args.adaptive_surrogate))
+                    split_model_surrogate = ConfigHandler.load_model_config(args.adaptive_surrogate,surrogate_config_setting,args.dataset,split_idx)
                     configs_surrogate = split_model_surrogate.get('model_config')
                     surrogate = ModelSupervisor(data,args.device,seed=seed,**configs_surrogate)
                     surrogate.train_model(idx_train,idx_val,idx_test)
