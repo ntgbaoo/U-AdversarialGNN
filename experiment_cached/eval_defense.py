@@ -112,21 +112,21 @@ if __name__ == "__main__":
 
     adaptive = ""
     if args.adaptive_surrogate == args.model and args.adversarial == PRBCD_NAME:
-        adaptive = "adaptive"
+        adaptive = "_adaptive"
 
 
     if args.purification is not None:
         if not os.path.exists("{}{}/{}_{}/{}".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset)):
             os.makedirs("{}{}/{}_{}/{}".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset))
 
-        poision_path = "{}{}/{}_{}/{}/{}_{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset,args.adversarial,adaptive)
-        evasion_path = "{}{}/{}_{}/{}/{}_{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification,args.dataset,args.adversarial,adaptive)
+        poision_path = "{}{}/{}_{}/{}/{}{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset,args.adversarial,adaptive)
+        evasion_path = "{}{}/{}_{}/{}/{}{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification,args.dataset,args.adversarial,adaptive)
     else:
         if not os.path.exists("{}{}/{}/{}/".format(PATH_RESULT,classifier_config_version,args.model,args.dataset)):
             os.makedirs("{}{}/{}/{}/".format(PATH_RESULT,classifier_config_version,args.model,args.dataset))
 
-        poision_path = "{}{}/{}/{}/{}_{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial,adaptive)
-        evasion_path = "{}{}/{}/{}/{}_{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial,adaptive)
+        poision_path = "{}{}/{}/{}/{}{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial,adaptive)
+        evasion_path = "{}{}/{}/{}/{}{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial,adaptive)
 
 
     for budget in range(args.budget_start,args.budget_end + 1):
