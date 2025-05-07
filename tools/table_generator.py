@@ -143,7 +143,7 @@ def generate_meta_table(budget,config_setting,no_degree = False,adversarials_lis
     return output
 
 
-def generate_complete_table(config_setting,no_degree = False,adversarials_list = ['nettack'], models_list= ["GCN"],datasets_list = ['cora']):
+def generate_complete_table(config_setting,no_degree = False,adversarials_list = ['nettack'], models_list= ["GCN"],datasets_list = ['cora'],adaptive = False):
     r"""
     Generate table in format as follow:
 
@@ -206,9 +206,12 @@ def generate_complete_table(config_setting,no_degree = False,adversarials_list =
                     adversarial_performance = []
                     for adversarial in adversarials_list:
                         try:
-
-                            result_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{adversarial}_{setting}.csv"
+                            if not adaptive:
+                                result_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{adversarial}_{setting}.csv"
+                            else:
+                                result_file_path = f"{RESULT_PATH}/{config_setting}/{model}/{dataset}/{adversarial}_adaptive_{setting}.csv"
                             resulf_df = pd.read_csv(result_file_path)
+
                             results = resulf_df['total'].tolist()
                             mean,std = extract_saved_result(results[budget-1])
                             adversarial_performance.append((adversarial,mean))
@@ -268,12 +271,16 @@ def generate_complete_table(config_setting,no_degree = False,adversarials_list =
                         try:
 
                             best = best_second_record_all[budget][model][dataset][0]
-                            second = best_second_record_all[budget][model][dataset][1]
+                            if len(best_second_record_all[budget][model][dataset]) > 2:
+                                second = best_second_record_all[budget][model][dataset][1]
+                            else:
+                                second = ""
                             resulf_df = pd.read_csv(result_file_path)
                             results = resulf_df['total'].tolist()
                             # assert len(results) == 5
                             mean,std = extract_saved_result(results[budget-1])
                             mean = round(mean*100,2)
+                            std = round(std*100,2)
                             mean = "{:.2f}".format(mean)
                             std = "{:.2f}".format(std)
 
@@ -285,7 +292,7 @@ def generate_complete_table(config_setting,no_degree = False,adversarials_list =
                                 row += f" & {mean} $\\pm$ {std}"
                         except Exception as e:
                             print(e)
-                            row += f" & Running"
+                            row += f" & ERR"
                 rank = "{:.2f}".format(adversarial_ranking_all[model][adversarial])
                 row += f"& {rank}\\\\"
 
@@ -681,20 +688,26 @@ def generate_table_ogb():
 
 
 if __name__ == "__main__":
-    # adversarials_list = ['random_degree_attack','fga','nettack','pgdattack','prbcdattack','sga','gottack']
-    adversarials_list = ['fga','pgdattack','prbcdattack','sga',"random_degree_attack"]
+    adversarials_list = ['random_degree_attack','fga','nettack','pgdattack','prbcdattack','sga','gottack']
+    adaptive_adversarials_list = ['prbcdattack']
+    # adversarials_list = ['fga','pgdattack','prbcdattack','sga',"random_degree_attack"]
 
     # adversarials_list = ['random_degree_attack','rnd']
 
     # adversarials_list = ['fga','nettack','pgdattack','prbcdattack','sga']
-    models_list = ['GCN',"GIN","GSAGE"]
-    # defense_models = ['GCORN','RUNG']
-    defense_models = ['ElasticGNN','GCN_GARNET','GNNGuard','GRAND','RobustGCN']
+    models_list = ['GCN','GIN',"GSAGE","PNA"]
+    # defense_models = ['ElasticGNN','GCN_GARNET','GCN_Jaccard','GNNGuard','GRAND','RobustGCN',"GCORN","RUNG"]
+    defense_models = ['ElasticGNN','GCN_GARNET','GCN_Jaccard','GNNGuard']
+    adaptive_attack_defense = ['ElasticGNN','GCN_GARNET','GCN_Jaccard','GNNGuard']
 
-    datasets_list = ['squirrel']
-    # datasets_list = ['cora']
+    # defense_models = ['GCN_GARNET','GNNGuard','GRAND']
 
-    output,overal_ranking = generate_complete_table("best_config",adversarials_list=adversarials_list,models_list=defense_models ,datasets_list=datasets_list)
+    # datasets_list = ['squirrel']
+    # datasets_list = ['cora','citeseer','pubmed']
+    datasets_list = ['squirrel','chameleon']
+
+
+    output,overal_ranking = generate_complete_table("best_config",adversarials_list=adversarials_list,models_list=adaptive_attack_defense ,datasets_list=datasets_list,adaptive=False)
     print(output)
     # print(overal_ranking)
     
@@ -703,13 +716,14 @@ if __name__ == "__main__":
     adversarials_list = ['fga','pgdattack','prbcdattack','sga',"random_degree_attack"]
 
     models_list = ['GCN',"GIN","GSAGE"]
+    defense_models = ['GCN_GARNET','GNNGuard','GRAND']
     datasets_list = ['cora','citeseer','pubmed']
     # for budget in [1,2,3,4,5]:
     # output,mean_diff = generate_difference_with_our_evaluation_table("default",adversarials_list=adversarials_list,models_list=models_list,datasets_list=datasets_list,budgets=[1,2,3,4,5])
     # print(mean_diff)
         # print(budget,mean_diff)
     
-    defense_models = ['GCN_Jaccard','GCN_GARNET',"GNNGuard","GRAND","ElasticGNN","RobustGCN"]
+    # defense_models = ['GCN_Jaccard','GCN_GARNET',"GNNGuard","GRAND","ElasticGNN","RobustGCN"]
     # output = generate_complete_table_for_defense("best_config",models_list=defense_models + models_list,dataset="citeseer")
     # print(output)
 
