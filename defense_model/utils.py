@@ -17,13 +17,10 @@ from defense_model.improving_training.GRAND.grand import GRAND
 from defense_model.improving_training import Noisy_GCN
 
 from defense_model.improving_graph.GARNET.garnet import GarnetPurification
-from defense_model.improving_graph import GTransPurification
 from defense_model.improving_graph import JaccardPurification
 from defense_model.improving_architecture.aggregation.soft_median import SoftMedianAggregation
 from defense_model.improving_architecture.conv.GCORN import GCORN
 from defense_model.improving_architecture.aggregation.RUNG import RUNG
-from defense_model.improving_architecture.hang_model import GNN_graphcon
-# from defense_model.custom.model.GIN import GIN
 
 from utility.util import logger
 from static import *
@@ -107,17 +104,6 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
     elif model_name == "GNNGuard":
         model = GNNGUARD(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
     
-    elif model_name == "SoftMedianGCN":
-        # model = SoftMedianGCN(in_channels = in_channel, out_channels = out_channel,hids = [nhid]*nlayers,acts=['relu'],dropout = drop_out)
-        from torch_geometric.nn.models.basic_gnn import GCN
-        model = GCN(in_channel,
-                    nhid,
-                    nlayers,
-                    out_channel,
-                    drop_out,
-                    aggr = SoftMedianAggregation())
-
-
     elif model_name == "ElasticGNN":
         prop_step_k = kwargs.get(PROPA_STEP_K)
         lambda1 = kwargs.get(LAMBDA1)
@@ -178,46 +164,9 @@ def load_graph_purification(device = None,**kwargs):
         purification = GarnetPurification(r,k,gamma,use_feature=use_feature,
                                           weighted_knn=weighted_knn,adj_norm=adj_norm)
         
-    elif purification_name == "GTrans":
-        args = kwargs
-        args.pop('purification')
-        purification = GTransPurification(device=device,**args)
-
-    elif purification_name == "GDC":
-        diffusion_method = args.get("diffusion_method")
-        alpha = args.get("alpha")
-        sparsification_method = args.get("sparsification_method")
-        k = args.get("k")
-        dim = args.get("dim")
-        
-        purification = T.GDC(
-        self_loop_weight=1,
-        normalization_in='sym',
-        normalization_out='col',
-        exact=True,
-        diffusion_kwargs=dict(method=diffusion_method, alpha=alpha),
-        sparsification_kwargs=dict(method=sparsification_method, k=k, dim=dim),
-    )
     else:
         raise Exception('Unsupport or undefined model{}'.format(purification_name))
     
     return purification
-
-
-
-
-
-
-
-if __name__ == "__main__":
-    # from config import args
-    # load_model(args)
-    config_dict = {
-        MODEL:"GCN",
-        IN_CHANNEL:17,
-        HIDDEN_UNITS:32,
-        NUM_LAYERS:2,
-        OUT_CHANNEL:1,
-    }
 
 

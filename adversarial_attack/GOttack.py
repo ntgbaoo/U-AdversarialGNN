@@ -10,29 +10,18 @@ Credits:
 """
 import warnings
 import torch
-from deeprobust.graph.targeted_attack import BaseAttack
-from torch.nn.parameter import Parameter
 from deeprobust.graph import utils
-import torch.nn.functional as F
-from torch import optim
-from torch.nn import functional as F
-from torch.nn.modules.module import Module
-from torch.nn.parameter import Parameter
 import numpy as np
 import scipy.sparse as sp
-from copy import deepcopy
 from numba import jit
-from torch import spmm
 from greatx.nn.models.surrogate import Surrogate
 from utility.util import set_random
 from torch_geometric.data import Data
-from torch_geometric.utils import degree, to_scipy_sparse_matrix,to_edge_index,to_dense_adj
+from torch_geometric.utils import to_dense_adj
 from copy import copy
 import pandas as pd
 
 class OrbitAttack:
-
-
     def __init__(self, data:Data , device='cpu',seed = 720,orbit_type = 1518):
         """
         Input:
@@ -83,7 +72,6 @@ class OrbitAttack:
             if W is None:
                 W = para
             else:
-                # print(W)
                 W = para @ W
 
         assert W is not None
@@ -185,9 +173,7 @@ class OrbitAttack:
 
         assert self.n_perturbations > 0, "need at least one perturbation"
 
-        # adj_norm = utils.normalize_adj_tensor(modified_adj, sparse=True)
         self.adj_norm = utils.normalize_adj(self.modified_adj)
-        # self.W = self.get_linearized_weight()
 
         logits = (self.adj_norm @ self.adj_norm @ self.modified_features @ self.W )[target]
 

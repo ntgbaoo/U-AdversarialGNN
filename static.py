@@ -7,7 +7,6 @@ GARNET = "GARNET"
 JACCARD = "Jaccard"
 SVD = "SVD"
 
-
 #Model set-up
 DEVICE = "device"
 IN_CHANNEL = "in_channel"
@@ -40,11 +39,10 @@ ORDER = "order"
 TEMP = "temp"
 LAMBDA ="lambda"
 SAMPLE = "sample"
-
-
 IDX_TRAIN = "idx_train"
 IDX_VAL = "idx_val"
 IDX_TEST = "idx_test"
+
 #Hyper-parameters' options
 SGD ="SGD"
 ADAM = "ADAM"
@@ -80,9 +78,7 @@ EVASION = "evasion"
 POSION = "poision"
 GOTTACK ="gottack"
 GRBCD_NAME = "GRBCD"
-PRBCD_greatX = "PRBCD_greatx"
-DEGREE_ATTACK = "degree_attack"
-L1_NORM_ATTACK = "l1norm_attack"
+L1_RND_ATTACK = "random_degree_attack"
 
 
 

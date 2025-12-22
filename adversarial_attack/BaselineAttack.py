@@ -170,7 +170,6 @@ class RandomOnlyAddAttack(RandomDegreeAttack):
                        direct_attack=direct_attack,
                        structure_attack=structure_attack,
                        feature_attack=feature_attack)
-        # assert 0 < threshold < 1
 
         if direct_attack:
             influence_nodes = [target]
@@ -213,7 +212,6 @@ class RandomOnlyRemoveAttack(RandomDegreeAttack):
                        direct_attack=direct_attack,
                        structure_attack=structure_attack,
                        feature_attack=feature_attack)
-        # assert 0 < threshold < 1
 
         if direct_attack:
             influence_nodes = [target]

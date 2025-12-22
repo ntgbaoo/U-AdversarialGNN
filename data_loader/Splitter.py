@@ -82,19 +82,5 @@ class Splitter(ISplitter):
 if __name__ == '__main__':
     X = np.random.rand(10, 1433)
     y = np.random.randint(1, size=10)
-    # sss = StratifiedShuffleSplit(n_splits=5, test_size=0.8, random_state=0)
-    
-    
-    # sss= StratifiedKFold(n_splits=5)
-    # sss.get_n_splits(X, y)
-    # # 5
-    # print(sss)
-    # # StratifiedShuffleSplit(n_splits=5, random_state=0, ...)
-    # for i, (train_index, test_index) in enumerate(sss.split(X, y)):
-    #     print(len(train_index))
-    #     print(f"Fold {i}:")
-    #     print(f"  Train: index={train_index}")
-    #     print(f"  Test:  index={test_index}")
-
     split = Splitter(True,2,0.2,0.2,0.6,0)
     split.split(X,y)

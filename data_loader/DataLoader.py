@@ -7,16 +7,12 @@ import torch_geometric.transforms as T
 from torch_geometric.datasets.heterophilous_graph_dataset import HeterophilousGraphDataset
 from torch_geometric.datasets import WikipediaNetwork
 import warnings
-import torch
 
 warnings.filterwarnings("ignore")
-
 
 # Edit path to import from different module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from greatx.datasets import GraphDataset
-from data_loader.utils import sparse_adjacency_to_edge_list,edge_list_to_sparse_adjacency,edge_list_to_sysmetric_sparse_adjacency
-from data_loader.Splitter import Splitter
 from static import *
 from greatx.utils import split_nodes
 
@@ -96,21 +92,8 @@ class DataLoader:
     
 
 if __name__ == '__main__':
-    # data_ogbn = DataLoader.load("ogbn-products")    
-    # idx_train,idx_val,idx_test = data_ogbn.idx_train, data_ogbn.idx_val, data_ogbn.idx_test
-    # adj, features, labels = data_ogbn.adj, data_ogbn.feature, data_ogbn.label
-
-    # data_hete = DataLoader.load("Minesweeper")[0]
-    # print(data_hete)
-    # print(data_hete.train_mask.shape)
-    # print(data_hete.train_mask)
-
     ogb_dataset,_ = DataLoader.load("ogbn-arxiv")
     print(ogb_dataset)
-    # print(torch.nonzero(data_wiki.train_mask[:,0], as_tuple=True)[0])
-    # print(data_hete)
-    # print(data_hete.train_mask.shape)
-    # print(data_hete.train_mask)
 
     
 

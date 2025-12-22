@@ -1,7 +1,3 @@
-import os.path as osp
-
-import torch
-import torch_geometric.transforms as T
 import sys
 import os
 import statistics as stats
@@ -11,24 +7,14 @@ import timeit
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utility import ConfigHandler
 from data_loader import DataLoader
-from greatx.attack.targeted import SGAttack,RandomAttack,DICEAttack,GFAttack,FGAttack,PGDAttack,IGAttack
-from adversarial_attack import Nettack
-from greatx.datasets import GraphDataset
-from greatx.nn.models import GCN,SGC
-from greatx.training import Trainer
-from greatx.training.callbacks import ModelCheckpoint
+from greatx.attack.targeted import SGAttack,RandomAttack,FGAttack,PGDAttack
 from evaluation import ModelSupervisor
 from adversarial_attack import NodeSelector
-from adversarial_attack import SurrogateLoader
-from adversarial_attack import AdversarialSupervisor
 from static import *
 from utility.config import args
-from adversarial_attack import PRBCDAttack,GRBCDAttack, DegreeAttack,L1NormAttack,OrbitAttack,RandomDegreeAttack,RandomOnlyAddAttack, RandomOnlyRemoveAttack
+from adversarial_attack import OrbitAttack,RandomDegreeAttack,AdversarialSupervisor,Nettack
 from data_loader import Splitter
 
-
-
-from greatx.utils import mark, split_nodes
 
 def load_attack(attack_method):
     if attack_method == SGA_NAME:
@@ -39,34 +25,15 @@ def load_attack(attack_method):
         return FGAttack
     elif attack_method == RND_NAME:
         return RandomAttack
-    elif attack_method == DICE_NAME:
-        return DICEAttack
-    elif attack_method == GFATTACK_NAME:
-        return GFAttack
     elif attack_method == PGDATTACK_NAME:
         return PGDAttack
-    elif attack_method == IGATTACK_NAME:
-        return IGAttack
     elif attack_method == PRBCD_NAME:
-        from adversarial_attack import PRBCDAttack,GRBCDAttack
+        from adversarial_attack import PRBCDAttack
         return PRBCDAttack
-    elif attack_method == GRBCD_NAME:
-        return GRBCDAttack
-    elif attack_method == PRBCD_greatX:
-        from greatx.attack.targeted import PRBCDAttack
-        return PRBCDAttack
-    elif attack_method == DEGREE_ATTACK:
-        return DegreeAttack
-    elif attack_method == L1_NORM_ATTACK:
-        return L1NormAttack
     elif attack_method == GOTTACK:
         return OrbitAttack
-    elif attack_method == "random_degree_attack":
+    elif attack_method == L1_RND_ATTACK:
         return RandomDegreeAttack
-    elif attack_method == "random_degree_add_attack":
-        return RandomOnlyAddAttack
-    elif attack_method == "random_degree_remove_attack":
-        return RandomOnlyRemoveAttack
     
 
     
@@ -74,7 +41,7 @@ def load_attack(attack_method):
 def get_surrogate_name(attack_method):
     if attack_method == SGA_NAME:
         return 'SGC'
-    elif attack_method in [NETTACK_NAME,FGA_NAME,PGDATTACK_NAME,IGATTACK_NAME,PRBCD_greatX,GOTTACK]:
+    elif attack_method in [NETTACK_NAME,FGA_NAME,PGDATTACK_NAME,IGATTACK_NAME,GOTTACK]:
         return 'GCN_surrogate'
     else:
         return None
@@ -83,11 +50,6 @@ def get_stat(results_list):
     return (stats.mean(results_list),stats.stdev(results_list))
 
 if __name__ == "__main__":
-    # args.dataset = 'cora'
-    # args.model = "GCN"
-    # args.seed = 720
-    # args.adversarial = SGA_NAME
-
     classifier_config_version = args.config_setting
     data,split = DataLoader.load(args.dataset)
 
@@ -155,7 +117,6 @@ if __name__ == "__main__":
                     bucket_target_nodes.append(target_node_dict[cate])
 
 
-                # surrogate_supervisor = 
                 attacker = load_attack(args.adversarial)(data, device=args.device,seed=seed)
                 surrogate_name = get_surrogate_name(args.adversarial)
                 if classifier_config_version.split("_")[0] in AVAILABLE_AGGRE and "best" in classifier_config_version:

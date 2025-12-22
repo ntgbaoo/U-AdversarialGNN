@@ -70,7 +70,6 @@ class ModelSelector:
             # To avoid bad configuration prevent model from converging
         start_train = timeit.default_timer()
         runner.train_model(idx_train=self.idx_train,idx_val=self.idx_val,idx_test= self.idx_test)
-        print(f"\nINFO: Train a single model takes: {timeit.default_timer() - start_train}\n")
         val_acc = runner.get_prediction_accuracy(self.idx_val,self.data)
         runner.to_device('cpu')
         del runner.model

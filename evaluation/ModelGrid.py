@@ -66,31 +66,4 @@ class ModelGrid(Grid):
 
 
 
-
-if __name__ == "__main__":
-   config = {
-       MODEL : "GCN",
-       NUM_LAYERS:[3,5],
-       BATCH_SIZE:[16],
-       LEARNING_RATE :[0.01,0.001,0.0001],
-       HIDDEN_UNITS : [32,64],
-       EPOCHS:[10000],
-       PATIENCE:[500],
-       OPTIMIZER_STATE:{
-           OPTIMIZER:ADAM
-       },
-       SCHEDULER_STATE:{
-           SCHEDULER:STEP_LR,
-           STEP_SIZE:[50,20],
-           GAMMA:[0.5]
-       },
-       AGGREGATION: ["sum","average"]
-   }
-
-   all_configs = ModelGrid(config).init_grid()
-   print(len(all_configs))
-   for config in all_configs:
-       print(config)
-
-
     

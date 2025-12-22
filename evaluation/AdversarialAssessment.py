@@ -12,7 +12,6 @@ from greatx.attack.targeted import SGAttack,RandomAttack,DICEAttack,GFAttack,FGA
 from adversarial_attack import Nettack
 from adversarial_attack.GOttack import OrbitAttack
 from adversarial_attack import PRBCDAttack
-from adversarial_attack import SurrogateLoader
 from static import *
 from utility import ConfigHandler
 from evaluation.ModelSupervisor import ModelSupervisor

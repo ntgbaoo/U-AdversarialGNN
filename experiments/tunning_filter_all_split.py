@@ -10,14 +10,9 @@ warnings.filterwarnings("ignore")
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from utility.config import args
-from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
-from evaluation import ModelSupervisor
 from evaluation import PurificationSelector
 from data_loader import DataLoader
-from data_loader import Splitter
 from utility import ConfigHandler
-from evaluation import ModelGrid
 
 if __name__ == "__main__":
     hyper_grid_config = ConfigHandler.load_hyper_puri_grid(purification_type=args.purification,grid_name="hyper_grid")

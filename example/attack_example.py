@@ -2,10 +2,8 @@
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import torch
-import torch_geometric.transforms as T
 
-from greatx.attack.targeted import SGAttack,FGAttack,Nettack
+from greatx.attack.targeted import Nettack
 from adversarial_attack import Nettack
 from evaluation import ModelSupervisor
 from data_loader import DataLoader
@@ -22,8 +20,6 @@ if __name__=="__main__":
     args.dataset = 'cora'
     args.seed = 722
     data,split = DataLoader.load(args.dataset)
-    # idx_train,idx_val,idx_test = split[IDX_TRAIN],split[IDX_VAL],split[IDX_TEST]
-    # best_config = ConfigHandler.load_model_config()
 
     split_0_model = ConfigHandler.load_model_config("GCN","best_config","cora",0)
     split = split_0_model['split']

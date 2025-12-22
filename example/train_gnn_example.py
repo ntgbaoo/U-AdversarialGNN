@@ -1,10 +1,3 @@
-import torch.nn.functional as F
-from torch_geometric.datasets import Planetoid
-import torch_geometric.transforms as T
-from torch_geometric.utils import degree
-import torch
-import numpy as np
-
 if __name__ == '__main__':
     import sys
     import os
@@ -13,12 +6,11 @@ if __name__ == '__main__':
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
     from utility.config import args
-    from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
+    from utility.util import set_random, init_logger,prepare_dir
     from evaluation import ModelSupervisor
     from data_loader import DataLoader
     from utility import ConfigHandler
     from static import *
-    from greatx.attack.targeted import FGAttack
 
     args.dataset = "cora"
     args.model="GCN"
@@ -30,7 +22,6 @@ if __name__ == '__main__':
 
     config = ConfigHandler.load_model_config(model_type=args.model,split=0,config_name="best_config",dataset=args.dataset)
     model_config = config['model_config']
-    # print(config)
     split_config = config['split']
     set_random(720)
     runner = ModelSupervisor(data,device=args.device,**model_config)

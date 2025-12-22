@@ -11,8 +11,6 @@ from static import *
 from torch_geometric.data import Data
 
 
-
-
 class PurificationSelector:
     def __init__(self,
                  config_dict:dict,

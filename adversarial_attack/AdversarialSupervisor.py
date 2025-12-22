@@ -9,7 +9,6 @@ import json
 from torch_geometric.utils import degree
 import torch
 
-
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from evaluation.ModelSupervisor import ModelSupervisor
@@ -82,22 +81,18 @@ class AdversarialSupervisor:
                 self.adversarial.set_max_perturbations(node_budget)
                 start_attack = timeit.default_timer()
                     
-                # try:
-                    # print("Herte")
-
-                torch.cuda.reset_peak_memory_stats()
-                torch.cuda.empty_cache()
-                self.adversarial.attack(node,num_budgets = node_budget,structure_attack = structure_attack, feature_attack = feature_attack)
-                gpu_mem_alloc = torch.cuda.max_memory_allocated() / 1000000 if torch.cuda.is_available() else 0
-                self.gpu_mem_usage_list.append(gpu_mem_alloc)
-                # except Exception as e:
-                #     print(e)
-                #     duration = timeit.default_timer() - start_attack
-                #     total += duration
-                #     counter += 1
-                #     continue
+                try:
+                    torch.cuda.reset_peak_memory_stats()
+                    torch.cuda.empty_cache()
+                    self.adversarial.attack(node,num_budgets = node_budget,structure_attack = structure_attack, feature_attack = feature_attack)
+                    gpu_mem_alloc = torch.cuda.max_memory_allocated() / 1000000 if torch.cuda.is_available() else 0
+                    self.gpu_mem_usage_list.append(gpu_mem_alloc)
+                except Exception as e:
+                    duration = timeit.default_timer() - start_attack
+                    total += duration
+                    counter += 1
+                    continue
                 duration = timeit.default_timer() - start_attack
-                print(f"\nEach attack takes:{duration}\n")
                 total += duration
 
                 if evasion:

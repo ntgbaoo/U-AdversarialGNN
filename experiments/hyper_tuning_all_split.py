@@ -11,9 +11,6 @@ warnings.filterwarnings("ignore")
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from utility.config import args
-from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-# from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
-from evaluation import ModelSupervisor
 from evaluation import ModelSelector
 from data_loader import DataLoader, PyG_WIKI_NETWORK_DATASET
 from data_loader import Splitter
@@ -35,7 +32,6 @@ if __name__ == "__main__":
         if args.dataset in PyG_WIKI_NETWORK_DATASET:
             mask_train,mask_val,mask_test = data.train_mask[:,split_idx],data.val_mask[:,split_idx],data.test_mask[:,split_idx] 
             idx_train,idx_val,idx_test = torch.nonzero(mask_train,as_tuple=True)[0], torch.nonzero(mask_val,as_tuple=True)[0],torch.nonzero(mask_test,as_tuple=True)[0]
-            # print(idx_train)
         hyper_grid_config = ConfigHandler.load_hyper_grid(model_type=args.model,grid_name="hyper_grid")
         modelSelector = ModelSelector(
             config_dict= hyper_grid_config,
