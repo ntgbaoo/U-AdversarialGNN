@@ -9,8 +9,12 @@ from utility.util import set_random
 from utility import ConfigHandler
 from static import *
 from torch_geometric.data import Data
+import torch
+import timeit
 
-
+def memory_stats():
+    print("GPU:",torch.cuda.memory_allocated()/1024**2)
+    print("GPU cached",torch.cuda.memory_cached()/1024**2)
 
 
 class ModelSelector:
@@ -46,7 +50,7 @@ class ModelSelector:
             
             config_perf = self._run_model_on_config(config,seed)   
             self.all_config_results_dict[aggre_type].append({"config_idx": index,"perfomance": config_perf})
-            print(f'\rINFO : finished {counter}/{len(self.all_configs)}', end='')
+            # print(f'\rINFO : finished {counter}/{len(self.all_configs)}', end='')
             counter +=1
         print("\n")
 
@@ -64,8 +68,15 @@ class ModelSelector:
         runner = ModelSupervisor(self.data,device=self.device,**config)
         # try:
             # To avoid bad configuration prevent model from converging
+        start_train = timeit.default_timer()
         runner.train_model(idx_train=self.idx_train,idx_val=self.idx_val,idx_test= self.idx_test)
+        print(f"\nINFO: Train a single model takes: {timeit.default_timer() - start_train}\n")
         val_acc = runner.get_prediction_accuracy(self.idx_val,self.data)
+        runner.to_device('cpu')
+        del runner.model
+        del runner.optimizer
+        del runner
+        torch.cuda.empty_cache()
         # except Exception as e:
         #     return -1
         return val_acc

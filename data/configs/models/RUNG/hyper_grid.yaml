@@ -1,6 +1,6 @@
 model: 'RUNG'
 aggr: 
-  - "sum"
+  - "mean"
 num_layers:
   - 2
   - 3

@@ -42,11 +42,16 @@ class AdversarialSupervisor:
 
         self.labels = []
         self.evasion_preds = []
-        self.poision_preds = []        
+        self.poision_preds = []
+        self.gpu_mem_usage_list = []
+        self.node_miss_classified_evasion = []
+        self.node_miss_classified_poison = []
+                
 
     def target_attack(self,bucket_target_nodes:Tuple[List[int],...],budget,evasion = False, poision = True,
                       evasion_model:ModelSupervisor= None,seed = 720,structure_attack = True, feature_attack = False,use_epsilon = False):
         assert evasion or poision, "Either evasion or posion setting"
+        self.gpu_mem_usage_list = []
         return_tuple = ()
         counter = 0     
 
@@ -77,14 +82,22 @@ class AdversarialSupervisor:
                 self.adversarial.set_max_perturbations(node_budget)
                 start_attack = timeit.default_timer()
                     
-                try:
-                    self.adversarial.attack(node,num_budgets = node_budget,structure_attack = structure_attack, feature_attack = feature_attack)
-                except Exception as e:
-                    duration = timeit.default_timer() - start_attack
-                    total += duration
-                    counter += 1
-                    continue
+                # try:
+                    # print("Herte")
+
+                torch.cuda.reset_peak_memory_stats()
+                torch.cuda.empty_cache()
+                self.adversarial.attack(node,num_budgets = node_budget,structure_attack = structure_attack, feature_attack = feature_attack)
+                gpu_mem_alloc = torch.cuda.max_memory_allocated() / 1000000 if torch.cuda.is_available() else 0
+                self.gpu_mem_usage_list.append(gpu_mem_alloc)
+                # except Exception as e:
+                #     print(e)
+                #     duration = timeit.default_timer() - start_attack
+                #     total += duration
+                #     counter += 1
+                #     continue
                 duration = timeit.default_timer() - start_attack
+                print(f"\nEach attack takes:{duration}\n")
                 total += duration
 
                 if evasion:
@@ -92,6 +105,7 @@ class AdversarialSupervisor:
                     self.evasion_preds.append(pred_evasion)
                     if pred_evasion != truth_label:
                         result[EVASION] += 1
+                        self.node_miss_classified_evasion.append(node)
                 
                 if poision:
                     victim_model = ModelSupervisor(self.adversarial.data(), device= self.device,seed = seed,use_purification=self.use_purification,purification_config=self.purification_config,**self.victim_configs)
@@ -102,6 +116,7 @@ class AdversarialSupervisor:
 
                     if pred_poision != truth_label:
                         result[POSION] += 1
+                        self.node_miss_classified_poison.append(node)
                 
                 counter += 1
                 print(f'\rINFO : finished {counter}/{len(target_nodes)}', end='')
@@ -129,6 +144,14 @@ class AdversarialSupervisor:
         }
         with open(saved_file, 'w') as json_file:
             json.dump(saved_dict, json_file,indent=4)
+
+
+    def get_gpu_mem_usage(self):
+        assert len(self.gpu_mem_usage_list) > 0, "Please run attack methods before getting GPU Memory Usage"
+        return stats.mean(self.gpu_mem_usage_list), stats.stdev(self.gpu_mem_usage_list)
+    
+    def get_missclassified_nodes(self):
+        return self.node_miss_classified_evasion, self.node_miss_classified_poison
 
 
 

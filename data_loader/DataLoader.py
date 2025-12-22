@@ -106,7 +106,7 @@ if __name__ == '__main__':
     # print(data_hete.train_mask)
 
     ogb_dataset,_ = DataLoader.load("ogbn-arxiv")
-    print(ogb_dataset.adj_t)
+    print(ogb_dataset)
     # print(torch.nonzero(data_wiki.train_mask[:,0], as_tuple=True)[0])
     # print(data_hete)
     # print(data_hete.train_mask.shape)

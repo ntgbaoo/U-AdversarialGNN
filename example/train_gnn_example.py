@@ -18,17 +18,20 @@ if __name__ == '__main__':
     from data_loader import DataLoader
     from utility import ConfigHandler
     from static import *
+    from greatx.attack.targeted import FGAttack
 
     args.dataset = "cora"
+    args.model="GCN"
     init_logger(
                 prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
                     args.seed) + '_log.txt')
     
     data,split = DataLoader.load(args.dataset)
-    
-    config = ConfigHandler.load_model_config(model_type="GCORN")
+
+    config = ConfigHandler.load_model_config(model_type=args.model,split=0,config_name="best_config",dataset=args.dataset)
     model_config = config['model_config']
-    split_config = split
+    # print(config)
+    split_config = config['split']
     set_random(720)
     runner = ModelSupervisor(data,device=args.device,**model_config)
     idx_train,idx_val,idx_test = split_config['idx_train'],split_config['idx_val'],split_config['idx_test']

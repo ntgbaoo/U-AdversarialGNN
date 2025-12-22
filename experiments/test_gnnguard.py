@@ -25,13 +25,42 @@ if __name__ == '__main__':
 
     data,split = DataLoader.load(args.dataset)
     print(data)
+    print("Number of labels in the dataset:",len(torch.unique(data.y)))
 
 
-    config = ConfigHandler.load_model_config(model_type="GNNGuard",split=0,config_name="best_config",dataset="chameleon")
+    config = ConfigHandler.load_model_config(model_type="GNNGuard",split=0,config_name="best_config",dataset=args.dataset)
     split_config = config['split']
     model_config = config['model_config']
     idx_train,idx_val,idx_test = split_config['idx_train'],split_config['idx_val'],split_config['idx_test']
     # print(idx_test)
+
+    runner = ModelSupervisor(data,device=args.device,**model_config,seed=720)
+    runner.train_model(idx_train=idx_train,idx_val=idx_val,idx_test= idx_test)
+    
+   
+    pred_evasion = runner.get_model_prediction(data)[node].item()
+    out = runner.get_model_output(data)
+
+    print("======== Before attack (first time) ========")
+    print("Clean data: ",data)
+    print("Prediction :",pred_evasion)
+    print("Label :",data.y[node])
+    print(f"Node emebdding (node ${node}) :", out[node])
+    print("Edge_idx from GNNGuard",runner.model.edge_idx)
+
+    runner = ModelSupervisor(data,device=args.device,**model_config,seed=720)
+    runner.train_model(idx_train=idx_train,idx_val=idx_val,idx_test= idx_test)
+    
+   
+    pred_evasion = runner.get_model_prediction(data)[node].item()
+    out = runner.get_model_output(data)
+
+    print("======== Before attack(second time) ========")
+    print("Clean data: ",data)
+    print("Prediction :",pred_evasion)
+    print("Label :",data.y[node])
+    print(f"Node emebdding (node ${node}) :", out[node])
+    print("Edge_idx from GNNGuard",runner.model.edge_idx)
 
     split_model_surrogate = ConfigHandler.load_model_config("SGC","best_config",args.dataset,0)
     configs_surrogate = split_model_surrogate.get('model_config')
@@ -42,25 +71,32 @@ if __name__ == '__main__':
     surrogate.train_model(idx_train,idx_val,idx_test)
     attacker.setup_surrogate(surrogate.model)
     attacker.reset()
-    attacker.set_max_perturbations(100)
-    attacker.attack(node,num_budgets = 100,structure_attack = True, feature_attack = False)
+    attacker.set_max_perturbations(10)
+    attacker.attack(node,num_budgets = 10,structure_attack = True, feature_attack = False)
 
-    init_logger(
-                prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
-                    args.seed) + '_log.txt')
+    # init_logger(
+    #             prepare_dir(args.output_folder) + args.model + '_' + args.dataset + '_seed_' + str(
+    #                 args.seed) + '_log.txt')
     
     
 
     # print(config)
     set_random(720)
     modified_data = attacker.data()
-    print(modified_data)
     runner = ModelSupervisor(modified_data,device=args.device,**model_config)
     runner.train_model(idx_train=idx_train,idx_val=idx_val,idx_test= idx_test)
     
    
     pred_evasion = runner.get_model_prediction(modified_data)[node].item()
-    print(pred_evasion)
-    print(data.y[node])
+    out = runner.get_model_output(modified_data)
+
+    print("======== After attack ========")
+    print("Modify data: ",modified_data)
+    print("Prediction :",pred_evasion)
+    print("Label :",data.y[node])
+    print(f"Node emebdding (node ${node}) :", out[node])
+    print("Edge_idx from GNNGuard",runner.model.edge_idx)
+
+
    
     

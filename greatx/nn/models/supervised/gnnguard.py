@@ -90,4 +90,5 @@ class GNNGUARD(nn.Module):
                 x = layer(x, edge_index, edge_weight)
             else:
                 x = layer(x)
+        self.edge_idx = edge_index # new
         return x

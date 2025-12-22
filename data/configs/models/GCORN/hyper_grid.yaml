@@ -1,6 +1,6 @@
 model: 'GCORN'
 aggr: 
-  - "sum"
+  - "mean"
 num_layers:
   - 2
 hidden_unit:

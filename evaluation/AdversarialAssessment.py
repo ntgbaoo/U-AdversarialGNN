@@ -49,6 +49,8 @@ class AdversarialAssessment:
         self.node_selector = NodeSelector.select_nodes_margin_degree if use_degree_node_selection else NodeSelector.select_nodes_margin
         self.node_category = ['high_margin','low_margin','high_degree','low_degree','other'] if use_degree_node_selection else ['high_margin','low_margin','other']
         self.config_name = "best_config" if use_tune_model else "default"
+        self.node_miss_classified_evasion = []
+        self.node_miss_classified_poison = []
         
     def _get_stat(self,results_list: list):
         return (stats.mean(results_list),stats.stdev(results_list))

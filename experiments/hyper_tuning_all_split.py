@@ -12,7 +12,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from utility.config import args
 from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
+# from deeprobust.graph.targeted_attack import Nettack,FGA,RND,SGAttack,IGAttack
 from evaluation import ModelSupervisor
 from evaluation import ModelSelector
 from data_loader import DataLoader, PyG_WIKI_NETWORK_DATASET
