@@ -5,6 +5,7 @@ from .ModelSelector import ModelSelector
 from .PurificationGrid import PurificationGrid
 from .PurificationSelector import PurificationSelector
 from .IModelSupervisor import IModelSupervisor
+from .AdversarialAssessment import AdversarialAssessment
 
 classes = __all__ = [
     "AdversarialAssessment",
@@ -14,5 +15,6 @@ classes = __all__ = [
     "ModelSelector",
     "PurificationGrid",
     "PurificationSelector",
-    "IModelSupervisor"
+    "IModelSupervisor",
+    "AdversarialAssessment"
 ]
