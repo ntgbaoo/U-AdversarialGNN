@@ -24,30 +24,66 @@ def get_stat(results_list):
     return (stats.mean(results_list),stats.stdev(results_list))
 
 
+def prepare_result_path(
+    use_degree = False, 
+    config_setting = "best_config",  
+    model = 'GCN', 
+    purification = None, 
+    dataset = "cora"
+):
+    path = PATH_RESULT
+    if not use_degree or config_setting == "default":
+        path += "ablation"
+    
+    if not use_degree:
+        path += "/no_degree"
+
+    path += f"/{config_setting}/{model}"
+    if purification is not None:
+        path += f"_{purification}"
+
+    path += f"/{dataset}"
+    
+    return path
+
+
+def prepare_file_name(
+    setting = 'evasion', 
+    adversarial = "nettack", 
+    adaptive = False
+):
+    file_name = f"{adversarial}_{setting}"
+    if adaptive:
+        file_name += f"_adaptive"
+    return file_name
+
+def flat(result_dict:dict):
+    for key in result_dict.keys():
+        result_dict[key] = result_dict[key][0]
+    return result_dict
 
 if __name__ == "__main__":
+    path = prepare_result_path(
+        use_degree = args.use_node_degree, 
+        config_setting = args.config_setting,  
+        model = args.model, 
+        purification = args.purification, 
+        dataset = args.dataset
+    )
+
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    file_name_evasion = prepare_file_name(
+        setting= "evasion",
+        adversarial=args.adversarial
+    ) if args.evasion else None
     
-    # Need to set up path here
-    adaptive = ""
-    classifier_config_version = "best_config" #@TODO: remove it?
-    if args.adaptive_surrogate == args.model and args.adversarial == PRBCD_NAME:
-        adaptive = "_adaptive" #@TODO: Check if AdversarialAssessment has this ability
+    file_name_poison = prepare_file_name(
+        setting= "poison",
+        adversarial=args.adversarial
+    ) if args.poison else None
 
-
-    if args.purification is not None: #@TODO: Make this look nicer
-        if not os.path.exists("{}{}/{}_{}/{}".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset)):
-            os.makedirs("{}{}/{}_{}/{}".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset))
-
-        poision_path = "{}{}/{}_{}/{}/{}{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset,args.adversarial,adaptive)
-        evasion_path = "{}{}/{}_{}/{}/{}{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification,args.dataset,args.adversarial,adaptive)
-    else:
-        if not os.path.exists("{}{}/{}/{}/".format(PATH_RESULT,classifier_config_version,args.model,args.dataset)):
-            os.makedirs("{}{}/{}/{}/".format(PATH_RESULT,classifier_config_version,args.model,args.dataset))
-
-        poision_path = "{}{}/{}/{}/{}{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial,adaptive)
-        evasion_path = "{}{}/{}/{}/{}{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial,adaptive)
-
-    
     evalution_pipeline = AdversarialAssessment(
         model= args.model,
         dataset=args.dataset,
@@ -56,14 +92,26 @@ if __name__ == "__main__":
         num_split=args.num_split,
         base_seed=args.seed,
         purification=args.purification, #None by default
-        device=args.device
+        device=args.device,
+        use_degree_node_selection=args.use_node_degree,
+        use_tune_model=args.config_setting == "best_config"
     )
-    for budget in [1,2,3,4,5]:
-        evasion_dict,poision_dict = evalution_pipeline.evaluate(
-            evasion=True,
-            poision=True,
-            budgets_list=[budget]
-        ) #@TODO consider make this return dict instead
 
-        save_results(evasion_dict,evasion_path)
-        save_results(poision_dict,poision_path)
+    for budget in [1,2,3,4,5]:
+        evasion_df,poision_df = evalution_pipeline.evaluate(
+            evasion=args.evasion,
+            poision=args.poison,
+            budgets_list=[budget]
+        )
+
+        save_results(
+            flat(evasion_df.to_dict(orient="list")),
+            f"{path}/{file_name_evasion}.csv"
+        )
+        save_results(
+            flat(poision_df.to_dict(orient="list")),
+            f"{path}/{file_name_poison}.csv"
+        )
+
+    
+    

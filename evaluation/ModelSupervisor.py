@@ -22,7 +22,6 @@ from static import *
 
 class ModelSupervisor:
     def __init__(self,data:Data,device = "cpu",seed = 720,train_early_stopping = True,use_purification = False,purification_config = None,**model_args) -> None:
-        # super().__init__()
         set_random(seed)
         deg = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
         degree_dist = torch.bincount(deg)

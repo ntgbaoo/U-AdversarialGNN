@@ -73,8 +73,6 @@ class AdversarialSupervisor:
                 self.adversarial.reset()
                 if use_epsilon:
                     node_budget = int(round(budget * self.degrees[node]))
-                    print(f"Node degree:{self.degrees[node]}")
-                    print(f"Node budget:{node_budget}")
                 else:
                     node_budget = budget
 
@@ -114,7 +112,7 @@ class AdversarialSupervisor:
                         self.node_miss_classified_poison.append(node)
                 
                 counter += 1
-                print(f'\rINFO : finished {counter}/{len(target_nodes)}', end='')
+                print(f'\rINFO : finished {counter}/{len(target_nodes) * len(bucket_target_nodes)}', end='')
                 
 
             result['time'] = total

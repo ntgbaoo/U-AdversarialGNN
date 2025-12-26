@@ -69,16 +69,13 @@ GOTTACK_NAME = "gottack"
 FGA_NAME= "fga"
 SGA_NAME= "sga"
 RND_NAME = "rnd"
-GFATTACK_NAME = "gfattack"
-IGATTACK_NAME = "igattack"
 PGDATTACK_NAME = "pgdattack"
-DICE_NAME = "dice"
 PRBCD_NAME = "prbcdattack"
 EVASION = "evasion"
 POSION = "poision"
 GOTTACK ="gottack"
 GRBCD_NAME = "GRBCD"
-L1_RND_ATTACK = "random_degree_attack"
+L1D_RND_ATTACK = "l1d_rnd_attack"
 
 
 

@@ -8,10 +8,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from data_loader import DataLoader
 from data_loader import Splitter
-from greatx.attack.targeted import SGAttack,RandomAttack,DICEAttack,GFAttack,FGAttack,PGDAttack,IGAttack
-from adversarial_attack import Nettack
-from adversarial_attack.GOttack import OrbitAttack
-from adversarial_attack import PRBCDAttack
+from greatx.attack.targeted import SGAttack,RandomAttack,FGAttack,PGDAttack
+from adversarial_attack import Nettack, RandomDegreeAttack, OrbitAttack, PRBCDAttack
 from static import *
 from utility import ConfigHandler
 from evaluation.ModelSupervisor import ModelSupervisor
@@ -29,9 +27,10 @@ class AdversarialAssessment:
                  num_split= 5,
                  base_seed = 720,
                  purification : str = None,
-                 use_tune_model = True,
+                 use_tune_model :bool = True,
                  use_degree_node_selection =True,
-                 device = "cpu") -> None:
+                 device = "cpu"
+        ) -> None:
         
         self.model = model
         self.device = device
@@ -50,6 +49,24 @@ class AdversarialAssessment:
         self.config_name = "best_config" if use_tune_model else "default"
         self.node_miss_classified_evasion = []
         self.node_miss_classified_poison = []
+        self._log()
+
+    def _log(self) -> str:
+        print("=="*30)
+        print("INFO: Adversarial Assessment setup")
+        print(f"INFO: Victim model: {self.model}")
+        print(f"INFO: Dataset: {self.dataset_name}")
+        print(f"INFO: Adversarial Attack: {self.adversarial_name}")
+        print(f"INFO: Number of runs: {self.num_runs}")
+        print(f"INFO: Base seed: {self.base_seed}")
+        print(f"INFO: Use tune model: {self.use_tune_model}")
+        print(f"INFO: Use degree as extra criteria for selecting target nodes: {self.use_degree_node_selection}")
+        print(f"INFO: Purification: {self.purification_name}")
+        print(f"INFO: Use Purification: {self.use_purification}")
+        print(f"INFO: Config setting: {self.config_name}")
+        print(f"INFO: Number of splits: {self.num_splits}")
+        print("=="*30)
+        
         
     def _get_stat(self,results_list: list):
         return (stats.mean(results_list),stats.stdev(results_list))
@@ -63,18 +80,14 @@ class AdversarialAssessment:
             return FGAttack
         elif adversarial_name == RND_NAME:
             return RandomAttack
-        elif adversarial_name == DICE_NAME:
-            return DICEAttack
-        elif adversarial_name == GFATTACK_NAME:
-            return GFAttack
         elif adversarial_name == PGDATTACK_NAME:
             return PGDAttack
-        elif adversarial_name == IGATTACK_NAME:
-            return IGAttack
         elif adversarial_name == PRBCD_NAME:
             return PRBCDAttack
         elif adversarial_name == GOTTACK:
             return OrbitAttack
+        elif adversarial_name == L1D_RND_ATTACK:
+            return RandomDegreeAttack
         else:
             raise Exception("Unsupport adversarial method")
         
@@ -112,7 +125,7 @@ class AdversarialAssessment:
     def _get_surrogate_name(self,attack_method):
         if attack_method == SGA_NAME:
             return 'SGC'
-        elif attack_method in [NETTACK_NAME,FGA_NAME,PGDATTACK_NAME,IGATTACK_NAME]:
+        elif attack_method in [NETTACK_NAME,FGA_NAME,PGDATTACK_NAME]:
             return 'GCN_surrogate'
         elif attack_method is PRBCD_NAME:
             return 'GCN'
@@ -126,10 +139,7 @@ class AdversarialAssessment:
         surrogate.train_model(idx_train,idx_val,idx_test)
         return surrogate.model
 
-    def _update_particular_config(self,attacker,data):
-        if self.adversarial_name is GFATTACK_NAME and self.dataname == "cora":
-            attacker.T = data.num_nodes//2                    
-                
+    def _update_particular_config(self,attacker,data):               
         if self.adversarial_name == PRBCD_NAME:
             attacker.update_config(10000,200)
 
