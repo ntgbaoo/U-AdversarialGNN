@@ -50,7 +50,7 @@ PyG_WIKI_NETWORK_DATASET = {
     'chameleon',
     'crocodile',
     'squirrel'
-    }
+}
 
 
 class DataLoader:

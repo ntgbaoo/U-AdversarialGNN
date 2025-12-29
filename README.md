@@ -1,77 +1,7 @@
 # U-AdversarialGNN
 Unifying Adversarial Attacks on Graph Neural Networks
 
-
-## Installation
-
-1. install torch
-
-```
-pip install torch==2.3.0 torchvision==0.18.0 torchaudio==2.3.0 --index-url https://download.pytorch.org/whl/cu121
-```
-
-2. install PyG
-
-```
-pip install torch_geometric
-pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.2.0+cu121.html
-```
-
-3. install DeepRobust
-
-```
-pip install deeprobust==0.2.9
-```
-
-
-4. install wandb (optional package for training debug only)
-```
-pip install wandb
-```
-
-5. install OGB
-```
-pip install ogb
-```
-
-
-
-*Expected result:* **True** *if you have GPU(s) available*
-
-
-6. Install additional packages
-
-```
-pip install opt-einsum hnswlib
-
-```
-
-
-**If you are using window, you may encounter this problem**
-```
-OSError: [WinError 127] The specified procedure could not be found
-```
-Then uninstall ```torch_geometric```, ```torch_scatter``` and ```torch_sparse ``` by using :
-
-```
-pip uninstall torch_geometric
-pip uninstall torch_scatter
-pip uninstall torch_sparse
-```
-Then re-install packages as follow:
-```
-pip install torch_geometric==2.5.3
-pip install torch_scatter==2.1.2
-pip install torch_sparse==0.6.18
-```
-
-## Create branches and development
-
-```
-git fetch origin
-
-git checkout -b [branch] origin/[branch]
-```
+**To setup the environment, please check out [setup.md](doc/Set%20up.md)**
 
 ## Experiments
 To run evaluation on adversarial attacks and defense. An example command can be used:
@@ -89,8 +19,29 @@ python experiments/adversarial_attack_evaluation.py --model=GCN --adversarial=l1
 - `evasion` or `no-evasion` : to perform evaluation in evasion setting (`True` or `evasion` by default)
 - `poison` or `no-poison` : to perform evaluation in poison setting (`True` or `poison` by default)
 - `use-node-degree` or `no-use-node-degree` : to perform evaluation with node degree as an extra criteria to select target node (`True` or `use-node-degree` by default)
+- `dataset`: dataset to perform experience on, select from list of [supporting datasets.](#supporting-datasets)
 
+## Model selection
+To perform model selection, use `hyper_tuning_all_split.py` to perform hyperparameters search on GNN backbone. An example command as follows:
 
+```bash
+python experiments/hyper_tuning_all_split.py --model=GCN --dataset=cora
+```
+
+### Custom args:
+- `dataset`: dataset to perform experience on
+- `model` : name of victim model selected from [list of models.](#supporting-victim-models)
+
+Or model selection on purification as follows:
+
+```bash
+python experiments/hyper_tuning_filter_all_split.py --model=GCN --dataset=cora --purification=GARNET
+```
+
+### Custom args:
+- `dataset`: dataset to perform experience on
+- `model` : name of victim model selected from [list of models.](#supporting-victim-models)
+- `purification`: purification method from [list of models.](#supporting-purification-methods)
 
 ## Supporting Purification methods
 | Method  | Paper |
@@ -126,16 +77,60 @@ python experiments/adversarial_attack_evaluation.py --model=GCN --adversarial=l1
 | PGD    | [Topology attack and defense for graph neural networks: An optimization perspective](https://arxiv.org/abs/1906.04214)|
 | L1D-RND    | [Adversarial Graph Neural Network Benchmarks: Towards Practical and Fair Evaluation](https://openreview.net/forum?id=ZTFbk7e3SN)|
 
-## Model selection
-TODO
+## Supporting datasets
+
+| Dataset Name        |
+|---------------------|
+| citeseer            |
+| citeseer_full       |
+| cora                |
+| cora_ml             |
+| cora_full           |
+| amazon_cs           |
+| amazon_photo        |
+| coauthor_cs         |
+| coauthor_phy        |
+| polblogs            |
+| karate_club         |
+| pubmed              |
+| flickr              |
+| blogcatalog         |
+| dblp                |
+| acm                 |
+| uai                 |
+| pdn                 |
+| Roman-empire        |
+| Amazon-ratings      |
+| Minesweeper         |
+| Tolokers            |
+| Questions           |
+| chameleon           |
+| crocodile           |
+| squirrel            |
+
+and [OGB dataset](https://ogb.stanford.edu/).
+
 
 ## Tool
 ### Orbit discovery
-TODO
+GOttack requires precompute orbit discovery on the dataset, PyORCA is available in `utility`. Please check out [PyORCA Github](https://github.com/qema/orca-py) for setting up instruction.
 
 
 
 ## Reference
+If you find our work helpful, please cite us:
+```
+@inproceedings{
+    anonymous2025adversarial,
+    title={Adversarial Graph Neural Network Benchmarks: Towards Practical and Fair Evaluation},
+    author={Anonymous},
+    booktitle={Submitted to The Fourteenth International Conference on Learning Representations},
+    year={2025},
+    url={https://openreview.net/forum?id=ZTFbk7e3SN},
+    note={under review}
+}
+```
+
 **Our adversarial benchmark is built upon [GreatX](https://github.com/EdisonLeeeee/GreatX) and [DeepRobust](https://github.com/DSE-MSU/DeepRobust). We appreciate their contribution to graph adversarial learning.**
 
 
