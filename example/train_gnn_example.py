@@ -26,7 +26,7 @@ if __name__ == '__main__':
     
     data,split = DataLoader.load(args.dataset)
     
-    config = ConfigHandler.load_model_config(model_type="GCORN")
+    config = ConfigHandler.load_model_config(model_type="NoisyGNN")
     model_config = config['model_config']
     split_config = split
     set_random(720)

@@ -15,7 +15,7 @@ def save_results(dataset, model, purification, mean,std,time,time_std):
     partial_path = "data/results"
     if not os.path.exists(partial_path):
         os.makedirs(partial_path)
-    result_path = f"{partial_path}/model_evaluation.csv"
+    result_path = f"{partial_path}/model_time_evaluation.csv"
     if not os.path.exists(result_path):
         result_df = pd.DataFrame(
             columns=["dataset", "model", "purification", "mean", "std","time","std_time"])
@@ -35,11 +35,16 @@ def save_results(dataset, model, purification, mean,std,time,time_std):
     result_df.to_csv(result_path, index=False)
 
 if __name__ == "__main__":
-    models = ["GCN","GIN","GSAGE","PNA","ElasticGNN","GRAND","GNNGuard","RobustGCN"]
+    # models = ["GCN","GIN","GSAGE","PNA","ElasticGNN","GRAND","GNNGuard","RobustGCN"]
+    # models = ["GCN","GIN","GSAGE","PNA"]
+    # models = ["GNNGuard","ElasticGNN","GRAND","RobustGCN","GCORN","RUNG"]
+    models = ["RUNG"]
+
+    # models = ["GCN-GARNET","GCN-Jaccard"]
     
     data,split = DataLoader.load(args.dataset)
    
-    total = 5*3
+    total = 5*1
     for model in models:
         performance_list = []
         time_list = []
@@ -63,7 +68,7 @@ if __name__ == "__main__":
             configs = split_model.get('model_config')
             idx_train, idx_val, idx_test = split['idx_train'],split['idx_val'],split['idx_test']
 
-            for idx_run in range(args.num_run):
+            for idx_run in range(1):
                 seed = args.seed + idx_run
                 start_time = timeit.default_timer()
                 classifier = ModelSupervisor(data,args.device,seed=seed,use_purification= use_purification,purification_config=purification_config,**configs)

@@ -190,7 +190,9 @@ if __name__ == "__main__":
                 
 
 
-                adversarial_supervisor = AdversarialSupervisor(data,attacker,idx_train,idx_val,idx_test,args.device,use_purification=use_purification,purification_config=purification_config,**configs)
+                adversarial_supervisor = AdversarialSupervisor(data,attacker,idx_train,idx_val,idx_test,args.device,
+                                                                structure_attack = args.structure_attack, feature_attack = args.feature_attack,
+                                                                use_purification=use_purification,purification_config=purification_config,**configs)
                 high_result,low_result, highest_degree_result,lowest_degree_result,other_result = adversarial_supervisor.target_attack(bucket_target_nodes,budget,evasion=True,poision=True, evasion_model=node_selector,seed = seed)
                 adversarial_supervisor.save_result(args.adversarial,seed,args.dataset,args.model,budget,args.purification,classifier_config_version)
                 evasion_dict['high_margin'].append( high_result[EVASION]/10)
@@ -256,14 +258,20 @@ if __name__ == "__main__":
         if not os.path.exists("{}{}/{}_{}/{}".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset)):
             os.makedirs("{}{}/{}_{}/{}".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset))
 
-        df_poision.to_csv("{}{}/{}_{}/{}/{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset,args.adversarial))
-        df_evasion.to_csv("{}{}/{}_{}/{}/{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification,args.dataset,args.adversarial))
+        poison_tag = "poision" + ("_structure" if args.structure_attack else "" + "_feature" if args.feature_attack else "")
+        evasion_tag = "evasion" + ("_structure" if args.structure_attack else "" + "_feature" if args.feature_attack else "")
+
+        df_poision.to_csv("{}{}/{}_{}/{}/{}_{}.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification ,args.dataset,args.adversarial,poison_tag))
+        df_evasion.to_csv("{}{}/{}_{}/{}/{}_{}.csv".format(PATH_RESULT,classifier_config_version,args.model,args.purification,args.dataset,args.adversarial,evasion_tag))
     else:
         if not os.path.exists("{}{}/{}/{}/".format(PATH_RESULT,classifier_config_version,args.model,args.dataset)):
             os.makedirs("{}{}/{}/{}/".format(PATH_RESULT,classifier_config_version,args.model,args.dataset))
 
-        df_poision.to_csv("{}{}/{}/{}/{}_poision.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial))
-        df_evasion.to_csv("{}{}/{}/{}/{}_evasion.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial))
+        poison_tag = "poision" + ("_structure" if args.structure_attack else "" + "_feature" if args.feature_attack else "")
+        evasion_tag = "evasion" + ("_structure" if args.structure_attack else "" + "_feature" if args.feature_attack else "")
+
+        df_poision.to_csv("{}{}/{}/{}/{}_{}.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial,poison_tag))
+        df_evasion.to_csv("{}{}/{}/{}/{}_{}.csv".format(PATH_RESULT,classifier_config_version,args.model,args.dataset,args.adversarial,evasion_tag))
 
 
 
