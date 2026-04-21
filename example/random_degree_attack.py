@@ -21,4 +21,5 @@ if __name__ == '__main__':
     attack = RandomDegreeAttack(data,seed=800)
     attack.reset()
     attack.set_max_perturbations(1)
+    
     attack.attack(target=0,num_budgets=1)

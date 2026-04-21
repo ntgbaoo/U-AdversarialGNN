@@ -6,6 +6,8 @@ from tqdm.auto import tqdm
 from greatx.attack.targeted.targeted_attacker import TargetedAttacker
 from greatx.nn.models.surrogate import Surrogate
 from greatx.utils import singleton_mask
+import timeit #**
+
 
 
 class FGAttack(TargetedAttacker, Surrogate):
@@ -94,7 +96,9 @@ class FGAttack(TargetedAttacker, Surrogate):
     def attack(self, target, *, target_label=None, num_budgets=None,
                direct_attack=True, structure_attack=True, feature_attack=False,
                disable=False):
+        self.time_break_down = {} #**
 
+        start_time = timeit.default_timer() #**
         super().attack(target, target_label, num_budgets=num_budgets,
                        direct_attack=direct_attack,
                        structure_attack=structure_attack,
@@ -114,6 +118,9 @@ class FGAttack(TargetedAttacker, Surrogate):
         target_label = torch.as_tensor(target_label, device=self.device,
                                        dtype=torch.long).view(-1)
         num_nodes, num_feats = self.num_nodes, self.num_feats
+
+        self.time_break_down['pre_compute'] = timeit.default_timer() - start_time #**
+        start_time = timeit.default_timer() #**
 
         for it in tqdm(range(self.num_budgets), desc='Peturbing graph...',
                        disable=disable):
@@ -157,6 +164,7 @@ class FGAttack(TargetedAttacker, Surrogate):
                     else:
                         self.add_feat(u, v, it)
 
+        self.time_break_down['finding_best_edges'] = timeit.default_timer() - start_time #**
         return self
 
     def structure_score(self, modified_adj, adj_grad, target):

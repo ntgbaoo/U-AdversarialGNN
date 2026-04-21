@@ -4,6 +4,7 @@ from typing import Optional
 from tqdm.auto import tqdm
 
 from greatx.attack.targeted.targeted_attacker import TargetedAttacker
+import timeit #**
 
 
 class RandomAttack(TargetedAttacker):
@@ -64,6 +65,9 @@ class RandomAttack(TargetedAttacker):
     def attack(self, target, *, num_budgets=None, threshold=0.5,
                direct_attack=True, structure_attack=True, feature_attack=False,
                disable=False):
+        self.time_break_down = {} #**
+
+        start_time = timeit.default_timer() #**
 
         super().attack(target, target_label=None, num_budgets=num_budgets,
                        direct_attack=direct_attack,
@@ -77,6 +81,8 @@ class RandomAttack(TargetedAttacker):
             influence_nodes = self.adjacency_matrix[target].indices.tolist()
 
         num_chosen = 0
+        self.time_break_down['pre_compute'] = timeit.default_timer() - start_time #**
+        start_time = timeit.default_timer() #**
 
         with tqdm(total=self.num_budgets, desc='Peturbing graph...',
                   disable=disable) as pbar:
@@ -98,7 +104,7 @@ class RandomAttack(TargetedAttacker):
 
                     num_chosen += 1
                     pbar.update(1)
-
+        self.time_break_down['finding_best_edges'] = timeit.default_timer() - start_time #**
         return self
 
     def get_added_edge(self, influence_nodes: list) -> Optional[tuple]:

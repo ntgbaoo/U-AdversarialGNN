@@ -37,9 +37,10 @@ from torch_geometric.utils import degree, to_scipy_sparse_matrix,to_edge_index,t
 from copy import copy
 import os
 import sys
+import timeit #**
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from utility.util import set_random
+from utility.util import set_random 
 
 
 class Nettack:
@@ -106,6 +107,7 @@ class Nettack:
 
         self.modified_adj = None
         self.modified_features = None
+        self.time_break_down = {} #**
 
     def setup_surrogate(self,model):
         self.surrogate = model
@@ -193,7 +195,7 @@ class Nettack:
         verbose : bool
             whether to show verbose logs
         """
-
+        start_time = timeit.default_timer() #**
         target_node = target
         if self.nnodes is None:
             self.nnodes = self.adj.shape[0]
@@ -283,6 +285,9 @@ class Nettack:
 
         self.potential_edges = self.potential_edges.astype("int32")
 
+        self.time_break_down['pre_compute'] = timeit.default_timer() - start_time #**
+        start_time = timeit.default_timer() #**
+        
         for _ in range(self.n_perturbations):
             if verbose:
                 print("##### ...{}/{} perturbations ... #####".format(_+1, self.n_perturbations))
@@ -358,6 +363,8 @@ class Nettack:
                 self.feature_perturbations.append(tuple(best_feature_ix))
                 self.structure_perturbations.append(())
                 surrogate_losses.append(best_feature_score)
+
+        self.time_break_down['finding_best_edges'] = timeit.default_timer() - start_time #**
 
         # return self.modified_adj, self.modified_features
 

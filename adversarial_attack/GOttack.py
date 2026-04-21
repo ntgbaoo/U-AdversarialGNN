@@ -29,6 +29,8 @@ from torch_geometric.data import Data
 from torch_geometric.utils import degree, to_scipy_sparse_matrix,to_edge_index,to_dense_adj
 from copy import copy
 import pandas as pd
+import timeit #**
+
 
 class OrbitAttack:
 
@@ -162,7 +164,9 @@ class OrbitAttack:
         verbose : bool
             whether to show verbose logs
         """
+        self.time_break_down = {} #**
 
+        start_time = timeit.default_timer() #**
         if self.nnodes is None:
             self.nnodes = self.adj.shape[0]
 
@@ -204,6 +208,8 @@ class OrbitAttack:
 
         self.potential_edges = (np.array([[target, value] for value in self.matching_index])).astype("int32")
 
+        self.time_break_down['pre_compute'] = timeit.default_timer() - start_time #**
+        start_time = timeit.default_timer() #**
 
         for _ in range(num_budgets):
             if verbose:
@@ -230,6 +236,7 @@ class OrbitAttack:
             self.feature_perturbations.append(())
             surrogate_losses.append(best_edge_score)
 
+        self.time_break_down['finding_best_edges'] = timeit.default_timer() - start_time #**
         # return self.modified_adj, self.modified_features
 
     def get_attacker_nodes(self, n=5, add_additional_nodes = False):

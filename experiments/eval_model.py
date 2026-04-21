@@ -15,7 +15,7 @@ def save_results(dataset, model, purification, mean,std,time,time_std):
     partial_path = "data/results"
     if not os.path.exists(partial_path):
         os.makedirs(partial_path)
-    result_path = f"{partial_path}/model_evaluation.csv"
+    result_path = f"{partial_path}/model_time_evaluation.csv"
     if not os.path.exists(result_path):
         result_df = pd.DataFrame(
             columns=["dataset", "model", "purification", "mean", "std","time","std_time"])
@@ -35,7 +35,12 @@ def save_results(dataset, model, purification, mean,std,time,time_std):
     result_df.to_csv(result_path, index=False)
 
 if __name__ == "__main__":
-    models = ["GCN","GIN","GSAGE","PNA","ElasticGNN","GRAND","GNNGuard","RobustGCN"]
+    # models = ["GCN","GIN","GSAGE","PNA","ElasticGNN","GRAND","GNNGuard","RobustGCN"]
+    # models = ["GCN","GIN","GSAGE","PNA"]
+    # models = ["GNNGuard","ElasticGNN","GRAND","RobustGCN","GCORN","RUNG"]
+    models = ["NoisyGNN"]
+
+    # models = ["GCN-GARNET","GCN-Jaccard"]
     
     data,split = DataLoader.load(args.dataset)
    

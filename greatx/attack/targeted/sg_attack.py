@@ -9,6 +9,8 @@ from tqdm.auto import tqdm
 from greatx.attack.targeted.targeted_attacker import TargetedAttacker
 from greatx.nn.models.surrogate import Surrogate
 from greatx.utils import ego_graph
+import timeit #**
+
 
 SubGraph = namedtuple('SubGraph', [
     'edge_index', 'sub_edges', 'non_edges', 'edge_weight', 'non_edge_weight',
@@ -197,6 +199,9 @@ class SGAttack(TargetedAttacker, Surrogate):
                num_budgets=None, direct_attack=True, structure_attack=True,
                feature_attack=False, disable=False):
 
+        self.time_break_down = {} #**
+        start_time = timeit.default_timer() #**
+
         super().attack(target, target_label, num_budgets=num_budgets,
                        direct_attack=direct_attack,
                        structure_attack=structure_attack,
@@ -216,6 +221,9 @@ class SGAttack(TargetedAttacker, Surrogate):
             condition1 = subgraph.sub_edges[0] != target
             condition2 = subgraph.sub_edges[1] != target
             mask = torch.logical_and(condition1, condition2).float()
+
+        self.time_break_down['pre_compute'] = timeit.default_timer() - start_time #**
+        start_time = timeit.default_timer() #**
 
         for it in tqdm(range(self.num_budgets), desc='Peturbing graph...',
                        disable=disable):
@@ -245,6 +253,7 @@ class SGAttack(TargetedAttacker, Surrogate):
                 self.add_edge(u, v, it)
 
         self.set_normalize(True)
+        self.time_break_down['finding_best_edges'] = timeit.default_timer() - start_time #**
         return self
 
     def compute_gradients(self, subgraph, target, target_label,

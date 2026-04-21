@@ -42,7 +42,7 @@ class AdversarialSupervisor:
 
         self.labels = []
         self.evasion_preds = []
-        self.poision_preds = []        
+        self.poision_preds = []     
 
     def target_attack(self,bucket_target_nodes:Tuple[List[int],...],budget,evasion = False, poision = True,
                       evasion_model:ModelSupervisor= None,seed = 720,structure_attack = True, feature_attack = False,use_epsilon = False):

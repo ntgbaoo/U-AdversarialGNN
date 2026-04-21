@@ -13,6 +13,7 @@ from tqdm import tqdm
 from torch_geometric.utils import coalesce, to_undirected
 import os
 import sys
+import timeit #**
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utility.util import set_random
@@ -190,6 +191,8 @@ class PRBCDAttack(torch.nn.Module):
 
         :rtype: (:class:`torch.Tensor`, :class:`torch.Tensor`)
         """
+        self.time_break_down = {} #**
+        start_time = timeit.default_timer() #**
 
         assert self.model is not None, "setup_surrogate() must be called before calling attack"
         self.model.eval()
@@ -219,6 +222,9 @@ class PRBCDAttack(torch.nn.Module):
             scalars['loss'] = loss.item()
             self._append_statistics(scalars)
 
+        self.time_break_down['pre_compute'] = timeit.default_timer() - start_time #**
+        start_time = timeit.default_timer() #**
+
         perturbed_edge_index, flipped_edges = self._close(
             self.x, self.labels, num_budgets, target, **kwargs)
 
@@ -228,6 +234,7 @@ class PRBCDAttack(torch.nn.Module):
 
         self.modified_edgelist =perturbed_edge_index
         self.flip_edge = flipped_edges
+        self.time_break_down['finding_best_edges'] = timeit.default_timer() - start_time #**
 
 
     def _prepare(self, budget: int) -> Iterable[int]:

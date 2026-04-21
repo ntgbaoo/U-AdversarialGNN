@@ -5,6 +5,7 @@ import torch
 from greatx.attack.targeted.targeted_attacker import TargetedAttacker
 from greatx.attack.untargeted.pgd_attack import PGD
 from greatx.nn.models.surrogate import Surrogate
+import timeit #**
 
 
 class PGDAttack(TargetedAttacker, PGD, Surrogate):
@@ -155,6 +156,9 @@ class PGDAttack(TargetedAttacker, PGD, Surrogate):
             raise RuntimeError(
                 "PGDAttack is not applicable to indirect attack.")
 
+        self.time_break_down = {} #**
+        start_time = timeit.default_timer() #**
+
         super().attack(target, target_label, num_budgets=num_budgets,
                        direct_attack=direct_attack,
                        structure_attack=structure_attack,
@@ -163,7 +167,10 @@ class PGDAttack(TargetedAttacker, PGD, Surrogate):
         victim_label = self.target_label.view(-1)
         victim_node = torch.as_tensor(self.target, device=self.device,
                                       dtype=torch.long).view(-1)
-        return PGD.attack(
+        
+        self.time_break_down['pre_compute'] = timeit.default_timer() - start_time #**
+
+        pgd = PGD.attack(
             self,
             self.num_budgets,
             victim_nodes=victim_node,
@@ -175,3 +182,7 @@ class PGDAttack(TargetedAttacker, PGD, Surrogate):
             sample_epochs=sample_epochs,
             disable=disable,
         )
+
+        self.time_break_down['pre_compute'] += pgd.time_break_down['pre_compute']
+        self.time_break_down['finding_best_edges'] = pgd.time_break_down['finding_best_edges']
+        return pgd

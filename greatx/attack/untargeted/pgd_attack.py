@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from torch import Tensor
 from torch.autograd import grad
 from tqdm.auto import tqdm
+import timeit #**
 
 from greatx.attack.untargeted.untargeted_attacker import UntargetedAttacker
 from greatx.nn.models.surrogate import Surrogate
@@ -29,7 +30,9 @@ class PGD:
         sample_epochs: int = 20,
         disable: bool = False,
     ) -> "PGD":
+        self.time_break_down = {} #**
 
+        start_time = timeit.default_timer() #**
         if ce_loss:
             self.loss_fn = cross_entropy_loss
         else:
@@ -67,6 +70,9 @@ class PGD:
         best_loss = -np.inf
         best_pert = None
 
+        self.time_break_down['pre_compute'] = timeit.default_timer() - start_time #**
+        start_time = timeit.default_timer() #**
+
         perturbations.detach_()
         for it in tqdm(range(sample_epochs), desc='Bernoulli sampling...',
                        disable=disable):
@@ -85,6 +91,7 @@ class PGD:
             else:
                 self.add_edge(u, v, it)
 
+        self.time_break_down['finding_best_edges'] = timeit.default_timer() - start_time #**
         return self
 
     def compute_loss(
